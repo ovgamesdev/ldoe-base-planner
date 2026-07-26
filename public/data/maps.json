@@ -1,0 +1,12 @@
+[
+  {
+    "id": "default-map-1",
+    "name": "Основная база",
+    "file": "/data/maps/default-map-1.json"
+  },
+  {
+    "id": "youtube_unker_v1",
+    "name": "YouTube UNKER (17.07.2026)",
+    "file": "/data/maps/youtube_unker_v1.json"
+  }
+]

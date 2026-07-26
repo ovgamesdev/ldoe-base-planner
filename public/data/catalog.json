@@ -1,0 +1,3764 @@
+[
+  {
+    "typeId": "small_box",
+    "category": "workbenches_storage",
+    "name": "Маленький ящик",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/small_box.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [
+      {
+        "color": "#1c3854",
+        "image": "/assets/small_box_dark_blue.webp"
+      },
+      {
+        "color": "#802020",
+        "image": "/assets/small_box_dark_red.webp"
+      },
+      {
+        "color": "#d5d52c",
+        "image": "/assets/small_box_dark_yellow.webp"
+      },
+      {
+        "color": "#3d7a2d",
+        "image": "/assets/small_box_dark_green.webp"
+      },
+      {
+        "color": "#2a2a2a",
+        "image": "/assets/small_box_dark_black.webp"
+      },
+      {
+        "color": "#e0e0e0",
+        "image": "/assets/small_box_dark_white.webp"
+      },
+      {
+        "color": "#4a3062",
+        "image": "/assets/small_box_dark_purple.webp"
+      },
+      {
+        "color": "#b94420",
+        "image": "/assets/small_box_dark_orange.webp"
+      },
+      {
+        "color": "#de7882",
+        "image": "/assets/small_box_dark_pink.webp"
+      }
+    ],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 40,
+      "sharedLimitGroup": "storage"
+    }
+  },
+  {
+    "typeId": "chest",
+    "category": "workbenches_storage",
+    "name": "Сундук",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/chest.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [
+      {
+        "color": "#1c3854",
+        "image": "/assets/chest_dark_blue.webp"
+      },
+      {
+        "color": "#802020",
+        "image": "/assets/chest_dark_red.webp"
+      },
+      {
+        "color": "#d5d52c",
+        "image": "/assets/chest_dark_yellow.webp"
+      },
+      {
+        "color": "#3d7a2d",
+        "image": "/assets/chest_dark_green.webp"
+      },
+      {
+        "color": "#2a2a2a",
+        "image": "/assets/chest_dark_black.webp"
+      },
+      {
+        "color": "#e0e0e0",
+        "image": "/assets/chest_dark_white.webp"
+      },
+      {
+        "color": "#4a3062",
+        "image": "/assets/chest_dark_purple.webp"
+      },
+      {
+        "color": "#b94420",
+        "image": "/assets/chest_dark_orange.webp"
+      },
+      {
+        "color": "#de7882",
+        "image": "/assets/chest_dark_pink.webp"
+      }
+    ],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 40,
+      "sharedLimitGroup": "storage"
+    }
+  },
+  {
+    "typeId": "trunk",
+    "category": "workbenches_storage",
+    "name": "Хранилище",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/trunk.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [
+      {
+        "color": "#1c3854",
+        "image": "/assets/trunk_dark_blue.webp"
+      },
+      {
+        "color": "#802020",
+        "image": "/assets/trunk_dark_red.webp"
+      },
+      {
+        "color": "#d5d52c",
+        "image": "/assets/trunk_dark_yellow.webp"
+      },
+      {
+        "color": "#3d7a2d",
+        "image": "/assets/trunk_dark_green.webp"
+      },
+      {
+        "color": "#2a2a2a",
+        "image": "/assets/trunk_dark_black.webp"
+      },
+      {
+        "color": "#e0e0e0",
+        "image": "/assets/trunk_dark_white.webp"
+      },
+      {
+        "color": "#4a3062",
+        "image": "/assets/trunk_dark_purple.webp"
+      },
+      {
+        "color": "#b94420",
+        "image": "/assets/trunk_dark_orange.webp"
+      },
+      {
+        "color": "#de7882",
+        "image": "/assets/trunk_dark_pink.webp"
+      }
+    ],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 40,
+      "sharedLimitGroup": "storage"
+    }
+  },
+  {
+    "typeId": "rack",
+    "category": "workbenches_storage",
+    "name": "Стеллаж",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/rack.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [
+      {
+        "color": "#1c3854",
+        "image": "/assets/rack_dark_blue.webp"
+      },
+      {
+        "color": "#802020",
+        "image": "/assets/rack_dark_red.webp"
+      },
+      {
+        "color": "#d5d52c",
+        "image": "/assets/rack_dark_yellow.webp"
+      },
+      {
+        "color": "#3d7a2d",
+        "image": "/assets/rack_dark_green.webp"
+      },
+      {
+        "color": "#2a2a2a",
+        "image": "/assets/rack_dark_black.webp"
+      },
+      {
+        "color": "#e0e0e0",
+        "image": "/assets/rack_dark_white.webp"
+      },
+      {
+        "color": "#4a3062",
+        "image": "/assets/rack_dark_purple.webp"
+      },
+      {
+        "color": "#b94420",
+        "image": "/assets/rack_dark_orange.webp"
+      },
+      {
+        "color": "#de7882",
+        "image": "/assets/rack_dark_pink.webp"
+      }
+    ],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 40,
+      "sharedLimitGroup": "storage"
+    }
+  },
+  {
+    "typeId": "bookshelf",
+    "category": "workbenches_storage",
+    "name": "Книжная полка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/bookshelf.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "warehouse",
+    "category": "workbenches_storage",
+    "name": "Склад материалов",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/warehouse.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "fridge",
+    "category": "workbenches_storage",
+    "name": "Холодильник",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/fridge.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "another_round",
+    "category": "workbenches_storage",
+    "name": "Еще по одной",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/another_round.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "medicine_cabinet",
+    "category": "workbenches_storage",
+    "name": "Домашняя аптека",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/medicine_cabinet.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "requiresFloor": false,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "triumph",
+    "category": "workbenches_storage",
+    "name": "Триумф",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/triumph.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "division_box",
+    "category": "workbenches_storage",
+    "name": "Ящик с делениями",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/division_box.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "junk_repository",
+    "category": "workbenches_storage",
+    "name": "Хранилище хлама",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/junk_repository.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "electronics_crate",
+    "category": "workbenches_storage",
+    "name": "Ящик для электроники",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/electronics_crate.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "fish_fridge",
+    "category": "workbenches_storage",
+    "name": "Холодильник для рыбы",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/fish_fridge.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "safe",
+    "category": "workbenches_storage",
+    "name": "Сейф",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/safe.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 5
+    }
+  },
+  {
+    "typeId": "fuel_tank_lvl_1",
+    "category": "workbenches_storage",
+    "name": "Цистерна с топливом УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/fuel_tank_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "sharedLimitGroup": "fuel_tank"
+    }
+  },
+  {
+    "typeId": "fuel_tank_lvl_2",
+    "category": "workbenches_storage",
+    "name": "Цистерна с топливом УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/fuel_tank_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "sharedLimitGroup": "fuel_tank"
+    }
+  },
+  {
+    "typeId": "sewing_rack",
+    "category": "workbenches_storage",
+    "name": "Швейный стеллаж",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sewing_rack.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "storage_for_explosives_lvl_1",
+    "category": "workbenches_storage",
+    "name": "Хранилище взрывчатки УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/storage_for_explosives_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1,
+      "sharedLimitGroup": "storage_for_explosives"
+    }
+  },
+  {
+    "typeId": "storage_for_explosives_lvl_2",
+    "category": "workbenches_storage",
+    "name": "Хранилище взрывчатки УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/storage_for_explosives_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1,
+      "sharedLimitGroup": "storage_for_explosives"
+    }
+  },
+  {
+    "typeId": "ore_storage",
+    "category": "workbenches_storage",
+    "name": "Хранилище руды",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/ore_storage.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "storage_for_equipment",
+    "category": "workbenches_storage",
+    "name": "Хранилище экипировки",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/storage_for_equipment.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "storage_for_parts",
+    "category": "workbenches_storage",
+    "name": "Хранилище запчастей",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/storage_for_parts.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "weapon_rack_lvl_1",
+    "category": "workbenches_storage",
+    "name": "Оружейный шкаф УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/weapon_rack_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 20,
+      "sharedLimitGroup": "weapon_rack"
+    }
+  },
+  {
+    "typeId": "cargo_shelving",
+    "category": "workbenches_storage",
+    "name": "Грузовой стеллаж",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/cargo_shelving.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "tabletop_food_pantry",
+    "category": "workbenches_storage",
+    "name": "Мобильный буфет",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/tabletop_food_pantry.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "garden_bed",
+    "category": "workbenches_basic",
+    "name": "Грядка",
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/garden_bed.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "woodworking_bench_lvl_1",
+    "category": "workbenches_basic",
+    "name": "Плотницкий стол УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/woodworking_bench_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "woodworking_bench"
+    }
+  },
+  {
+    "typeId": "woodworking_bench_lvl_2",
+    "category": "workbenches_basic",
+    "name": "Плотницкий стол УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/woodworking_bench_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "woodworking_bench"
+    }
+  },
+  {
+    "typeId": "rain_catcher",
+    "category": "workbenches_basic",
+    "name": "Водосборник",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/rain_catcher.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "campfire_lvl_1",
+    "category": "workbenches_basic",
+    "name": "Костёр УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/campfire_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "campfire"
+    }
+  },
+  {
+    "typeId": "campfire_lvl_2",
+    "category": "workbenches_basic",
+    "name": "Костёр УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/campfire_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "campfire"
+    }
+  },
+  {
+    "typeId": "meat_dryer_lvl_1",
+    "category": "workbenches_basic",
+    "name": "Сушилка для мяса УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/meat_dryer_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "meat_dryer"
+    }
+  },
+  {
+    "typeId": "meat_dryer_lvl_2",
+    "category": "workbenches_basic",
+    "name": "Сушилка для мяса УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/meat_dryer_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "meat_dryer"
+    }
+  },
+  {
+    "typeId": "melting_furnace_lvl_1",
+    "category": "workbenches_basic",
+    "name": "Плавильня УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/melting_furnace_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "melting_furnace"
+    }
+  },
+  {
+    "typeId": "melting_furnace_lvl_2",
+    "category": "workbenches_basic",
+    "name": "Плавильня УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/melting_furnace_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "melting_furnace"
+    }
+  },
+  {
+    "typeId": "tanning_rack_lvl_1",
+    "category": "workbenches_basic",
+    "name": "Сцшилка для кожи УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/tanning_rack_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "tanning_rack"
+    }
+  },
+  {
+    "typeId": "tanning_rack_lvl_2",
+    "category": "workbenches_basic",
+    "name": "Сцшилка для кожи УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/tanning_rack_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "tanning_rack"
+    }
+  },
+  {
+    "typeId": "stonecutter_table_lvl_1",
+    "category": "workbenches_advanced",
+    "name": "Камнерезка УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/stonecutter_table_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "stonecutter_table"
+    }
+  },
+  {
+    "typeId": "stonecutter_table_lvl_2",
+    "category": "workbenches_advanced",
+    "name": "Камнерезка УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/stonecutter_table_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "stonecutter_table"
+    }
+  },
+  {
+    "typeId": "kitchen_stove",
+    "category": "workbenches_advanced",
+    "name": "Кухонная плита",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/kitchen_stove.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "buzzsaw",
+    "category": "workstation",
+    "name": "Циркулярная пила",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/buzzsaw.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "workbench_lvl_1",
+    "category": "workbenches_advanced",
+    "name": "Верстак УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/workbench_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "workbench"
+    }
+  },
+  {
+    "typeId": "workbench_lvl_2",
+    "category": "workbenches_advanced",
+    "name": "Верстак УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/workbench_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "workbench"
+    }
+  },
+  {
+    "typeId": "sewing_table_lvl_1",
+    "category": "workbenches_advanced",
+    "name": "Швейный стол УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sewing_table_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "sewing_table"
+    }
+  },
+  {
+    "typeId": "sewing_table_lvl_2",
+    "category": "workbenches_advanced",
+    "name": "Швейный стол УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sewing_table_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "sewing_table"
+    }
+  },
+  {
+    "typeId": "medical_table_lvl_1",
+    "category": "workbenches_advanced",
+    "name": "Стол медика УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/medical_table_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "medical_table"
+    }
+  },
+  {
+    "typeId": "medical_table_lvl_2",
+    "category": "workbenches_advanced",
+    "name": "Стол медика УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/medical_table_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "medical_table"
+    }
+  },
+  {
+    "typeId": "refined_melting_furnace_lvl_1",
+    "category": "workbenches_advanced",
+    "name": "Улучшенная плавильня УР.1",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/refined_melting_furnace_lvl_1.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "refined_melting_furnace"
+    }
+  },
+  {
+    "typeId": "refined_melting_furnace_lvl_2",
+    "category": "workbenches_advanced",
+    "name": "Улучшенная плавильня УР.2",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/refined_melting_furnace_lvl_2.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "refined_melting_furnace"
+    }
+  },
+  {
+    "typeId": "recycler",
+    "category": "workbenches_technologic",
+    "name": "Станок для переработки",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/recycler.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "repair_station",
+    "category": "workbenches_technologic",
+    "name": "Ремонтный стол",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/repair_station.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "pressing_machine",
+    "category": "workbenches_technologic",
+    "name": "Пресс",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/pressing_machine.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 4,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "electronics_lab",
+    "category": "workbenches_technologic",
+    "name": "Лаборатория",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/electronics_lab.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "chemistry_station",
+    "category": "workbenches_technologic",
+    "name": "Стол химика",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/chemistry_station.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 4,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "hydroponic_system",
+    "category": "workbenches_technologic",
+    "name": "Гидропонная установка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/hydroponic_system.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 4,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "aluminum_extractor",
+    "category": "workbenches_extractors",
+    "name": "Экстрактор алюминия",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/aluminum_extractor.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "copper_extractor",
+    "category": "workbenches_extractors",
+    "name": "Экстрактор меди",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/copper_extractor.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "titanium_extractor",
+    "category": "workbenches_extractors",
+    "name": "Экстрактор титана",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/titanium_extractor.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "sulfur_extractor",
+    "category": "workbenches_extractors",
+    "name": "Экстрактор серы",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sulfur_extractor.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "echo",
+    "category": "workbenches_extractors",
+    "name": "Эхо",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/echo.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "lead_extractor",
+    "category": "workbenches_extractors",
+    "name": "Экстрактор свинца",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/lead_extractor.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "wardrobe",
+    "category": "furniture_practical",
+    "name": "Гардерб",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/wardrobe.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "shower",
+    "category": "furniture_practical",
+    "name": "Душ",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/shower.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "doormat",
+    "category": "furniture_practical",
+    "name": "Коврик",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/doormat.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "mirror",
+    "category": "furniture_practical",
+    "name": "Зеркало",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/mirror.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "hand_pump",
+    "category": "furniture_practical",
+    "name": "Ручная водокачка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/hand_pump.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2
+    }
+  },
+  {
+    "typeId": "weapon_stand",
+    "category": "furniture_practical",
+    "name": "Оружейный стенд",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/weapon_stand.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "outdoor_toilet",
+    "category": "furniture_practical",
+    "name": "Древенский туалет",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/outdoor_toilet.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "gramophone",
+    "category": "furniture_practical",
+    "name": "Граммофон",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/gramophone.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "mannequin",
+    "category": "furniture_practical",
+    "name": "Манекен",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/mannequin.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 4
+    }
+  },
+  {
+    "typeId": "houseplant",
+    "category": "furniture_for_comfort",
+    "name": "Комнатное растение",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/houseplant.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 15
+    }
+  },
+  {
+    "typeId": "dining_table",
+    "category": "furniture_for_comfort",
+    "name": "Обеденный стол",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/dining_table.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "cozy_couch",
+    "category": "furniture_for_comfort",
+    "name": "Уютный диван",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/cozy_couch.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 4
+    }
+  },
+  {
+    "typeId": "floor_lamp",
+    "category": "furniture_for_comfort",
+    "name": "Торшер",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/floor_lamp.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 10
+    }
+  },
+  {
+    "typeId": "comfortable_bed",
+    "category": "furniture_for_comfort",
+    "name": "Удобная кровать",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/comfortable_bed.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "spruce",
+    "category": "furniture_for_the_garden",
+    "name": "Декоративная ель",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/spruce.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "tire_flowerbed",
+    "category": "furniture_for_the_garden",
+    "name": "Клумба из покрышек",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/tire_flowerbed.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "bath_with_flowers",
+    "category": "furniture_for_the_garden",
+    "name": "Ванна с цветами",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/bath_with_flowers.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "decorative_pond",
+    "category": "furniture_for_the_garden",
+    "name": "Уютный пруд",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/decorative_pond.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 3
+    }
+  },
+  {
+    "typeId": "sculpture",
+    "category": "furniture_for_the_garden",
+    "name": "Скульптура",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sculpture.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "horse_feeder",
+    "category": "furniture_for_the_garden",
+    "name": "Кормушка для лошади",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/horse_feeder.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 4
+    }
+  },
+  {
+    "typeId": "spike_trap",
+    "category": "furniture_protective",
+    "name": "Колья",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/spike_trap.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 80
+    }
+  },
+  {
+    "typeId": "trip_wire_trap",
+    "category": "furniture_protective",
+    "name": "Растяжка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/trip_wire_trap.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "barbed_wire",
+    "category": "furniture_protective",
+    "name": "Колючая проволка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/barbed_wire.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "turret",
+    "category": "furniture_protective",
+    "name": "Турель",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/turret.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 4
+    }
+  },
+  {
+    "typeId": "the_blind_one_head",
+    "category": "furniture_protective",
+    "name": "Голова Слепого охотника",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/the_blind_one_head.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "witch_head",
+    "category": "furniture_protective",
+    "name": "Голова Ведьмы",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/witch_head.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "trophy_board",
+    "category": "furniture_wall_mounted",
+    "name": "Трофейная доска",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/trophy_board.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 4
+    }
+  },
+  {
+    "typeId": "blood_clot",
+    "category": "furniture_wall_mounted",
+    "name": "Сгусток крови",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/blood_clot.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "sweet_couple",
+    "category": "furniture_wall_mounted",
+    "name": "Сладкая парочка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sweet_couple.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "predatory_gaze",
+    "category": "furniture_wall_mounted",
+    "name": "Хищный взгляд",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/predatory_gaze.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "toxic_gaze",
+    "category": "furniture_wall_mounted",
+    "name": "Токсичный взгляд",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/toxic_gaze.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "chilling_gaze",
+    "category": "furniture_wall_mounted",
+    "name": "Леденящий взгляд",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/chilling_gaze.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "radio",
+    "category": "special_unique",
+    "name": "Радио",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/radio.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "dog_crate",
+    "category": "special_unique",
+    "name": "Вольер для собак",
+    "size": {
+      "w": 3,
+      "h": 4
+    },
+    "image": "/assets/dog_crate.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "gunsmith_bench",
+    "category": "special_unique",
+    "name": "Стол оружейника",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/gunsmith_bench.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "electric_generator",
+    "category": "special_unique",
+    "name": "Генератор",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/electric_generator.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "drone_and_docking_station",
+    "category": "special_unique",
+    "name": "Дрон и док-станция",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/drone_and_docking_station.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "drone_upgrade_workbench",
+    "category": "special_unique",
+    "name": "Стол улучшения дрона",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/drone_upgrade_workbench.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "broken_down_motorcycle",
+    "category": "special_unique",
+    "name": "Разбитый мотоцикл",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/broken_down_motorcycle.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "ice_block",
+    "category": "special_unique",
+    "name": "Глыба льда",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/ice_block.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "cat_tree",
+    "category": "special_unique",
+    "name": "Кошачий домик",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/cat_tree.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "cat_playpen",
+    "category": "special_unique",
+    "name": "Манеж для котов",
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/cat_playpen.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "broken_down_atv_engine",
+    "category": "special_unique",
+    "name": "Сломанный двигатель вездехода",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/broken_down_atv_engine.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "chopper",
+    "category": "special_transport",
+    "name": "Чоппер",
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/chopper.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "garage",
+    "category": "special_transport",
+    "name": "Гараж",
+    "size": {
+      "w": 3,
+      "h": 4
+    },
+    "image": "/assets/garage.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "motorboat",
+    "category": "special_transport",
+    "name": "Катер",
+    "size": {
+      "w": 2,
+      "h": 4
+    },
+    "image": "/assets/motorboat.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "broken_slot_machine",
+    "category": "workstation",
+    "name": "Взломнанная слот-машина",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/broken_slot_machine.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "requiresFloor": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "wheel_of_chance",
+    "category": "workstation",
+    "name": "Барабан фортуны",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/wheel_of_chance.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 2,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "luck-o-matic",
+    "category": "workstation",
+    "name": "Шансомат",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/luck-o-matic.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "weather_station",
+    "category": "workstation",
+    "name": "Метеостанция",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/weather_station.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "pine_tree_seedling",
+    "category": "workstation",
+    "name": "Саженец сосны",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/pine_tree_seedling.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": false,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "oak_seedling",
+    "category": "workstation",
+    "name": "Саженец дуба",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/oak_seedling.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": false,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "sakura_seedling",
+    "category": "workstation",
+    "name": "Саженец сакуры",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sakura_seedling.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "requiresFloor": false,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "evil_dead_witch_poster",
+    "category": "workstation",
+    "name": "Плакат \"Зловещая ведьма\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/evil_dead_witch_poster.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 1,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "paper_lanterns_lights",
+    "category": "workstation",
+    "name": "Гирлянда \"Бумажные фонарики\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/paper_lanterns_lights.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "krumpy",
+    "category": "workstation",
+    "name": "Крампи",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/krumpy.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "christmas_lights",
+    "category": "workstation",
+    "name": "Новогодняя гирлянда",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/christmas_lights.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "jack-o-lantems_lights",
+    "category": "workstation",
+    "name": "Гирлянда \"Тыквы\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/jack-o-lantems_lights.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "welcome_to_the_wasteland_poster",
+    "category": "workstation",
+    "name": "Плакат \"Добро пожаловать в Пустошь!\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/welcome_to_the_wasteland_poster.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "commune_symbol",
+    "category": "workstation",
+    "name": "Символ Коммуны",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/commune_symbol.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "sussi_poster",
+    "category": "workstation",
+    "name": "Плакат Сьюзи",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/sussi_poster.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "poster_wasteland_predator",
+    "category": "workstation",
+    "name": "Плакат \"Хищник Пустоши\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/poster_wasteland_predator.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "mechanic_poster",
+    "category": "workstation",
+    "name": "Плакат \"Механик\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/mechanic_poster.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "martial_artist_poster",
+    "category": "workstation",
+    "name": "Плакат \"Мастер боевых искуств\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/poster.webp",
+    "tooltipImage": "/assets/martial_artist_poster.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "christmas_ornaments",
+    "category": "workstation",
+    "name": "Новогодние украшения",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/christmas_ornaments.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "halloween_party_lights",
+    "category": "workstation",
+    "name": "Гирлянда \"Вечеринка на Хэллоуин\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/halloween_party_lights.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "ghosts_lights",
+    "category": "workstation",
+    "name": "Гирлянда \"Призраки\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/ghosts_lights.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "spring_smile_planter",
+    "category": "workstation",
+    "name": "Кашпо \"Улыбка весны\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/spring_smile_planter.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "sunny_day_planter",
+    "category": "workstation",
+    "name": "Кашпо \"Солнечный день\"",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/sunny_day_planter.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "wall",
+      "requiresFloor": false,
+      "requiresWallLevel": 3,
+      "allowWindowWall": true,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 6
+    }
+  },
+  {
+    "typeId": "carrot_dispenser",
+    "category": "workstation",
+    "name": "Морковный автомат",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/carrot_dispenser.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "crypt",
+    "category": "workstation",
+    "name": "Склеп",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/crypt.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "any",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "ritual_fire",
+    "category": "workstation",
+    "name": "Ритуальный костер",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/ritual_fire.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "festive_arch",
+    "category": "workstation",
+    "name": "Праздничная арка",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/festive_arch.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "hedge",
+    "category": "workstation",
+    "name": "Живая изгородь",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/hedge.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "autoTiling": true,
+      "connectsTo": [
+        "hedge",
+        "spirea"
+      ],
+      "autoTileImages": {
+        "single": "/assets/hedge.webp",
+        "end": "/assets/hedge-end.webp",
+        "straight": "/assets/hedge-straight.webp",
+        "corner": "/assets/hedge-corner.webp",
+        "tee": "/assets/hedge-tee.webp",
+        "cross": "/assets/hedge-cross.webp"
+      },
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "spirea",
+    "category": "workstation",
+    "name": "Спирея",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/spirea.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "autoTiling": true,
+      "connectsTo": [
+        "hedge",
+        "spirea"
+      ],
+      "autoTileImages": {
+        "single": "/assets/spirea.webp",
+        "end": "/assets/spirea-end.webp",
+        "straight": "/assets/spirea-straight.webp",
+        "corner": "/assets/spirea-corner.webp",
+        "tee": "/assets/spirea-tee.webp",
+        "cross": "/assets/spirea-cross.webp"
+      },
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 20
+    }
+  },
+  {
+    "typeId": "fireplace",
+    "category": "workstation",
+    "name": "Камин",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/fireplace.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "turkey_coop",
+    "category": "workstation",
+    "name": "Индюшатник",
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/turkey_coop.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  },
+  {
+    "typeId": "trophy_from_albert",
+    "category": "workstation",
+    "name": "Трофей от Альберта",
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/trophy_from_albert.webp",
+    "tooltipImage": "",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1
+    }
+  }
+]

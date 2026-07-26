@@ -24,3 +24,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+html, body {
+  /* Фиксируем высоту под динамический экран */
+  height: 100dvh;
+  width: 100dvw;
+  
+  /* Запрещаем любой скролл и вытягивание страницы */
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  
+  /* Убираем стандартные отступы */
+  margin: 0;
+  padding: 0;
+}
+
+/* Если приложение открывают как PWA или через "На экран Домой" */
+@supports (-webkit-touch-callout: none) {
+  body {
+    /* Коррекция под челку и нижнюю полоску iPhone */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

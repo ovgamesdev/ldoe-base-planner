@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/OLD_src/
+/public/assets/*.ps1
+/public/assets/*.png
