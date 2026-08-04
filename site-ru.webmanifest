@@ -1,0 +1,21 @@
+{
+  "name": "LDOE BASE PLANNER — Планировщик базы и поселения",
+  "short_name": "LDOE Планировщик",
+  "description": "Интерактивный планировщик базы и поселения для игры Last Day on Earth: Survival (LDOE).",
+  "start_url": "/ldoe-base-planner/ru/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/ldoe-base-planner/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/ldoe-base-planner/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
