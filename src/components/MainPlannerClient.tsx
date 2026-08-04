@@ -8,6 +8,7 @@ import {
   getOccupiedCells,
   hasFloorForWall,
   hasValidWallForDecor,
+  isWallCrossingObjectFootprint,
   isWallDecorValid
 } from '../lib/grid-utils'
 import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type MapData, type ModalInfoState, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '../lib/initial-data'
@@ -26,7 +27,114 @@ const generateUUID = (): string => {
   );
 };
 
+const cyrb53 = (str: string, seed = 0) => {
+  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
 const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+const compressMapToUrl = async (map: MapData): Promise<string> => {
+  const minimalMap = {
+    n: map.name,
+    mb: {
+      l: {
+        f: map.mainBase?.layers?.floors?.map(f => [f.x, f.y, f.level]) || [],
+        w: map.mainBase?.layers?.walls?.map(w => [w.x, w.y, w.orientation === 'horizontal' ? 0 : 1, w.level, w.isDoor ? 1 : 0, w.isWindow ? 1 : 0]) || [],
+        o: map.mainBase?.layers?.objects?.map(o => [o.typeId, o.x, o.y, o.rotation || 0, o.paintColor || '']) || []
+      },
+      c: map.mainBase?.mapConfig?.noBuildZones?.map(nb => [nb.x, nb.y]) || []
+    },
+    sb: {
+      l: {
+        f: map.settlementBase?.layers?.floors?.map(f => [f.x, f.y, f.level]) || [],
+        w: map.settlementBase?.layers?.walls?.map(w => [w.x, w.y, w.orientation === 'horizontal' ? 0 : 1, w.level, w.isDoor ? 1 : 0, w.isWindow ? 1 : 0]) || [],
+        o: map.settlementBase?.layers?.objects?.map(o => [o.typeId, o.x, o.y, o.rotation || 0, o.layer || 'objects', o.paintColor || '']) || []
+      },
+      c: map.settlementBase?.mapConfig?.noBuildZones?.map(nb => [nb.x, nb.y, nb.layer || 'objects']) || []
+    }
+  };
+
+  const jsonStr = JSON.stringify(minimalMap);
+  const blob = new Blob([jsonStr]);
+  const cs = new CompressionStream('deflate-raw');
+  const compressedStream = blob.stream().pipeThrough(cs);
+  const buffer = await new Response(compressedStream).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const decompressMapFromUrl = async (base64urlStr: string): Promise<Partial<MapData>> => {
+  let jsonStr = '';
+  try {
+    let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) base64 += '=';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const ds = new DecompressionStream('deflate-raw');
+    const blob = new Blob([bytes]);
+    const decompressedStream = blob.stream().pipeThrough(ds);
+    const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
+    jsonStr = new TextDecoder().decode(decompressedBuffer);
+  } catch {
+    try {
+      jsonStr = decodeURIComponent(atob(base64urlStr));
+    } catch {
+      jsonStr = base64urlStr;
+    }
+  }
+
+  const m = JSON.parse(jsonStr);
+
+  if (m.mainBase) {
+    return m;
+  }
+
+  return {
+    id: generateUUID(),
+    name: m.n || 'Загруженная карта',
+    mainBase: {
+      mapConfig: {
+        width: DEFAULT_MAP.mainBase.mapConfig.width,
+        height: DEFAULT_MAP.mainBase.mapConfig.height,
+        noBuildZones: (m.mb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1] }))
+      },
+      layers: {
+        floors: (m.mb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
+        walls: (m.mb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
+        objects: (m.mb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], paintColor: o[4] || undefined }))
+      }
+    },
+    settlementBase: {
+      mapConfig: {
+        width: DEFAULT_MAP.settlementBase.mapConfig.width,
+        height: DEFAULT_MAP.settlementBase.mapConfig.height,
+        noBuildZones: (m.sb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1], layer: nb[2] || 'objects' }))
+      },
+      layers: {
+        floors: (m.sb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
+        walls: (m.sb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
+        objects: (m.sb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], layer: o[4] || 'objects', paintColor: o[5] || undefined }))
+      }
+    }
+  };
+};
 
 export default function MainPlannerClient() {
   const { t, language } = useLanguage();
@@ -351,30 +459,6 @@ export default function MainPlannerClient() {
   const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const skipNextPersistenceRef = useRef(true);
 
-  // const [isTransforming, setIsTransforming] = useState(false);
-  // const transformTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // useEffect(() => {
-  //   if (transformTimeoutRef.current) {
-  //     clearTimeout(transformTimeoutRef.current);
-  //   }
-
-  //   if (isPanning) {
-  //     // eslint-disable-next-line react-hooks/set-state-in-effect
-  //     setIsTransforming(true);
-  //   } else {
-  //     transformTimeoutRef.current = setTimeout(() => {
-  //       setIsTransforming(false);
-  //     }, 150);
-  //   }
-
-  //   return () => {
-  //     if (transformTimeoutRef.current) {
-  //       clearTimeout(transformTimeoutRef.current);
-  //     }
-  //   };
-  // }, [isPanning]);
-
   const [newBuilding, setNewBuilding] = useState<NewBuildingState>({
     typeId: '', name: { ru: '', en: '' }, category: 'workstation', w: 1, h: 1, image: '', tooltipImage: '', color: '#4b5563',
     allowedRotations: [0, 90, 180, 270],
@@ -450,6 +534,34 @@ export default function MainPlannerClient() {
           setActiveMapId(requestedInitialMapId ?? mapIndex[0]?.id ?? '');
         }
 
+        const shareParam = new URLSearchParams(window.location.search).get('share');
+        if (shareParam) {
+          try {
+            const sharedMap = await decompressMapFromUrl(shareParam);
+            if (sharedMap?.mainBase) {
+              const sharedId = `shared_${cyrb53(shareParam)}`;
+              const mapObj: MapData = {
+                id: sharedId,
+                name: sharedMap.name || 'Общая карта',
+                mainBase: sharedMap.mainBase || DEFAULT_MAP.mainBase,
+                settlementBase: sharedMap.settlementBase || DEFAULT_MAP.settlementBase
+              };
+              setMaps(prev => {
+                const filtered = prev.filter(m => m.id !== mapObj.id);
+                return [...filtered, mapObj];
+              });
+              setActiveMapId(mapObj.id);
+
+              const url = new URL(window.location.href);
+              url.searchParams.delete('share');
+              window.history.replaceState(null, '', url);
+            }
+          } catch (err) {
+            console.error('Ошибка загрузки карты из ссылки:', err);
+            showAlert(t('failedLoadShared'), t('importError'), 'error');
+          }
+        }
+
         if (savedViewMode) setViewMode(savedViewMode as ViewMode);
         if (savedZoom) setZoom(parseFloat(savedZoom));
         if (savedPan) setPan(JSON.parse(savedPan));
@@ -497,7 +609,7 @@ export default function MainPlannerClient() {
         setIsLoaded(true);
       }
     })();
-  }, []);
+  }, [language, showAlert, t]);
 
   useEffect(() => {
     if (!isLoaded || !activeMapId || initialMaps.length === 0) return;
@@ -511,6 +623,7 @@ export default function MainPlannerClient() {
     } else {
       url.searchParams.delete('map');
     }
+    url.searchParams.delete('share');
     window.history.replaceState(null, '', url);
   }, [activeMapId, initialMaps, isLoaded]);
 
@@ -1272,6 +1385,18 @@ export default function MainPlannerClient() {
 
     const isRemoving = mapState.layers.walls.some(w => w.x === x && w.y === y && w.orientation === orientation && w.level === buildLevel && w.isDoor === isDoorPlacement && w.isWindow === isWindowPlacement);
 
+    if (!isRemoving) {
+      const relevantObjects = mapState.layers.objects.filter(obj => {
+        if (activeBaseType === 'main') return true;
+        const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
+        return objLayer === activeSettlementLayer;
+      });
+      if (isWallCrossingObjectFootprint(relevantObjects, catalogMap, x, y, orientation)) {
+        showAlert(t('wallCrossesBuilding'), t('placementError'), 'error');
+        return;
+      }
+    }
+
     setMapState(prev => {
       const filtered = prev.layers.walls.filter(w => !(w.x === x && w.y === y && w.orientation === orientation));
       const nextWalls = isRemoving ? filtered : [...filtered, { x, y, orientation, level: buildLevel, isDoor: isDoorPlacement, isWindow: isWindowPlacement }];
@@ -1293,7 +1418,7 @@ export default function MainPlannerClient() {
     } else if (selectedInstanceId === wallId) {
       setSelectedInstanceId(null);
     }
-  }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, validatePlacement, showAlert, t]);
+  }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, mapState.layers.objects, validatePlacement, showAlert, t]);
 
   const handleSelectBuildingType = useCallback((typeId: string) => {
     setSelectedTypeId(typeId);
@@ -1468,6 +1593,21 @@ export default function MainPlannerClient() {
     dlAnchor.setAttribute("download", `ldoe_base_planner_map_${safeName}.json`);
     dlAnchor.click();
   }, [fullMapState]);
+
+  const handleShareMap = useCallback(async () => {
+    try {
+      const compressed = await compressMapToUrl(fullMapState);
+      const url = new URL(window.location.href);
+      url.searchParams.set('share', compressed);
+      url.searchParams.delete('map');
+
+      await navigator.clipboard.writeText(url.toString());
+      showAlert(t('linkCopied'), t('success'), 'success');
+    } catch (err) {
+      console.error('Ошибка создания ссылки:', err);
+      showAlert(t('linkCopiedError'), t('importError'), 'error');
+    }
+  }, [fullMapState, showAlert, t]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -1808,6 +1948,7 @@ export default function MainPlannerClient() {
         onSetActiveMapId={setActiveMapId}
         onExportMap={handleExportMap}
         onImportMap={handleImportMap}
+        onShareMap={handleShareMap}
         onExportCatalog={handleExportCatalog}
         onImportCatalog={handleImportCatalog}
         onResetCatalog={handleResetCatalog}

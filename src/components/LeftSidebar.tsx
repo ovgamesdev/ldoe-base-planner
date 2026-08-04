@@ -39,6 +39,7 @@ interface LeftSidebarProps {
   onSetActiveMapId: (id: string) => void;
   onExportMap: () => void;
   onImportMap: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onShareMap: () => void;
   onExportCatalog: () => void;
   onImportCatalog: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onResetCatalog: () => void;
@@ -95,6 +96,7 @@ export const LeftSidebar = memo(function LeftSidebar({
   onSetActiveMapId,
   onExportMap,
   onImportMap,
+  onShareMap,
   onExportCatalog,
   onImportCatalog,
   onResetCatalog,
@@ -278,6 +280,12 @@ export const LeftSidebar = memo(function LeftSidebar({
           <button onClick={onExportMap} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('exportBtn')}</button>
           <button onClick={() => fileInputRef.current?.click()} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('importBtn')}</button>
         </div>
+        <button
+          onClick={onShareMap}
+          className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer flex items-center justify-center gap-1.5 font-bold"
+        >
+          <span>🔗</span> {t('shareBtn')}
+        </button>
         <input type="file" ref={fileInputRef} onChange={onImportMap} accept=".json" className="hidden" />
 
         <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs">
@@ -421,16 +429,16 @@ export const LeftSidebar = memo(function LeftSidebar({
 
                   const itemName = getItemName(item.name, language);
 
-              return (
-                <div
-                  key={item.typeId}
-                  data-type-id={item.typeId}
-                  draggable
-                  onDragStart={() => onDragStart(idx)}
-                  onDragOver={(e) => onDragOver(e, idx)}
-                  onDrop={onDrop}
-                  onDragEnd={onDragEnd}
-                  className={`flex gap-1.5 md:gap-1 items-center transition ${dragItemIndex === idx ? 'opacity-40' : ''} ${dragOverItemIndex === idx && dragItemIndex !== idx ? 'border-t-2 border-amber-500' : ''}`}
+                  return (
+                    <div
+                      key={item.typeId}
+                      data-type-id={item.typeId}
+                      draggable
+                      onDragStart={() => onDragStart(idx)}
+                      onDragOver={(e) => onDragOver(e, idx)}
+                      onDrop={onDrop}
+                      onDragEnd={onDragEnd}
+                      className={`flex gap-1.5 md:gap-1 items-center transition ${dragItemIndex === idx ? 'opacity-40' : ''} ${dragOverItemIndex === idx && dragItemIndex !== idx ? 'border-t-2 border-amber-500' : ''}`}
                     >
                       <button
                         onClick={() => onSelectBuildingType(item.typeId)}
@@ -438,10 +446,10 @@ export const LeftSidebar = memo(function LeftSidebar({
                       >
                         {item.tooltipImage || item.image ? (
                           <img src={getAssetPath(item.tooltipImage || item.image)} alt={itemName} className="w-12 h-12 md:w-10 md:h-10 object-contain bg-neutral-950 rounded p-1 md:p-0.5 shrink-0" />
-                        ) : (
+                          ) : (
                           <div className="w-12 h-12 md:w-10 md:h-10 rounded shrink-0 flex items-center justify-center text-[9px] md:text-[8px] text-white" style={{ backgroundColor: item.color !== 'transparent' ? item.color : '#333' }}>
                             {itemName.slice(0, 3)}
-                          </div>
+                        </div>
                         )}
                         <div className="flex flex-col overflow-hidden min-w-0 flex-1">
                           <span className={`truncate text-sm md:text-xs ${selectedTypeId === item.typeId ? 'text-amber-500 font-bold' : 'text-neutral-300'}`}>{itemName}</span>
@@ -450,21 +458,21 @@ export const LeftSidebar = memo(function LeftSidebar({
                             {limitInfo && (
                               <span className={`ml-1 ${limitInfo.remaining <= 0 ? 'text-red-400 font-bold' : limitInfo.current > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                                 • {limitInfo.current}/{limitInfo.max}
-                      </span>
-                    )}
+                          </span>
+                        )}
                   </span>
                   </div>
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onLoadForEditing(item.typeId); }}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onLoadForEditing(item.typeId); }}
                     className="p-3 md:p-2.5 bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 text-amber-500 border border-transparent hover:border-amber-400 rounded transition text-base md:text-xs flex items-center justify-center min-w-[44px] md:min-w-[36px] min-h-[56px] md:min-h-[44px] cursor-pointer active:scale-95 shrink-0"
                     title={t('editInConstructor')}
-                  >
+                      >
                     ✎
-                  </button>
-                </div>
-              );
-            })}
+                      </button>
+                    </div>
+                  );
+                })}
             {filteredCatalog.length === 0 && (
                 <div className="text-center text-neutral-500 text-sm md:text-xs py-4 md:py-3">{t('nothingFound')}</div>
                 )}

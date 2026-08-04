@@ -47,6 +47,30 @@ export const getAutoTileMask = (
     + (hasCompatibleObjectAt(object.x - 1, object.y) ? 8 : 0);
 };
 
+export const isWallCrossingObjectFootprint = (
+  objects: ObjectLayer[],
+  catalogMap: Record<string, CatalogItem>,
+  x: number,
+  y: number,
+  orientation: 'horizontal' | 'vertical'
+) => {
+  const cellA = orientation === 'horizontal' ? { x, y: y - 1 } : { x: x - 1, y };
+  const cellB = { x, y };
+
+  return objects.some(obj => {
+    const template = catalogMap[obj.typeId];
+    if (!template || template.constraints.placementType === 'wall') return false;
+
+    const effSize = getEffectiveSize(template);
+    const cells = getOccupiedCells(obj.x, obj.y, effSize.w, effSize.h, obj.rotation);
+    if (cells.length < 2) return false;
+
+    const hasA = cells.some(c => c.x === cellA.x && c.y === cellA.y);
+    const hasB = cells.some(c => c.x === cellB.x && c.y === cellB.y);
+    return hasA && hasB;
+  });
+};
+
 export const hasFloorForWall = (
   floors: FloorLayer[], 
   x: number, 

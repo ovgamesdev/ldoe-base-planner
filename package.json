@@ -4,16 +4,12 @@
   "private": true,
   "scripts": {
     "assets:build": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-assets.ps1",
-
     "predev": "npm run assets:build",
     "dev": "next dev",
-    
     "prebuild": "npm run assets:build",
     "build": "next build",
-
     "start": "next start",
     "lint": "eslint",
-    
     "predeploy": "npm run build",
     "deploy": "gh-pages -d out -b gh-pages --dotfiles"
   },
