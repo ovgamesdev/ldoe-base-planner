@@ -1,5 +1,5 @@
 import { CELL_SIZE, ISO_H, ISO_W, ViewMode } from './constants'
-import type { CatalogItem, FloorLayer, ObjectLayer, WallLayer } from './initial-data'
+import type { BaseType, CatalogItem, FloorLayer, ObjectLayer, SettlementLayerType, WallLayer } from './initial-data'
 
 export const getOccupiedCells = (x: number, y: number, w: number, h: number, rotation: number) => {
   const cells: { x: number; y: number }[] = [];
@@ -168,25 +168,56 @@ export const getCornerHighlightPaths = (
   });
 };
 
-export const getFloorFill = (floors: FloorLayer[], x: number, y: number) => {
+export const getFloorFill = (floors: FloorLayer[], x: number, y: number, activeBaseType?: BaseType, activeSettlementLayer?: SettlementLayerType) => {
+  const isResourceLayer = activeBaseType === 'settlement' && (activeSettlementLayer === 'energy' || activeSettlementLayer === 'water');
+  if (isResourceLayer) return '#5b4736';
+
   const floor = floors.find(f => f.x === x && f.y === y);
   if (!floor) return '#166534'; 
+
+  if (activeBaseType === 'settlement') {
+    if (floor.level === 1) return '#78350f'; 
+    if (floor.level === 2) return '#854d0e'; 
+    if (floor.level === 3) return '#78716c'; 
+    if (floor.level === 4) return '#334155'; 
+    if (floor.level === 5) return '#164e63'; 
+  }
+
   if (floor.level === 1) return '#78350f'; 
-  if (floor.level === 2) return '#78350f'; 
+  if (floor.level === 2) return '#854d0e'; 
   if (floor.level === 3) return '#78716c'; 
   if (floor.level === 4) return '#334155'; 
   if (floor.level === 5) return '#164e63'; 
   return '#166534';
 };
 
-export const getWallColor = (walls: WallLayer[], x: number, y: number, orientation: 'horizontal' | 'vertical') => {
+export const getWallColor = (walls: WallLayer[], x: number, y: number, orientation: 'horizontal' | 'vertical', activeBaseType?: BaseType) => {
   const wall = walls.find(w => w.x === x && w.y === y && w.orientation === orientation);
   if (!wall) return null;
+
+  if (activeBaseType === 'settlement') {
+    if (wall.isWindow) return '#3b82f6';
+    if (wall.isDoor) return '#10b981';
+    if (wall.level === 1) return '#d97706';
+    if (wall.level === 2) return '#f59e0b';
+    if (wall.level === 3) return '#a8a29e';
+    if (wall.level === 4) return '#64748b';
+  }
+
   if (wall.isWindow) return '#3b82f6';
   if (wall.isDoor) return '#10b981';
   if (wall.level === 1) return '#d97706';
-  if (wall.level === 2) return '#d97706';
+  if (wall.level === 2) return '#f59e0b';
   if (wall.level === 3) return '#a8a29e';
   if (wall.level === 4) return '#64748b';
   return '#06b6d4';
 };
+
+export function getAssetPath(path: string | undefined): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${basePath}${cleanPath}`;
+}

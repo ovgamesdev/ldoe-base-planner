@@ -1,15 +1,18 @@
 import { memo } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 import type { Tool, ViewMode } from '../lib/constants'
 import { AUTO_TILE_APPEARANCE_BY_MASK, CELL_SIZE, ISO_W } from '../lib/constants'
 import {
-	footprintCentroid,
-	footprintPoints,
-	getAutoTileMask,
-	getEffectiveSize,
-	getFinalSize,
-	getTopVertex
+  footprintCentroid,
+  footprintPoints,
+  getAssetPath,
+  getAutoTileMask,
+  getEffectiveSize,
+  getFinalSize,
+  getTopVertex
 } from '../lib/grid-utils'
-import type { CatalogItem, ObjectLayer } from '../lib/initial-data'
+import type { BaseType, CatalogItem, ObjectLayer, SettlementLayerType } from '../lib/initial-data'
+import { getItemName } from '../lib/initial-data'
 
 interface GridObjectsProps {
   sortedRootObjects: { obj: ObjectLayer; template: CatalogItem }[];
@@ -17,6 +20,8 @@ interface GridObjectsProps {
   viewMode: ViewMode;
   gridW: number;
   activeTool: Tool;
+  activeBaseType: BaseType;
+  activeSettlementLayer: SettlementLayerType;
   onSelectObject: (instanceId: string) => void;
 }
 
@@ -26,11 +31,15 @@ export const GridObjects = memo(function GridObjects({
   viewMode,
   gridW,
   activeTool,
+  activeBaseType,
+  activeSettlementLayer,
   onSelectObject
 }: GridObjectsProps) {
+  const { language } = useLanguage();
+
   return (
     <>
-      {sortedRootObjects.map(({ obj, template }) => {
+      {sortedRootObjects.map(({ obj, template }, index) => {
         const effSize = getEffectiveSize(template);
         const autoTileMask = template.constraints.autoTiling
           ? getAutoTileMask(obj, objects, template)
@@ -40,7 +49,7 @@ export const GridObjects = memo(function GridObjects({
         const { w: fw, h: fh } = getFinalSize(effSize.w, effSize.h, displayRotation);
         const pts = footprintPoints(obj.x, obj.y, fw, fh, viewMode, gridW);
         const centroid = footprintCentroid(obj.x, obj.y, fw, fh, viewMode, gridW);
-        
+
         const t = getTopVertex(obj.x, obj.y, viewMode, gridW);
         const r = getTopVertex(obj.x + fw, obj.y, viewMode, gridW);
         const b = getTopVertex(obj.x + fw, obj.y + fh, viewMode, gridW);
@@ -68,42 +77,105 @@ export const GridObjects = memo(function GridObjects({
 
         const chipW = Math.max(fw, fh) * (viewMode === 'isometric' ? ISO_W * 0.62 : CELL_SIZE * 0.85);
         const chipH = 30;
-        const clipId = `clip-obj-${obj.instanceId}`;
-        
+        const clipId = `clip-obj-${obj.instanceId || index}`;
+
         const variantImage = template.colorVariants?.find(v => v.color === obj.paintColor)?.image;
         const autoTileImage = autoTileAppearance ? template.constraints.autoTileImages?.[autoTileAppearance.variant] : undefined;
         const currentImage = autoTileImage || variantImage || template.image;
 
+        const objLayer = obj.layer || template.constraints.settlementLayer || 'objects';
+        const isCurrentLayer = activeBaseType !== 'settlement' || objLayer === activeSettlementLayer;
+        const isFaded = !isCurrentLayer;
+        let isSelect = !isFaded
+
+        let opacity = 1;
+        let color = template.color || '#eab308'
+        if (isFaded) {
+          if (activeSettlementLayer === 'energy') {
+            opacity = template.constraints.requiresPower ? 0.90 : 0.12;
+            if (template.constraints.requiresPower) {
+              isSelect = true
+              color = 'oklch(79.5% 0.184 86.047)'
+            }
+          } else if (activeSettlementLayer === 'water') {
+            opacity = template.constraints.requiresWater ? 0.90 : 0.12;
+            if (template.constraints.requiresWater) {
+              isSelect = true
+              color = 'oklch(71.5% 0.143 215.221)'
+            }
+          } else {
+            opacity = 0.25;
+          }
+        }
+
+        const objectKey = obj.instanceId || `obj-${obj.typeId}-${obj.x}-${obj.y}-${index}`;
+        const displayName = getItemName(template.name, language);
+
         return (
-          <g 
-            key={obj.instanceId} 
+          <g
+            key={objectKey}
             onClick={(e) => {
               e.stopPropagation();
-              if (activeTool === 'hand') {
+              if (activeTool === 'hand' && isSelect) {
                 onSelectObject(obj.instanceId);
               }
-            }} 
-            className={activeTool === 'hand' ? "cursor-pointer" : ""}
-            style={{ pointerEvents: activeTool === 'hand' ? 'auto' : 'none' }}
+            }}
+            className={activeTool === 'hand' && isSelect ? "cursor-pointer" : ""}
+            style={{ pointerEvents: activeTool === 'hand' && isSelect ? 'auto' : 'none', opacity }}
           >
-            <defs><clipPath id={clipId}><polygon points={pts} /></clipPath></defs>
-            <polygon points={pts} fill={template.color} fillOpacity={template.color === 'transparent' ? 0 : (currentImage ? 0.25 : 0.55)} stroke={template.color === 'transparent' && !currentImage ? '#666' : '#000'} strokeOpacity={0.5} strokeWidth={1.5} />
-
+            <polygon
+              points={pts}
+              fill={color}
+              fillOpacity={0.25}
+              stroke={color}
+              strokeWidth={1.5}
+            />
             {currentImage ? (
-              <foreignObject x={foX} y={foY} width={S} height={S} clipPath={`url(#${clipId})`} style={{ pointerEvents: 'none' }}>
-                <div className="relative overflow-hidden" style={{ width: `${S}px`, height: `${S}px` }}>
-                  <img src={currentImage} alt={template.name} className="absolute object-contain pointer-events-none" style={{ width: `${baseBoxW}px`, height: `${baseBoxH}px`, top: '50%', left: '50%', transform: `translate(-50%, -50%) rotate(${displayRotation}deg)` }} onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-                  <div className="absolute pointer-events-none hidden" style={{ width: `${boxW}px`, height: `${boxH}px`, top: `${(S - boxH) / 2}px`, left: `${(S - boxW) / 2}px` }}>
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-white bg-black/60 px-1 rounded drop-shadow pointer-events-none whitespace-nowrap max-w-[90%] truncate">{obj.rotation}°</span>
-                  </div>
-                </div>
-              </foreignObject>
+              <image
+                href={getAssetPath(currentImage)}
+                x={foX}
+                y={foY}
+                width={S}
+                height={S}
+                preserveAspectRatio="xMidYMid meet"
+                transform={displayRotation !== 0 ? `rotate(${displayRotation}, ${centroid.sx}, ${centroid.sy})` : undefined}
+              />
             ) : (
-              <foreignObject x={centroid.sx - chipW / 2} y={centroid.sy - chipH / 2} width={chipW} height={chipH} style={{ overflow: 'visible', pointerEvents: 'none' }}>
-                <div className="w-full h-full flex flex-col items-center justify-center rounded shadow-md px-1 select-none overflow-hidden" style={{ background: template.color === 'transparent' ? 'rgba(0,0,0,0.6)' : template.color, border: '1px solid rgba(0,0,0,0.4)' }}>
-                  <span className="text-[9px] font-bold text-white text-center leading-none drop-shadow whitespace-nowrap">{template.name} ({obj.rotation}°)</span>
-                </div>
-              </foreignObject>
+              <g>
+                <clipPath id={clipId}>
+                  <rect
+                    x={centroid.sx - chipW / 2}
+                    y={centroid.sy - chipH / 2}
+                    width={chipW}
+                    height={chipH}
+                    rx={6}
+                    ry={6}
+                  />
+                </clipPath>
+                <rect
+                  x={centroid.sx - chipW / 2}
+                  y={centroid.sy - chipH / 2}
+                  width={chipW}
+                  height={chipH}
+                  rx={6}
+                  ry={6}
+                  fill={template.color || '#374151'}
+                  stroke="#1f2937"
+                  strokeWidth={1}
+                />
+                <text
+                  x={centroid.sx}
+                  y={centroid.sy}
+                  clipPath={`url(#${clipId})`}
+                  fill="#ffffff"
+                  fontSize={10}
+                  fontWeight="bold"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                >
+                  {displayName}
+                </text>
+              </g>
             )}
           </g>
         );

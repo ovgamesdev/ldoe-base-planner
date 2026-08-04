@@ -3,10 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "assets:build": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-assets.ps1",
+
+    "predev": "npm run assets:build",
     "dev": "next dev",
+    
+    "prebuild": "npm run assets:build",
     "build": "next build",
+
     "start": "next start",
     "lint": "eslint",
+    
     "predeploy": "npm run build",
     "deploy": "gh-pages -d out -b gh-pages --dotfiles"
   },
@@ -26,5 +33,9 @@
     "gh-pages": "^6.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }

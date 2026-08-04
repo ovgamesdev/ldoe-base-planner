@@ -1,29 +1,6 @@
 import React, { memo } from 'react'
-import { CATEGORY_LABELS } from '../lib/constants'
-import type { CatalogItem, ColorVariant } from '../lib/initial-data'
-
-interface NewBuildingState {
-  typeId: string;
-  name: string;
-  category: string;
-  w: number;
-  h: number;
-  image: string;
-  tooltipImage: string;
-  color: string;
-  allowedRotations: number[];
-  placementType: 'floor' | 'ground' | 'wall' | 'any';
-  minFloorLvl: number;
-  minWallLvl: number;
-  allowWindowWall: boolean;
-  allowWallDecorAbove: boolean;
-  maxCount: number;
-  sharedLimitGroup: string;
-  autoTiling: boolean;
-  connectsTo: string;
-  autoTileImages: Record<string, string>;
-  colorVariants: ColorVariant[];
-}
+import { useLanguage } from '../context/LanguageContext'
+import { getItemName, type CatalogItem, type NewBuildingState } from '../lib/initial-data'
 
 interface RightSidebarProps {
   isCatalogBuilderVisible: boolean;
@@ -50,271 +27,470 @@ export const RightSidebar = memo(function RightSidebar({
   onDeleteProduct,
   onCloseMobile
 }: RightSidebarProps) {
-  const isEditing = catalog.some(c => c.typeId === newBuilding.typeId);
+  const { t, language } = useLanguage();
+
+  const isSettlementOrBoth = newBuilding.baseType === 'settlement' || newBuilding.baseType === 'both';
+  const isSettlementOnly = newBuilding.baseType === 'settlement';
+  const isEnergyOrWater = isSettlementOrBoth && (newBuilding.settlementLayer === 'energy' || newBuilding.settlementLayer === 'water');
+  const isMainBaseOnly = newBuilding.baseType === 'main';
+
+  const showDesksAndRooms = !isMainBaseOnly && !isEnergyOrWater;
+  const showPlacementType = !isEnergyOrWater;
+
+  const handleBaseTypeChange = (baseType: 'main' | 'settlement' | 'both') => {
+    onSetNewBuilding(prev => ({
+      ...prev,
+      baseType,
+      placementType: baseType === 'settlement' && prev.placementType === 'wall' ? 'floor' : prev.placementType
+    }));
+  };
+
+  const handleDeleteProduct = (typeId: string) => {
+    const itemName = getItemName(newBuilding.name, language);
+
+    if (window.confirm(t('confirmDeleteCatalogItem', { name: itemName }))) {
+      onDeleteProduct(typeId);
+    }
+  };
 
   return (
-    <div className={`w-full ${isCatalogBuilderVisible ? 'md:w-80 p-4' : 'md:w-12 p-2'} bg-neutral-900 border-l border-neutral-800 overflow-y-auto custom-scrollbar z-10 transition-all duration-200 h-full`}>
-      <div className="flex items-center justify-between mb-3">
-        {isCatalogBuilderVisible && <h2 className="text-xl font-black text-amber-500 tracking-wide">
-          Конструктор Каталога
-        </h2>}
-        <div className="flex items-center gap-2">
-          {onCloseMobile && (
+    <div className="relative h-full w-full bg-neutral-900 border-l border-neutral-800 overflow-hidden">
+      <div
+        className={`hidden md:flex flex-col h-full w-12 items-center py-4 absolute inset-y-0 left-0 transition-opacity duration-300 ${
+          !isCatalogBuilderVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <button
+          onClick={onToggleVisibility}
+          title={t('openCatalogBuilder')}
+          className="text-amber-500 hover:text-amber-400 font-bold p-2 text-lg cursor-pointer"
+        >
+          ⚙️
+        </button>
+      </div>
+
+      <div
+        className={`flex flex-col h-full w-80 text-xs overflow-y-auto custom-scrollbar p-4 transition-opacity duration-300 ${
+          isCatalogBuilderVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800 shrink-0">
+          <h2 className="font-bold text-amber-500 text-sm flex items-center gap-2">
+            <span>⚙️</span> {t('catalogBuilder')}
+          </h2>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onCloseMobile}
-              className="md:hidden rounded bg-neutral-800 p-2 text-xs text-neutral-300 hover:bg-neutral-700 min-w-[36px] min-h-[36px] cursor-pointer"
+              onClick={onToggleVisibility}
+              className="hidden md:inline-block text-neutral-400 hover:text-white font-bold px-1.5 py-0.5 rounded bg-neutral-800 border border-neutral-700 cursor-pointer"
+              title={t('collapsePanel')}
             >
               ✕
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onToggleVisibility}
-            aria-label={isCatalogBuilderVisible ? 'Скрыть конструктор каталога' : 'Показать конструктор каталога'}
-            title={isCatalogBuilderVisible ? 'Скрыть конструктор' : 'Показать конструктор'}
-            className="hidden md:block rounded bg-neutral-800 px-2.5 py-1 text-xs text-amber-500 hover:bg-neutral-700 cursor-pointer"
-          >
-            {isCatalogBuilderVisible ? '→' : '←'}
-          </button>
-        </div>
-      </div>
-
-      {isCatalogBuilderVisible && (
-        <form onSubmit={onSaveProduct} className="space-y-3 text-xs">
-          <div>
-            <label className="block text-neutral-400 mb-1">Уникальный Type ID</label>
-            <input required type="text" placeholder="например, poster_v1" value={newBuilding.typeId} onChange={e => onSetNewBuilding(prev => ({ ...prev, typeId: e.target.value }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none focus:border-amber-500" />
-          </div>
-
-          <div>
-            <label className="block text-neutral-400 mb-1">Название элемента</label>
-            <input required type="text" placeholder="Плакат" value={newBuilding.name} onChange={e => onSetNewBuilding(prev => ({ ...prev, name: e.target.value }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none focus:border-amber-500" />
-          </div>
-
-          <div>
-            <label className="block text-neutral-400 mb-1">Категория</label>
-            <select
-              value={newBuilding.category}
-              onChange={e => onSetNewBuilding(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none focus:border-amber-500 custom-scrollbar cursor-pointer"
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              className="md:hidden text-neutral-400 hover:text-white font-bold px-2 py-1 rounded bg-neutral-800 border border-neutral-700 cursor-pointer"
             >
-              {allCategories.map(c => (
-                <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>
-              ))}
-            </select>
+              {t('close')}
+            </button>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-2">
+        <form onSubmit={onSaveProduct} className="space-y-4">
+          <div className="space-y-2">
             <div>
-              <label className="block text-neutral-400 mb-1">Ширина (W)</label>
-              <input type="number" min="1" max="5" value={newBuilding.w} onChange={e => onSetNewBuilding(prev => ({ ...prev, w: Number(e.target.value) }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
+              <label className="block text-neutral-400 mb-1">{t('itemId')}</label>
+              <input
+                type="text"
+                required
+                value={newBuilding.typeId}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, typeId: e.target.value }))}
+                placeholder="e.g. settlement_pump"
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
             </div>
+
             <div>
-              <label className="block text-neutral-400 mb-1">Высота (H)</label>
-              <input type="number" min="1" max="5" value={newBuilding.h} onChange={e => onSetNewBuilding(prev => ({ ...prev, h: Number(e.target.value) }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
+              <label className="block text-neutral-400 mb-1">{t('nameRuLabel')}</label>
+              <input
+                type="text"
+                value={newBuilding.name.ru}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, name: { ...prev.name, ru: e.target.value } }))}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                placeholder="Название объекта"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('nameEnLabel')}</label>
+              <input
+                type="text"
+                value={newBuilding.name.en}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, name: { ...prev.name, en: e.target.value } }))}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                placeholder="Name object"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('categoryLabel')}</label>
+              <input
+                type="text"
+                list="catalog-categories-list"
+                value={newBuilding.category}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="workstation / decoration / energy / etc."
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
+              <datalist id="catalog-categories-list">
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{t(cat)}</option>
+                ))}
+              </datalist>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('widthLabel')}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={newBuilding.w}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, w: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('heightLabel')}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={newBuilding.h}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, h: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('imagePathLabel')}</label>
+              <input
+                type="text"
+                value={newBuilding.image}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, image: e.target.value }))}
+                placeholder="/images/items/pump.png"
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('tooltipImageLabel')}</label>
+              <input
+                type="text"
+                value={newBuilding.tooltipImage}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, tooltipImage: e.target.value }))}
+                placeholder="/images/tooltips/pump_info.png"
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('fillColorLabel')}</label>
+              <label className="flex items-center gap-2 text-neutral-300 mb-2 cursor-pointer text-xs py-1">
+                <input type="checkbox" checked={newBuilding.color === 'transparent'} onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.checked ? 'transparent' : '#4b5563' }))} className="w-4 h-4 rounded bg-neutral-800 border-neutral-700 text-amber-500 focus:ring-0" /> {t('transparentColor')}
+              </label>
+              {newBuilding.color !== 'transparent' && (
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="color"
+                    value={newBuilding.color || '#4b5563'}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.value }))}
+                    className="w-8 h-8 rounded border border-neutral-700 bg-transparent cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={newBuilding.color}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.value }))}
+                    placeholder="#4b5563"
+                    className="flex-1 bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          <div>
-            <label className="block text-neutral-400 mb-1">Путь к картинке по умолчанию (URL)</label>
-            <input type="text" placeholder="/assets/items/poster.png" value={newBuilding.image} onChange={e => onSetNewBuilding(prev => ({ ...prev, image: e.target.value }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
-          </div>
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <h3 className="font-bold text-amber-500">{t('baseCompatibility')}</h3>
 
-          <div>
-            <label className="block text-neutral-400 mb-1">Превью для Tooltip</label>
-            <input type="text" placeholder="/assets/items/poster_preview.png" value={newBuilding.tooltipImage} onChange={e => onSetNewBuilding(prev => ({ ...prev, tooltipImage: e.target.value }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
-          </div>
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('baseLabel')}</label>
+              <select
+                value={newBuilding.baseType}
+                onChange={e => handleBaseTypeChange(e.target.value as any)}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              >
+                <option value="main">{t('mainBase')}</option>
+                <option value="settlement">{t('settlement')}</option>
+                <option value="both">{t('allBases')}</option>
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-neutral-400 mb-1">Цвет заливки</label>
-            <label className="flex items-center gap-2 text-neutral-300 mb-2 cursor-pointer text-xs py-1">
-              <input type="checkbox" checked={newBuilding.color === 'transparent'} onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.checked ? 'transparent' : '#4b5563' }))} className="w-4 h-4 rounded bg-neutral-800 border-neutral-700 text-amber-500 focus:ring-0" /> Без цвета (прозрачный)
-            </label>
-            {newBuilding.color !== 'transparent' && (
-              <div className="flex gap-2 items-center">
-                <input type="color" value={newBuilding.color === 'transparent' ? '#000000' : newBuilding.color} onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.value }))} className="w-10 h-10 rounded cursor-pointer bg-transparent border-0" />
-                <input type="text" value={newBuilding.color} onChange={e => onSetNewBuilding(prev => ({ ...prev, color: e.target.value }))} className="flex-1 bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
+            {isSettlementOrBoth && (
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('settlementLayerLabel')}</label>
+                <select
+                  value={newBuilding.settlementLayer || 'objects'}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, settlementLayer: e.target.value as any }))}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                >
+                  <option value="objects">{t('itemsAndBuildings')}</option>
+                  <option value="energy">{t('energy')}</option>
+                  <option value="water">{t('water')}</option>
+                </select>
               </div>
             )}
           </div>
 
-          <div>
-            <label className="block text-neutral-400 mb-1">Тип размещения</label>
-            <select
-              value={newBuilding.placementType}
-              onChange={e => onSetNewBuilding(prev => ({ ...prev, placementType: e.target.value as "floor" | "ground" | "wall" | "any" }))}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none focus:border-amber-500 custom-scrollbar cursor-pointer"
-            >
-              <option value="floor">На пол (floor)</option>
-              <option value="ground">На землю (ground)</option>
-              <option value="wall">На стену (wall)</option>
-              <option value="any">Везде (any)</option>
-            </select>
-          </div>
-
-          {newBuilding.placementType === 'wall' && (
-            <div className="space-y-2 bg-neutral-950 p-2 rounded border border-neutral-800">
-              <div>
-                <label className="block text-neutral-400 mb-1">Мин. уровень стены</label>
-                <input type="number" min="1" max="5" value={newBuilding.minWallLvl} onChange={e => onSetNewBuilding(prev => ({ ...prev, minWallLvl: Number(e.target.value) }))} className="w-full bg-neutral-900 border border-neutral-800 rounded p-2 focus:outline-none" />
-              </div>
-              <label className="flex items-center gap-2 text-neutral-300 cursor-pointer py-1">
-                <input type="checkbox" checked={newBuilding.allowWindowWall} onChange={e => onSetNewBuilding(prev => ({ ...prev, allowWindowWall: e.target.checked }))} className="accent-amber-500 w-4 h-4" />
-                Разрешено на стене с окном
+          {isSettlementOrBoth && (
+            <div className="pt-3 border-t border-neutral-800 space-y-2">
+              <h3 className="font-bold text-amber-500">{t('settlementResources')}</h3>
+              <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!newBuilding.requiresPower}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, requiresPower: e.target.checked }))}
+                  className="accent-amber-500 rounded"
+                />
+                <span>{t('requiresPowerCheckbox')}</span>
+              </label>
+              <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!newBuilding.requiresWater}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, requiresWater: e.target.checked }))}
+                  className="accent-amber-500 rounded"
+                />
+                <span>{t('requiresWaterCheckbox')}</span>
               </label>
             </div>
           )}
 
-          <div className="bg-neutral-950 p-2 rounded border border-neutral-800 space-y-2">
-            {(newBuilding.placementType === 'floor' || newBuilding.placementType === 'any') && (
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <h3 className="font-bold text-amber-500">{t('rotationAndAutoTiling')}</h3>
+
+            <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newBuilding.autoTiling}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, autoTiling: e.target.checked }))}
+                className="accent-amber-500 rounded"
+              />
+              <span>{t('enableAutoTiling')}</span>
+            </label>
+
+            {!newBuilding.autoTiling ? (
               <div>
-                <label className="block text-neutral-400 mb-1">Мин. уровень пола</label>
-                <input type="number" min="1" max="5" value={newBuilding.minFloorLvl} onChange={e => onSetNewBuilding(prev => ({ ...prev, minFloorLvl: Number(e.target.value) }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
+                <label className="block text-neutral-400 mb-1">{t('allowedRotationsLabel')}</label>
+                <div className="flex gap-1.5">
+                  {[0, 90, 180, 270].map(deg => (
+                    <button
+                      type="button"
+                      key={deg}
+                      onClick={() => onToggleNewBuildingRotation(deg)}
+                      className={`flex-1 py-2 rounded text-xs font-bold transition min-h-[40px] ${newBuilding.allowedRotations.includes(deg) ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-950 text-neutral-500 border border-neutral-800'} cursor-pointer`}
+                    >
+                      {deg}°
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
-            <label className="flex items-center gap-2 text-neutral-300 cursor-pointer py-1">
-              <input type="checkbox" checked={newBuilding.allowWallDecorAbove} onChange={e => onSetNewBuilding(prev => ({ ...prev, allowWallDecorAbove: e.target.checked }))} className="accent-amber-500 w-4 h-4" />
-              Разрешить настенный декор над ним
-            </label>
-          </div>
-
-          {!newBuilding.autoTiling && (
-            <div>
-              <label className="block text-neutral-400 mb-1">Разрешённые повороты</label>
-              <div className="flex gap-1">
-                {[0, 90, 180, 270].map(deg => (
-                  <button
-                    type="button"
-                    key={deg}
-                    onClick={() => onToggleNewBuildingRotation(deg)}
-                    className={`flex-1 py-2 rounded text-xs font-bold transition min-h-[40px] ${newBuilding.allowedRotations.includes(deg) ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-950 text-neutral-500 border border-neutral-800'} cursor-pointer`}
-                  >
-                    {deg}°
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-neutral-400 mb-1">Макс. на базу</label>
-              <input type="number" min="1" max="999" value={newBuilding.maxCount} onChange={e => onSetNewBuilding(prev => ({ ...prev, maxCount: Number(e.target.value) }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
-            </div>
-            <div>
-              <label className="block text-neutral-400 mb-1">Группа лимита</label>
-              <input type="text" placeholder="например, chests" value={newBuilding.sharedLimitGroup} onChange={e => onSetNewBuilding(prev => ({ ...prev, sharedLimitGroup: e.target.value }))} className="w-full bg-neutral-950 border border-neutral-800 rounded p-2 focus:outline-none" />
-            </div>
-          </div>
-
-          <div className="bg-neutral-950 p-2 rounded border border-neutral-800 space-y-2">
-            <label className="flex items-center gap-2 text-neutral-300 cursor-pointer py-1">
-              <input type="checkbox" checked={newBuilding.autoTiling} onChange={e => onSetNewBuilding(prev => ({ ...prev, autoTiling: e.target.checked }))} className="accent-amber-500 w-4 h-4" />
-              Включить авто-тайлинг
-            </label>
-
-            {newBuilding.autoTiling && (
-              <>
+            ) : (
+              <div className="space-y-2">
                 <div>
-                  <label className="block text-neutral-400 mb-1">Соединяется с Type ID (через запятую)</label>
+                  <label className="block text-neutral-400 mb-1">{t('connectsToLabel')}</label>
                   <input
                     type="text"
-                    placeholder="hedge_tile_01, hedge_tile_02"
                     value={newBuilding.connectsTo}
                     onChange={e => onSetNewBuilding(prev => ({ ...prev, connectsTo: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded p-2 focus:outline-none"
+                    placeholder="settlement_wall_lvl1, settlement_wall_lvl2"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
                   />
                 </div>
 
-                <div className="space-y-1.5 pt-1">
-                  <span className="block text-[11px] font-bold text-neutral-400">Изображения вариантов тайла:</span>
+                <div className="space-y-1">
+                  <label className="block text-neutral-400">{t('tileVariationImages')}</label>
                   {(['single', 'end', 'straight', 'corner', 'tee', 'cross'] as const).map(variant => (
-                    <div key={variant} className="flex items-center gap-1.5">
-                      <span className="w-14 text-[10px] text-neutral-500 uppercase font-mono">{variant}</span>
+                    <div key={variant} className="flex items-center gap-2">
+                      <span className="w-16 text-neutral-400 text-[10px] uppercase">{variant}:</span>
                       <input
                         type="text"
-                        placeholder={`URL для ${variant}`}
-                        value={newBuilding.autoTileImages[variant]}
-                        onChange={e => onSetNewBuilding(prev => ({
-                          ...prev,
-                          autoTileImages: { ...prev.autoTileImages, [variant]: e.target.value }
-                        }))}
-                        className="flex-1 bg-neutral-900 border border-neutral-800 rounded p-1.5 text-xs focus:outline-none"
+                        value={newBuilding.autoTileImages[variant] || ''}
+                        onChange={e =>
+                          onSetNewBuilding(prev => ({
+                            ...prev,
+                            autoTileImages: { ...prev.autoTileImages, [variant]: e.target.value }
+                          }))
+                        }
+                        placeholder={`/images/${variant}.png`}
+                        className="flex-1 bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-white focus:border-amber-500 outline-none"
                       />
                     </div>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="bg-neutral-950 p-2 rounded border border-neutral-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-neutral-400">Цветовые варианты (краска)</span>
-              <button
-                type="button"
-                onClick={() => onSetNewBuilding(prev => ({ ...prev, colorVariants: [...prev.colorVariants, { color: '#ffffff', image: '' }] }))}
-                className="text-xs bg-neutral-800 hover:bg-neutral-700 text-amber-400 px-2 py-1 rounded cursor-pointer"
-              >
-                + Добавить
-              </button>
+          {showPlacementType && (
+            <div className="pt-3 border-t border-neutral-800 space-y-2">
+              <h3 className="font-bold text-amber-500">{t('placementTypeHeader')}</h3>
+
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('placementLabel')}</label>
+                <select
+                  value={newBuilding.placementType}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, placementType: e.target.value as any }))}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                >
+                  <option value="floor">{t('placementFloor')}</option>
+                  <option value="ground">{t('placementGround')}</option>
+                  {!isSettlementOnly && <option value="wall">{t('placementWall')}</option>}
+                  <option value="any">{t('placementAny')}</option>
+                </select>
+              </div>
+
+              {(newBuilding.placementType === 'floor' || newBuilding.placementType === 'any') && (
+                <div>
+                  <label className="block text-neutral-400 mb-1">{t('minFloorLvlLabel')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={newBuilding.minFloorLvl}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, minFloorLvl: parseInt(e.target.value) || 1 }))}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                  />
+                </div>
+              )}
+
+              {newBuilding.placementType === 'wall' && (
+                <div>
+                  <label className="block text-neutral-400 mb-1">{t('minWallLvlLabel')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5}
+                    value={newBuilding.minWallLvl}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, minWallLvl: parseInt(e.target.value) || 1 }))}
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                  />
+                </div>
+              )}
+
+              {!isSettlementOnly && newBuilding.placementType === 'wall' && (
+                <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newBuilding.allowWindowWall}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, allowWindowWall: e.target.checked }))}
+                    className="accent-amber-500 rounded"
+                  />
+                  <span>{t('allowWindowWall')}</span>
+                </label>
+              )}
+
+              {!isSettlementOnly && (
+                <label className="flex items-center gap-2 text-neutral-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newBuilding.allowWallDecorAbove}
+                    onChange={e => onSetNewBuilding(prev => ({ ...prev, allowWallDecorAbove: e.target.checked }))}
+                    className="accent-amber-500 rounded"
+                  />
+                  <span>{t('allowWallDecorAbove')}</span>
+                </label>
+              )}
             </div>
-            {newBuilding.colorVariants.map((v, idx) => (
-              <div key={idx} className="flex gap-1.5 items-center">
-                <input
-                  type="color"
-                  value={v.color}
-                  onChange={e => {
-                    const newColor = e.target.value;
-                    onSetNewBuilding(prev => {
-                      const next = [...prev.colorVariants];
-                      next[idx] = { ...next[idx], color: newColor };
-                      return { ...prev, colorVariants: next };
-                    });
-                  }}
-                  className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
-                />
+          )}
+
+          {showDesksAndRooms && (
+            <div className="pt-3 border-t border-neutral-800 space-y-2">
+              <h3 className="font-bold text-amber-500">{t('roomsAndDesks')}</h3>
+
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('isDeskCode')}</label>
                 <input
                   type="text"
-                  placeholder="URL картинки с этим цветом"
-                  value={v.image}
-                  onChange={e => {
-                    const newImg = e.target.value;
-                    onSetNewBuilding(prev => {
-                      const next = [...prev.colorVariants];
-                      next[idx] = { ...next[idx], image: newImg };
-                      return { ...prev, colorVariants: next };
-                    });
-                  }}
-                  className="flex-1 bg-neutral-900 border border-neutral-800 rounded p-1.5 text-xs focus:outline-none"
+                  value={newBuilding.isDesk}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, isDesk: e.target.value }))}
+                  placeholder="e.g. desk_substation"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
                 />
-                <button
-                  type="button"
-                  onClick={() => onSetNewBuilding(prev => ({ ...prev, colorVariants: prev.colorVariants.filter((_, i) => i !== idx) }))}
-                  className="text-red-400 p-2 text-sm font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
               </div>
-            ))}
+
+              <div>
+                <label className="block text-neutral-400 mb-1">{t('requiredDeskCode')}</label>
+                <input
+                  type="text"
+                  value={newBuilding.requiredDesk}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, requiredDesk: e.target.value }))}
+                  placeholder="e.g. desk_substation"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="pt-3 border-t border-neutral-800 space-y-2">
+            <h3 className="font-bold text-amber-500">{t('quantityLimits')}</h3>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('maxPerBaseLabel')}</label>
+              <input
+                type="number"
+                min={1}
+                max={999}
+                value={newBuilding.maxCount}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, maxCount: parseInt(e.target.value) || 99 }))}
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-neutral-400 mb-1">{t('sharedLimitGroupLabel')}</label>
+              <input
+                type="text"
+                value={newBuilding.sharedLimitGroup}
+                onChange={e => onSetNewBuilding(prev => ({ ...prev, sharedLimitGroup: e.target.value }))}
+                placeholder="e.g. settlement_generators"
+                className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
+              />
+            </div>
           </div>
 
-          <button type="submit" className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-3 rounded transition text-xs uppercase tracking-wider mt-2 min-h-[44px] cursor-pointer">
-            {catalog.some(c => c.typeId === newBuilding.typeId) ? 'Сохранить изменения' : 'Добавить в каталог'}
-          </button>
-
-          {isEditing && (
+          <div className="pt-4 border-t border-neutral-800 space-y-2">
             <button
-              type="button"
-              onClick={() => onDeleteProduct(newBuilding.typeId)}
-              className="w-full bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/50 font-bold py-3 rounded transition text-xs uppercase tracking-wider mt-1 min-h-[44px] cursor-pointer"
+              type="submit"
+              className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-2 px-4 rounded text-xs transition-colors cursor-pointer"
             >
-              Удалить из каталога
+              {catalog.some(c => c.typeId === newBuilding.typeId) ? t('updateItemBtn') : t('addItemBtn')}
             </button>
-          )}
+
+            {catalog.some(c => c.typeId === newBuilding.typeId) && (
+              <button
+                type="button"
+                onClick={() => handleDeleteProduct(newBuilding.typeId)}
+                className="w-full bg-red-900/60 hover:bg-red-800/80 border border-red-700/60 text-red-200 font-bold py-1.5 px-4 rounded text-xs transition-colors cursor-pointer"
+              >
+                {t('deleteFromCatalogBtn')}
+              </button>
+            )}
+          </div>
         </form>
-      )}
+      </div>
     </div>
   );
 });

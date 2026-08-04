@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import type { Tool, ViewMode } from '../lib/constants'
 import { diamondPoints, getFloorFill } from '../lib/grid-utils'
-import type { MapData } from '../lib/initial-data'
+import type { BaseType, MapData, SettlementLayerType } from '../lib/initial-data'
 
 interface GridCellsProps {
   allCells: { x: number; y: number }[];
@@ -9,10 +9,14 @@ interface GridCellsProps {
   gridH: number;
   viewMode: ViewMode;
   activeTool: Tool;
-  mapState: MapData;
+  mapState: MapData['mainBase'];
+  activeBaseType: BaseType;
+  activeSettlementLayer: SettlementLayerType;
+  highlightedCells?: Set<string>;
   onCellClick: (x: number, y: number) => void;
   onSelectFloor: (x: number, y: number) => void;
   onClearSelection: () => void;
+  onHoverCell?: (x: number, y: number) => void;
 }
 
 export const GridCells = memo(function GridCells({
@@ -22,25 +26,34 @@ export const GridCells = memo(function GridCells({
   viewMode,
   activeTool,
   mapState,
+  activeBaseType,
+  activeSettlementLayer,
+  highlightedCells,
   onCellClick,
   onSelectFloor,
-  onClearSelection
+  onClearSelection,
+  onHoverCell
 }: GridCellsProps) {
+  // const isResourceLayer = activeBaseType === 'settlement' && (activeSettlementLayer === 'energy' || activeSettlementLayer === 'water');
+  // const opacityValue = isResourceLayer ? 0.35 : 1;
+  const opacityValue = 1;
+
   return (
     <>
       {allCells.map(({ x, y }) => {
         const isOutOfBounds = x < 0 || y < 0 || x >= gridW || y >= gridH;
-        const isNoBuild = !isOutOfBounds && mapState.mapConfig.noBuildZones.some(nb => nb.x === x && nb.y === y);
+        const isNoBuild = !isOutOfBounds && mapState.mapConfig.noBuildZones.some(nb => nb.x === x && nb.y === y && (activeBaseType === 'main' || nb.layer === activeSettlementLayer));
         const floorExists = !isOutOfBounds && mapState.layers.floors.some(f => f.x === x && f.y === y);
         const isInteractive = (!isOutOfBounds && activeTool !== 'hand') || floorExists || (isOutOfBounds && (activeTool === 'object' || activeTool === 'eraser'));
+        const isHighlighted = highlightedCells?.has(`${x},${y}`);
 
         return (
           <polygon
             key={`floor-${x}-${y}`}
             points={diamondPoints(x, y, viewMode, gridW)}
-            fill={isOutOfBounds ? 'transparent' : (isNoBuild ? '#450a0a' : getFloorFill(mapState.layers.floors, x, y))}
-            stroke={isOutOfBounds ? (activeTool === 'object' ? 'rgba(255,255,255,0.05)' : 'transparent') : "#262626"}
-            strokeWidth={1}
+            fill={isOutOfBounds ? 'transparent' : (isHighlighted ? 'rgba(234, 179, 8, 0.4)' : (isNoBuild ? '#450a0a' : getFloorFill(mapState.layers.floors, x, y, activeBaseType, activeSettlementLayer)))}
+            stroke={isOutOfBounds ? (activeTool === 'object' ? 'rgba(255,255,255,0.05)' : 'transparent') : (isHighlighted ? '#eab308' : "#262626")}
+            strokeWidth={isHighlighted ? 2 : 1}
             onClick={(e) => {
               e.stopPropagation();
               if (activeTool === 'hand') {
@@ -50,8 +63,9 @@ export const GridCells = memo(function GridCells({
                 onCellClick(x, y);
               }
             }}
+            onMouseEnter={() => onHoverCell && onHoverCell(x, y)}
             className={isInteractive ? 'cursor-pointer transition-opacity hover:opacity-80' : 'transition-opacity'}
-            style={{ pointerEvents: isInteractive ? 'auto' : 'none' }}
+            style={{ pointerEvents: isInteractive ? 'auto' : 'none', opacity: opacityValue }}
           />
         );
       })}

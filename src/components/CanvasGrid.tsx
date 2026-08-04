@@ -1,14 +1,14 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react'
 import type { Tool, ViewMode } from '../lib/constants'
 import { CELL_SIZE, ISO_H, ISO_W } from '../lib/constants'
-import type { CatalogItem, MapData, ObjectLayer } from '../lib/initial-data'
+import type { BaseData, BaseType, CatalogItem, ObjectLayer, SettlementLayerType } from '../lib/initial-data'
 import { GridCells } from './GridCells'
 import { GridObjects } from './GridObjects'
 import { GridWalls } from './GridWalls'
 import { SelectionOverlay } from './SelectionOverlay'
 
 interface CanvasGridProps {
-  mapState: MapData;
+  mapState: BaseData;
   catalogMap: Record<string, CatalogItem>;
   viewMode: ViewMode;
   zoom: number;
@@ -19,21 +19,25 @@ interface CanvasGridProps {
   selectedInstanceId: string | null;
   selectedElementData: any;
   allCells: { x: number; y: number }[];
+  highlightedCells?: Set<string>;
+  highlightedWalls?: Set<string>;
+  setHoveredCell?: (cell: { x: number; y: number } | null) => void;
   wallLines: { x: number; y: number; orientation: 'horizontal' | 'vertical' }[];
   sortedRootObjects: { obj: ObjectLayer; template: CatalogItem }[];
-  
+
   onMouseDown: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseUp: () => void;
   onMouseLeave: () => void;
-  
+
   onCellClick: (x: number, y: number) => void;
   onWallClick: (x: number, y: number, orientation: 'horizontal' | 'vertical', e: React.MouseEvent) => void;
   onSelectInstance: (id: string | null) => void;
-  
+
   onZoomChange?: (newZoom: number) => void;
   onPanChange?: (newPan: { x: number; y: number }) => void;
-  useWillChange: boolean;
+  activeBaseType: BaseType;
+  activeSettlementLayer: SettlementLayerType;
 }
 
 export const CanvasGrid = memo(function CanvasGrid({
@@ -48,6 +52,9 @@ export const CanvasGrid = memo(function CanvasGrid({
   selectedInstanceId,
   selectedElementData,
   allCells,
+  highlightedCells,
+  highlightedWalls,
+  setHoveredCell,
   wallLines,
   sortedRootObjects,
   onMouseDown,
@@ -59,11 +66,11 @@ export const CanvasGrid = memo(function CanvasGrid({
   onSelectInstance,
   onZoomChange,
   onPanChange,
-  useWillChange
+  activeBaseType,
+  activeSettlementLayer
 }: CanvasGridProps) {
-  const svgRef = useRef<SVGSVGElement>(null); 
-  
-  // Единый реф для хранения координат, позволяет менять transform напрямую (минуя React)
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const localTransformRef = useRef({ x: pan.x, y: pan.y, z: zoom });
   const wheelTimeoutRef = useRef<any>(null);
   const lastDispatchedRef = useRef({ x: pan.x, y: pan.y, z: zoom });
@@ -75,47 +82,79 @@ export const CanvasGrid = memo(function CanvasGrid({
     }
   }, [viewMode]);
 
-  // Принудительно применяем трансформацию (поворот) при изменении режима вида
+  // willChange управляется императивно, напрямую на DOM-узле, синхронно с реальным
+  // началом/концом взаимодействия (drag/pinch/wheel) — а не через React state/props.
+  // Так надёжнее: не зависит от цикла рендера (и не "теряется" из-за React.memo),
+  // одинаково работает для мыши и тача, и гарантированно выключается по завершении.
+  const willChangeActiveRef = useRef(false);
+  const willChangeOffTimeoutRef = useRef<any>(null);
+
+  const setSvgWillChange = useCallback((active: boolean) => {
+    if (willChangeOffTimeoutRef.current) {
+      clearTimeout(willChangeOffTimeoutRef.current);
+      willChangeOffTimeoutRef.current = null;
+    }
+
+    if (active) {
+      if (!willChangeActiveRef.current) {
+        willChangeActiveRef.current = true;
+        if (svgRef.current) svgRef.current.style.willChange = 'transform';
+      }
+      return;
+    }
+
+    // Небольшая задержка перед выключением: даёт браузеру доотрисовать последний
+    // кадр перехода на GPU-слое и не дёргает layer promotion при быстрых повторных жестах.
+    willChangeOffTimeoutRef.current = setTimeout(() => {
+      willChangeActiveRef.current = false;
+      if (svgRef.current) svgRef.current.style.willChange = 'auto';
+      willChangeOffTimeoutRef.current = null;
+    }, 200);
+  }, []);
+
   useEffect(() => {
     const { x, y, z } = localTransformRef.current;
     updateTransform(x, y, z);
   }, [viewMode, updateTransform]);
-  
-  // Синхронизация: если внешний стейт поменялся (ползунком из LeftSidebar)
-  useEffect(() => {
-  // Сравниваем пришедшие пропсы с тем, что мы отправляли в последний раз.
-  const isExternallyForced =
-    pan.x !== lastDispatchedRef.current.x ||
-    pan.y !== lastDispatchedRef.current.y ||
-    zoom !== lastDispatchedRef.current.z;
 
-  if (isExternallyForced) {
-    localTransformRef.current = { x: pan.x, y: pan.y, z: zoom };
-    lastDispatchedRef.current = { x: pan.x, y: pan.y, z: zoom };
-    updateTransform(pan.x, pan.y, zoom);
-  }
-}, [pan, zoom, updateTransform]);
+  useEffect(() => {
+    return () => {
+      if (willChangeOffTimeoutRef.current) clearTimeout(willChangeOffTimeoutRef.current);
+      if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const isExternallyForced =
+      pan.x !== lastDispatchedRef.current.x ||
+      pan.y !== lastDispatchedRef.current.y ||
+      zoom !== lastDispatchedRef.current.z;
+
+    if (isExternallyForced) {
+      localTransformRef.current = { x: pan.x, y: pan.y, z: zoom };
+      lastDispatchedRef.current = { x: pan.x, y: pan.y, z: zoom };
+      updateTransform(pan.x, pan.y, zoom);
+    }
+  }, [pan, zoom, updateTransform]);
 
   const { width: GRID_W, height: GRID_H } = mapState.mapConfig;
 
-  const svgWidth = viewMode === 'isometric' 
+  const svgWidth = viewMode === 'isometric'
     ? (GRID_W + GRID_H) * (ISO_W / 2) + ISO_W
     : GRID_W * CELL_SIZE + CELL_SIZE * 2;
-    
-  const svgHeight = viewMode === 'isometric' 
+
+  const svgHeight = viewMode === 'isometric'
     ? (GRID_W + GRID_H) * (ISO_H / 2) + ISO_H * 2
     : GRID_H * CELL_SIZE + CELL_SIZE * 2;
 
   const selectedTemplate = catalogMap[selectedTypeId];
   const wasDraggingRef = useRef(false);
 
-  // Вычисляем это значение здесь, чтобы GridWalls не перерисовывался каждый раз, 
-  // когда мы кликаем по другому напольному зданию в каталоге.
   const isWallDecorTool = activeTool === 'object' && selectedTemplate?.constraints.placementType === 'wall';
 
-  // --- ЛОКАЛЬНЫЙ ОБРАБОТЧИК ЗУМА ДЛЯ КОЛЕСИКА ---
   const handleLocalWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setSvgWillChange(true);
     const rect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - (rect.left + rect.width / 2);
     const mouseY = e.clientY - (rect.top + rect.height / 2);
@@ -132,21 +171,19 @@ export const CanvasGrid = memo(function CanvasGrid({
     const nextX = mouseX - (mouseX - currentX) * zoomFactor;
     const nextY = mouseY - (mouseY - currentY) * zoomFactor;
 
-    // Прямое обновление DOM:
     localTransformRef.current = { x: nextX, y: nextY, z: nextZ };
     updateTransform(nextX, nextY, nextZ);
 
-    // Debounce для обновления React стейта (чтобы обновился ползунок, но без просадок фпс при зуме)
     if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
     wheelTimeoutRef.current = setTimeout(() => {
       lastDispatchedRef.current = { x: nextX, y: nextY, z: nextZ };
       if (onZoomChange) onZoomChange(nextZ);
       if (onPanChange) onPanChange({ x: nextX, y: nextY });
+      setSvgWillChange(false);
     }, 100);
     window.dispatchEvent(new CustomEvent('internal-zoom', { detail: { newZoom: nextZ } }));
-  }, [updateTransform, onZoomChange, onPanChange]);
+  }, [updateTransform, onZoomChange, onPanChange, setSvgWillChange]);
 
-  // --- ЛОКАЛЬНЫЙ ОБРАБОТЧИК ЗУМА ДЛЯ ПОЛЗУНКА (ИЗ LEFTSIDEBAR) ---
   useEffect(() => {
     const handleExternalZoom = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -154,30 +191,28 @@ export const CanvasGrid = memo(function CanvasGrid({
       const currentZ = localTransformRef.current.z;
       if (nextZ === currentZ) return;
 
+      setSvgWillChange(true);
       const zoomFactor = nextZ / currentZ;
       const nextX = localTransformRef.current.x * zoomFactor;
       const nextY = localTransformRef.current.y * zoomFactor;
 
-      // Прямое обновление DOM
       localTransformRef.current = { x: nextX, y: nextY, z: nextZ };
       updateTransform(nextX, nextY, nextZ);
 
-      // Debounce для обновления React стейта (чтобы синхронизировать TSXBasePlanner)
       if (wheelTimeoutRef.current) clearTimeout(wheelTimeoutRef.current);
       wheelTimeoutRef.current = setTimeout(() => {
         lastDispatchedRef.current = { x: nextX, y: nextY, z: nextZ };
         if (onZoomChange) onZoomChange(nextZ);
         if (onPanChange) onPanChange({ x: nextX, y: nextY });
+        setSvgWillChange(false);
       }, 100);
       window.dispatchEvent(new CustomEvent('internal-zoom', { detail: { newZoom: nextZ } }));
     };
 
     window.addEventListener('external-zoom', handleExternalZoom);
     return () => window.removeEventListener('external-zoom', handleExternalZoom);
-  }, [updateTransform, onZoomChange, onPanChange]);
+  }, [updateTransform, onZoomChange, onPanChange, setSvgWillChange]);
 
-
-  // --- СОСТОЯНИЕ ДЛЯ ТАЧ-ЖЕСТОВ ---
   const touchStateRef = useRef<{
     mode: 'none' | 'pan' | 'pinch';
     initialDist: number;
@@ -185,8 +220,8 @@ export const CanvasGrid = memo(function CanvasGrid({
     initialPan: { x: number; y: number };
     startTouchPos: { x: number; y: number };
     isDrag: boolean;
-    currentPan?: { x: number; y: number }; 
-    currentZoom?: number; 
+    currentPan?: { x: number; y: number };
+    currentZoom?: number;
   }>({
     mode: 'none',
     initialDist: 0,
@@ -196,7 +231,6 @@ export const CanvasGrid = memo(function CanvasGrid({
     isDrag: false
   });
 
-  // --- СОСТОЯНИЕ ДЛЯ МЫШИ ---
   const mouseStateRef = useRef<{
     isDown: boolean;
     isDragging: boolean;
@@ -238,53 +272,104 @@ export const CanvasGrid = memo(function CanvasGrid({
       }
 
       if (state.isDragging) {
+        if (!willChangeActiveRef.current) setSvgWillChange(true);
+
         const newPanX = state.initialPan.x + dx;
         const newPanY = state.initialPan.y + dy;
 
         state.currentPan = { x: newPanX, y: newPanY };
         localTransformRef.current = { ...localTransformRef.current, x: newPanX, y: newPanY };
-        
+
         updateTransform(newPanX, newPanY, localTransformRef.current.z);
-        return; 
+        return;
       }
     }
 
     if (onMouseMove) onMouseMove(e);
-  }, [updateTransform, onMouseMove]);
+  }, [updateTransform, onMouseMove, setSvgWillChange]);
 
-  const handleLocalMouseUp = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const state = mouseStateRef.current;
-    
-    if (state.isDragging) {
-      wasDraggingRef.current = true;
-      setTimeout(() => { wasDraggingRef.current = false; }, 200);
-      if (state.currentPan && onPanChange) {
-        lastDispatchedRef.current = { ...lastDispatchedRef.current, x: state.currentPan.x, y: state.currentPan.y };
-        onPanChange(state.currentPan);
+  // Единая точка завершения взаимодействия: используется и обычным mouseup/mouseleave/
+  // touchend на канве, и window-level safety-net'ом ниже (на случай, если кнопку мыши
+  // отпустили за пределами канвы и обычный onMouseUp на div не сработал).
+  const forceStopInteraction = useCallback(() => {
+    const mState = mouseStateRef.current;
+    if (mState.isDown) {
+      if (mState.isDragging) {
+        wasDraggingRef.current = true;
+        setTimeout(() => { wasDraggingRef.current = false; }, 200);
+        if (mState.currentPan && onPanChange) {
+          lastDispatchedRef.current = { ...lastDispatchedRef.current, x: mState.currentPan.x, y: mState.currentPan.y };
+          onPanChange(mState.currentPan);
+        }
       }
+
+      mState.isDown = false;
+      mState.isDragging = false;
+      mState.currentPan = undefined;
+
+      if (onMouseUp) onMouseUp();
     }
 
-    state.isDown = false;
-    state.isDragging = false;
-    state.currentPan = undefined;
+    const tState = touchStateRef.current;
+    if (tState.mode !== 'none') {
+      if (tState.isDrag) {
+        wasDraggingRef.current = true;
+        setTimeout(() => { wasDraggingRef.current = false; }, 200);
+      }
+      if (tState.currentPan && onPanChange) {
+        lastDispatchedRef.current = { ...lastDispatchedRef.current, x: tState.currentPan.x, y: tState.currentPan.y };
+        onPanChange(tState.currentPan);
+      }
+      if (tState.currentZoom && onZoomChange) {
+        lastDispatchedRef.current.z = tState.currentZoom;
+        onZoomChange(tState.currentZoom);
+      }
 
-    if (onMouseUp) onMouseUp();
-  }, [onPanChange, onMouseUp]);
-
-  const handleLocalMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const state = mouseStateRef.current;
-
-    if (state.isDragging) {
-      if (state.currentPan && onPanChange) onPanChange(state.currentPan);
+      tState.mode = 'none';
+      tState.isDrag = false;
+      tState.currentPan = undefined;
+      tState.currentZoom = undefined;
     }
 
-    state.isDown = false;
-    state.isDragging = false;
-    state.currentPan = undefined;
+    setSvgWillChange(false);
+  }, [onPanChange, onZoomChange, onMouseUp, setSvgWillChange]);
 
+  const handleLocalMouseUp = useCallback((_e: React.MouseEvent<HTMLDivElement>) => {
+    forceStopInteraction();
+  }, [forceStopInteraction]);
+
+  // Safety-net: если кнопку мыши отпустили (или палец подняли) за пределами канвы,
+  // либо окно/вкладка потеряли фокус во время драга — mouseup/touchend на самом div
+  // не сработает, и локальное состояние (а с ним и willChange) зависнет навсегда.
+  // Слушаем это на уровне window/document и принудительно завершаем взаимодействие.
+  useEffect(() => {
+    const handleWindowPointerUp = () => forceStopInteraction();
+    const handleWindowBlur = () => forceStopInteraction();
+    const handleVisibilityChange = () => {
+      if (document.hidden) forceStopInteraction();
+    };
+
+    window.addEventListener('mouseup', handleWindowPointerUp);
+    window.addEventListener('touchend', handleWindowPointerUp);
+    window.addEventListener('touchcancel', handleWindowPointerUp);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('mouseup', handleWindowPointerUp);
+      window.removeEventListener('touchend', handleWindowPointerUp);
+      window.removeEventListener('touchcancel', handleWindowPointerUp);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [forceStopInteraction]);
+
+  const handleLocalMouseLeave = useCallback((_e: React.MouseEvent<HTMLDivElement>) => {
+    // Курсор ушёл с канвы, но кнопка ещё может быть зажата (drag продолжится за её пределами) —
+    // не завершаем взаимодействие здесь, это сделает window-level 'mouseup'/'pointerup'
+    // (либо обычный onMouseUp на div, если курсор вернётся и отпустится внутри).
     if (onMouseLeave) onMouseLeave();
-  }, [onPanChange, onMouseLeave]);
-
+  }, [onMouseLeave]);
 
   const getTouchDist = (t1: React.Touch, t2: React.Touch) => {
     return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
@@ -307,7 +392,7 @@ export const CanvasGrid = memo(function CanvasGrid({
       };
     } else if (e.touches.length === 2) {
       const dist = getTouchDist(e.touches[0], e.touches[1]);
-      
+
       const startFocalX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - centerX;
       const startFocalY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - centerY;
 
@@ -335,6 +420,8 @@ export const CanvasGrid = memo(function CanvasGrid({
       }
 
       if (state.isDrag) {
+        if (!willChangeActiveRef.current) setSvgWillChange(true);
+
         const newPanX = state.initialPan.x + dx;
         const newPanY = state.initialPan.y + dy;
         const targetZoom = state.initialZoom;
@@ -342,7 +429,7 @@ export const CanvasGrid = memo(function CanvasGrid({
         state.currentPan = { x: newPanX, y: newPanY };
         state.currentZoom = targetZoom;
         localTransformRef.current = { x: newPanX, y: newPanY, z: targetZoom };
-        
+
         updateTransform(newPanX, newPanY, targetZoom);
       }
 
@@ -350,6 +437,7 @@ export const CanvasGrid = memo(function CanvasGrid({
       const currentDist = getTouchDist(e.touches[0], e.touches[1]);
       if (state.initialDist > 0) {
         state.isDrag = true;
+        if (!willChangeActiveRef.current) setSvgWillChange(true);
 
         const rect = e.currentTarget.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -369,36 +457,15 @@ export const CanvasGrid = memo(function CanvasGrid({
         state.currentPan = { x: newPanX, y: newPanY };
         state.currentZoom = targetZoom;
         localTransformRef.current = { x: newPanX, y: newPanY, z: targetZoom };
-        
+
         updateTransform(newPanX, newPanY, targetZoom);
       }
     }
-  }, [updateTransform]);
+  }, [updateTransform, setSvgWillChange]);
 
   const handleTouchEnd = useCallback(() => {
-    const state = touchStateRef.current;
-    
-    if (state.isDrag) {
-      wasDraggingRef.current = true;
-      setTimeout(() => {
-        wasDraggingRef.current = false;
-      }, 200);
-    }
-    
-    if (state.currentPan && onPanChange) {
-      lastDispatchedRef.current = { ...lastDispatchedRef.current, x: state.currentPan.x, y: state.currentPan.y };
-      onPanChange(state.currentPan);
-    }
-    if (state.currentZoom && onZoomChange) {
-      lastDispatchedRef.current.z = state.currentZoom;
-      onZoomChange(state.currentZoom);
-    }
-
-    state.mode = 'none';
-    state.isDrag = false;
-    state.currentPan = undefined;
-    state.currentZoom = undefined;
-  }, [onPanChange, onZoomChange]);
+    forceStopInteraction();
+  }, [forceStopInteraction]);
 
   return (
     <div
@@ -422,9 +489,8 @@ export const CanvasGrid = memo(function CanvasGrid({
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
         className="select-none max-w-none touch-none"
         style={{
-          // Обратите внимание: transform удален отсюда, теперь он применяется только напрямую через updateTransform
           transformOrigin: 'center center',
-          willChange: useWillChange ? 'transform' : 'auto', 
+          willChange: 'auto',
           pointerEvents: 'auto'
         }}
         onClickCapture={(e) => {
@@ -443,9 +509,13 @@ export const CanvasGrid = memo(function CanvasGrid({
           viewMode={viewMode}
           activeTool={activeTool}
           mapState={mapState}
+          activeBaseType={activeBaseType}
+          activeSettlementLayer={activeSettlementLayer}
+          highlightedCells={highlightedCells}
           onCellClick={onCellClick}
           onSelectFloor={(x, y) => onSelectInstance(`floor_${x}_${y}`)}
           onClearSelection={() => onSelectInstance(null)}
+          onHoverCell={(x, y) => setHoveredCell && setHoveredCell({ x, y })}
         />
 
         <GridObjects
@@ -454,7 +524,9 @@ export const CanvasGrid = memo(function CanvasGrid({
           viewMode={viewMode}
           gridW={GRID_W}
           activeTool={activeTool}
-          onSelectObject={(instanceId) => onSelectInstance(instanceId)}
+          activeBaseType={activeBaseType}
+          activeSettlementLayer={activeSettlementLayer}
+          onSelectObject={onSelectInstance}
         />
 
         <GridWalls
@@ -464,8 +536,11 @@ export const CanvasGrid = memo(function CanvasGrid({
           gridW={GRID_W}
           activeTool={activeTool}
           isWallDecorTool={isWallDecorTool}
+          activeBaseType={activeBaseType}
+          activeSettlementLayer={activeSettlementLayer}
+          highlightedWalls={highlightedWalls}
           onWallClick={onWallClick}
-          onSelectWall={(wallId) => onSelectInstance(wallId)}
+          onSelectWall={onSelectInstance}
           onClearSelection={() => onSelectInstance(null)}
         />
 
@@ -479,5 +554,29 @@ export const CanvasGrid = memo(function CanvasGrid({
         />
       </svg>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  const mapDataEqual =
+    prevProps.mapState === nextProps.mapState &&
+    prevProps.mapState.layers === nextProps.mapState.layers &&
+    prevProps.mapState.mapConfig === nextProps.mapState.mapConfig;
+
+  return (
+    mapDataEqual &&
+    prevProps.catalogMap === nextProps.catalogMap &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.zoom === nextProps.zoom &&
+    prevProps.pan === nextProps.pan &&
+    prevProps.activeTool === nextProps.activeTool &&
+    prevProps.selectedTypeId === nextProps.selectedTypeId &&
+    prevProps.selectedInstanceId === nextProps.selectedInstanceId &&
+    prevProps.selectedElementData === nextProps.selectedElementData &&
+    prevProps.allCells === nextProps.allCells &&
+    prevProps.highlightedCells === nextProps.highlightedCells &&
+    prevProps.highlightedWalls === nextProps.highlightedWalls &&
+    prevProps.wallLines === nextProps.wallLines &&
+    prevProps.sortedRootObjects === nextProps.sortedRootObjects &&
+    prevProps.activeBaseType === nextProps.activeBaseType &&
+    prevProps.activeSettlementLayer === nextProps.activeSettlementLayer
   );
 });

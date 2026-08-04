@@ -40,6 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/OLD_src/
-/public/assets/*.ps1
-/public/assets/*.png
+/public/assets/
+.asset-build-cache.json

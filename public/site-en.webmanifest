@@ -1,0 +1,21 @@
+{
+  "name": "LDOE BASE PLANNER — Base & Settlement Planner",
+  "short_name": "LDOE Planner",
+  "description": "Interactive base and settlement planner for Last Day on Earth: Survival (LDOE).",
+  "start_url": "/ldoe-base-planner/en/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/ldoe-base-planner/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/ldoe-base-planner/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

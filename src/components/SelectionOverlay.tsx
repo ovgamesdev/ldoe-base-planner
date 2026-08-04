@@ -1,12 +1,12 @@
 import { memo } from 'react'
 import type { ViewMode } from '../lib/constants'
 import { getCornerHighlightPaths, getFinalSize, getTopVertex } from '../lib/grid-utils'
-import type { CatalogItem, MapData } from '../lib/initial-data'
+import type { BaseData, CatalogItem } from '../lib/initial-data'
 
 interface SelectionOverlayProps {
   selectedInstanceId: string | null;
   selectedElementData: any;
-  mapState: MapData;
+  mapState: BaseData;
   catalogMap: Record<string, CatalogItem>;
   viewMode: ViewMode;
   gridW: number;
