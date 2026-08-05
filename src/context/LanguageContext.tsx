@@ -140,6 +140,21 @@ export const translations = {
     openSharedBasesBtn: 'Общедоступные базы',
     myBases: 'Мои базы',
 
+    cookieSettings: 'Настройки cookies',
+    cookieBannerTitle: 'Уведомление о cookies',
+    cookieBannerText: 'Мы используем необходимые cookies для работы сайта и, с вашего согласия, аналитические cookies.',
+    cookieBannerPrivacyLink: 'Подробнее в политике конфиденциальности',
+    cookieBannerAcceptAll: 'Принять все',
+    cookieBannerNecessaryOnly: 'Только необходимые',
+
+    privacyCookiesTitle: 'Cookies и локальное хранилище',
+    privacyCookiesIntro: 'Мы используем cookies и localStorage для двух целей:',
+    privacyCookiesNecessaryLabel: 'Необходимые: ',
+    privacyCookiesNecessaryText: 'сессия Firebase Authentication — нужна для входа и работы сайта, отключить нельзя.',
+    privacyCookiesAnalyticsLabel: 'Аналитические: ',
+    privacyCookiesAnalyticsText: 'Google Analytics (Firebase Analytics) — устанавливаются только после вашего согласия в баннере.',
+    privacyCookiesManageText: 'Своё решение можно изменить в любой момент, сбросив согласие (баннер появится снова).',
+
     // SelectedElementPanel
     objectsCount: 'Объекты ({count})',
     door: 'Дверь',
@@ -217,6 +232,7 @@ export const translations = {
     requiresDeskInRoom: 'Для объекта \'{name}\' в комнате должен быть установлен \'{targetName}\'.',
     groupLimitExceeded: 'Превышен лимит ({limit}) для группы объектов \'{group}\'.',
     objectLimitExceeded: 'Превышен лимит ({limit}) для объекта \'{name}\'.',
+    cannotBuildInNoBuildZone: 'Нельзя строить в запретной зоне (No-Build).',
 
     // RightSidebar
     openCatalogBuilder: 'Открыть Конструктор Каталога',
@@ -467,6 +483,21 @@ export const translations = {
     openSharedBasesBtn: 'Public Bases',
     myBases: 'My Bases',
 
+    cookieSettings: 'Cookie settings',
+    cookieBannerTitle: 'Cookie Notice',
+    cookieBannerText: 'We use essential cookies for the site to function and, with your consent, analytical cookies.',
+    cookieBannerPrivacyLink: 'Learn more in our privacy policy',
+    cookieBannerAcceptAll: 'Accept all',
+    cookieBannerNecessaryOnly: 'Necessary only',
+
+    privacyCookiesTitle: 'Cookies and Local Storage',
+    privacyCookiesIntro: 'We use cookies and localStorage for two purposes:',
+    privacyCookiesNecessaryLabel: 'Necessary: ',
+    privacyCookiesNecessaryText: 'Firebase Authentication session — required to log in and use the site, cannot be disabled.',
+    privacyCookiesAnalyticsLabel: 'Analytics: ',
+    privacyCookiesAnalyticsText: 'Google Analytics (Firebase Analytics) — set only after your consent in the banner.',
+    privacyCookiesManageText: 'You can change your decision at any time by resetting your consent (the banner will reappear).',
+
     // SelectedElementPanel
     objectsCount: 'Objects ({count})',
     door: 'Door',
@@ -544,6 +575,7 @@ export const translations = {
     requiresDeskInRoom: 'For object \'{name}\', \'{targetName}\' must be placed in the room.',
     groupLimitExceeded: 'Limit ({limit}) exceeded for object group \'{group}\'.',
     objectLimitExceeded: 'Limit ({limit}) exceeded for object \'{name}\'.',
+    cannotBuildInNoBuildZone: 'Cannot build in a No-Build zone.',
 
     // RightSidebar
     openCatalogBuilder: 'Open Catalog Builder',

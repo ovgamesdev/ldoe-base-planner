@@ -111,6 +111,26 @@ export default function PrivacyPolicy() {
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-white border-b border-slate-800 pb-2">
+            {t('privacyCookiesTitle')}
+          </h2>
+          <div className="space-y-3 text-slate-300 text-sm sm:text-base">
+            <p>{t('privacyCookiesIntro')}</p>
+            <ul className="list-disc list-inside space-y-2 pl-2">
+              <li>
+                <strong className="text-slate-100">{t('privacyCookiesNecessaryLabel')}</strong>
+                {t('privacyCookiesNecessaryText')}
+              </li>
+              <li>
+                <strong className="text-slate-100">{t('privacyCookiesAnalyticsLabel')}</strong>
+                {t('privacyCookiesAnalyticsText')}
+              </li>
+            </ul>
+            <p>{t('privacyCookiesManageText')}</p>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold text-white border-b border-slate-800 pb-2">
             {t('privacySec5Title')}
           </h2>
           <p className="text-slate-300 text-sm sm:text-base">

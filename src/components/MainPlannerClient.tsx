@@ -18,6 +18,7 @@ import {
 } from '../lib/grid-utils'
 import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type MapData, type ModalInfoState, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '../lib/initial-data'
 import { CanvasGrid } from './CanvasGrid'
+import CookieConsentBanner from './CookieConsentBanner'
 import { LeftSidebar } from './LeftSidebar'
 import { ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
@@ -1240,7 +1241,21 @@ export default function MainPlannerClient() {
         return;
       }
 
+      const noBuildZones = mapState.mapConfig?.noBuildZones || [];
+      const isNoBuild = noBuildZones.some(nb => {
+        if (nb.x !== x || nb.y !== y) return false;
+        if (activeBaseType === 'main') return true;
+        return !nb.layer || nb.layer === activeSettlementLayer;
+      });
+
       const floorAlreadyExists = mapState.layers.floors.some(f => f.x === x && f.y === y);
+      const isRemoving = mapState.layers.floors.some(f => f.x === x && f.y === y && f.level === buildLevel);
+
+      if (!isRemoving && isNoBuild) {
+        showAlert(t('cannotBuildInNoBuildZone'), t('placementError'), 'error');
+        return;
+      }
+
       if (!floorAlreadyExists) {
         const objExists = mapState.layers.objects.some(obj => {
           if (activeBaseType === 'settlement') {
@@ -1258,8 +1273,6 @@ export default function MainPlannerClient() {
            return;
         }
       }
-
-      const isRemoving = mapState.layers.floors.some(f => f.x === x && f.y === y && f.level === buildLevel);
 
       if (isRemoving) {
         const objExists = mapState.layers.objects.some(obj => {
@@ -1422,7 +1435,7 @@ export default function MainPlannerClient() {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [GRID_W, GRID_H, mapState.layers.floors, mapState.layers.objects, catalogMap, selectedInstanceId, setMapState, validatePlacement, activeBaseType, activeSettlementLayer, showAlert, t]);
+  }, [GRID_W, GRID_H, mapState.layers.floors, mapState.layers.objects, mapState.mapConfig.noBuildZones, catalogMap, selectedInstanceId, setMapState, validatePlacement, activeBaseType, activeSettlementLayer, showAlert, t]);
 
   const handleWallClick = useCallback((x: number, y: number, orientation: 'horizontal' | 'vertical', e: React.MouseEvent) => {
     e.stopPropagation();
@@ -2414,7 +2427,9 @@ export default function MainPlannerClient() {
       <ModalInfo
         modalInfo={modalInfo}
         onClose={() => setModalInfo(null)}
-        />
+      />
+
+      <CookieConsentBanner />
     </div>
   );
 }

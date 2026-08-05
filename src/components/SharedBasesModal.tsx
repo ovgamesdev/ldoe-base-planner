@@ -119,7 +119,7 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              {t('myBases')}
+              {t('allBases')}
             </button>
             <button
               onClick={() => setFilterMode('my')}
@@ -129,7 +129,7 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
                   : 'text-neutral-400 hover:text-white'
               }`}
             >
-              {t('allBases')}
+              {t('myBases')}
             </button>
           </div>
         </div>

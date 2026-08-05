@@ -4,6 +4,7 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { TranslationKey, useLanguage } from '../context/LanguageContext'
 import type { Tool, ViewMode } from '../lib/constants'
 import { ALL_ROTATIONS } from '../lib/constants'
+import { clearConsent } from '../lib/cookie-consent'
 import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '../lib/initial-data'
 import { getItemName, searchMatchesName } from '../lib/initial-data'
 import { isDefaultMapName } from './MainPlannerClient'
@@ -174,6 +175,10 @@ export const LeftSidebar = memo(function LeftSidebar({
       return;
     }
     onShareMap();
+  };
+
+  const handleCookieSettings = () => {
+    clearConsent();
   };
 
   const handleResetCatalog = () => {
@@ -556,7 +561,7 @@ export const LeftSidebar = memo(function LeftSidebar({
         </div>
       )}
 
-      <div className="pt-3 mt-auto border-t border-neutral-800 flex items-center justify-center gap-4 text-[11px] text-neutral-500">
+      <div className="pt-3 mt-auto border-t border-neutral-800 flex items-center justify-center gap-4 text-[11px] text-neutral-500 flex-wrap">
         <Link href={`/${language}/privacy`} className="hover:text-neutral-300 transition underline">
           {t('privacyPolicy')}
         </Link>
@@ -564,6 +569,14 @@ export const LeftSidebar = memo(function LeftSidebar({
         <Link href={`/${language}/terms`} className="hover:text-neutral-300 transition underline">
           {t('termsOfService')}
         </Link>
+        <span>•</span>
+        <button
+          type="button"
+          onClick={handleCookieSettings}
+          className="hover:text-neutral-300 transition underline cursor-pointer"
+        >
+          {t('cookieSettings')}
+        </button>
       </div>
     </div>
   );
