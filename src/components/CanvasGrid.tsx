@@ -72,7 +72,7 @@ export const CanvasGrid = memo(function CanvasGrid({
   const svgRef = useRef<SVGSVGElement>(null);
 
   const localTransformRef = useRef({ x: pan.x, y: pan.y, z: zoom });
-  const wheelTimeoutRef = useRef<any>(null);
+  const wheelTimeoutRef = useRef<NodeJS.Timeout>(null);
   const lastDispatchedRef = useRef({ x: pan.x, y: pan.y, z: zoom });
 
   const updateTransform = useCallback((x: number, y: number, currentZoom: number) => {
@@ -87,7 +87,7 @@ export const CanvasGrid = memo(function CanvasGrid({
   // Так надёжнее: не зависит от цикла рендера (и не "теряется" из-за React.memo),
   // одинаково работает для мыши и тача, и гарантированно выключается по завершении.
   const willChangeActiveRef = useRef(false);
-  const willChangeOffTimeoutRef = useRef<any>(null);
+  const willChangeOffTimeoutRef = useRef<NodeJS.Timeout>(null);
 
   const setSvgWillChange = useCallback((active: boolean) => {
     if (willChangeOffTimeoutRef.current) {

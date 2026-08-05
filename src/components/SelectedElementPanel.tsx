@@ -1,6 +1,6 @@
 import { getAssetPath } from '@/lib/grid-utils'
 import { memo, useEffect, useRef, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
+import { TranslationKey, useLanguage } from '../context/LanguageContext'
 import { getItemName, type CatalogItem } from '../lib/initial-data'
 
 interface SelectedElementPanelProps {
@@ -193,7 +193,7 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
                     
                     <div className="space-y-1 text-neutral-300 flex-1">
                       <p className="font-bold text-emerald-300 text-sm">{itemName}</p>
-                      <p><span className="text-neutral-500">{t('categoryLabel')}</span> {t(template.category)}</p>
+                      <p><span className="text-neutral-500">{t('categoryLabel')}</span> {t(template.category as TranslationKey)}</p>
                       <p><span className="text-neutral-500">{t('sizeLabel')}</span> {template.size.w}x{template.size.h}</p>
                       <p><span className="text-neutral-500">{t('rotationLabel')}</span> {obj.rotation}°</p>
                       {template.constraints.requiresPower && <p><span className="text-neutral-500">{t('requiresPowerLabel')}</span> <span className="text-amber-400 font-semibold">{t('yesPower')}</span></p>}

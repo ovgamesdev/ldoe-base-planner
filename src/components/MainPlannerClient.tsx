@@ -1,5 +1,8 @@
 'use client';
 
+import { getApp, getApps, initializeApp } from 'firebase/app'
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
+import { child, get, getDatabase, ref, set } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, InitialMapEntry, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
@@ -17,6 +20,43 @@ import { LeftSidebar } from './LeftSidebar'
 import { ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
 import { SelectedElementPanel } from './SelectedElementPanel'
+import { SharedBasesModal } from './SharedBasesModal'
+
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
+};
+
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+if (process.env.NODE_ENV === 'development') {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
+  globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+}
+
+const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getDatabase(firebaseApp);
+
+if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+  try {
+    initializeAppCheck(firebaseApp, {
+      provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (e) {
+    console.error('App Check initialization failed:', e);
+  }
+}
 
 const generateUUID = (): string => {
   if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -39,7 +79,7 @@ const cyrb53 = (str: string, seed = 0) => {
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
   h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
-}
+};
 
 const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -146,6 +186,10 @@ export default function MainPlannerClient() {
   const [isMobileRightOpen, setIsMobileRightOpen] = useState(false);
 
   const [modalInfo, setModalInfo] = useState<ModalInfoState | null>(null);
+
+  const [isSharedBasesModalOpen, setIsSharedBasesModalOpen] = useState(false);
+  const [sharedBasesList, setSharedBasesList] = useState<MapData[]>([]);
+  const [isLoadingSharedBases, setIsLoadingSharedBases] = useState(false);
 
   const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info') => {
     setModalInfo({ message, title, type });
@@ -537,7 +581,14 @@ export default function MainPlannerClient() {
         const shareParam = new URLSearchParams(window.location.search).get('share');
         if (shareParam) {
           try {
-            const sharedMap = await decompressMapFromUrl(shareParam);
+            let sharedMap: Partial<MapData> | null = null;
+            const snapshot = await get(child(ref(db), `shares/${shareParam}`));
+            if (snapshot.exists()) {
+              sharedMap = snapshot.val() as Partial<MapData>;
+            } else {
+              sharedMap = await decompressMapFromUrl(shareParam);
+            }
+
             if (sharedMap?.mainBase) {
               const sharedId = `shared_${cyrb53(shareParam)}`;
               const mapObj: MapData = {
@@ -948,9 +999,9 @@ export default function MainPlannerClient() {
           }
 
           const blockingFloorObject = objectsHere.find(o => {
-             const t = catalogMap[o.typeId];
-             if (t?.constraints.placementType === 'wall') return false;
-             if (t && !t.constraints.allowWallDecorAbove) return true;
+             const tObj = catalogMap[o.typeId];
+             if (tObj?.constraints.placementType === 'wall') return false;
+             if (tObj && !tObj.constraints.allowWallDecorAbove) return true;
              return false;
           });
           if (blockingFloorObject) {
@@ -958,8 +1009,8 @@ export default function MainPlannerClient() {
           }
         } else {
           const blockingObject = objectsHere.find(o => {
-             const t = catalogMap[o.typeId];
-             if (t?.constraints.placementType === 'wall' && template.constraints.allowWallDecorAbove) return false;
+             const tObj = catalogMap[o.typeId];
+             if (tObj?.constraints.placementType === 'wall' && template.constraints.allowWallDecorAbove) return false;
              return true;
           });
           if (blockingObject) {
@@ -1017,8 +1068,8 @@ export default function MainPlannerClient() {
         }
         const existingDesk = mapState.layers.objects.find(o => {
           if (o.instanceId === ignoreInstanceId) return false;
-          const t = catalogMap[o.typeId];
-          return t?.constraints.isDesk && targetRoom.has(`${o.x},${o.y}`);
+          const tObj = catalogMap[o.typeId];
+          return tObj?.constraints.isDesk && targetRoom.has(`${o.x},${o.y}`);
         });
         if (existingDesk) {
           return { valid: false, reason: t('deskAlreadyInRoom') };
@@ -1031,8 +1082,8 @@ export default function MainPlannerClient() {
           return { valid: false, reason: t('requiresDeskNotInRoom', { name: templateDisplayName, targetName: getItemName(target_name, language) }) };
         }
         const matchingDesk = mapState.layers.objects.find(o => {
-          const t = catalogMap[o.typeId];
-          return t?.constraints.isDesk === template.constraints.requiredDesk && targetRoom.has(`${o.x},${o.y}`);
+          const tObj = catalogMap[o.typeId];
+          return tObj?.constraints.isDesk === template.constraints.requiredDesk && targetRoom.has(`${o.x},${o.y}`);
         });
         if (!matchingDesk) {
           const target_name = catalogMap[`new_base_${template.constraints.requiredDesk}`]?.name || template.constraints.requiredDesk;
@@ -1045,8 +1096,8 @@ export default function MainPlannerClient() {
       if (template.constraints.sharedLimitGroup) {
         const groupCount = mapState.layers.objects.filter(obj => {
           if (obj.instanceId === ignoreInstanceId) return false;
-          const t = catalogMap[obj.typeId];
-          return t && t.constraints.sharedLimitGroup === template.constraints.sharedLimitGroup;
+          const tObj = catalogMap[obj.typeId];
+          return tObj && tObj.constraints.sharedLimitGroup === template.constraints.sharedLimitGroup;
         }).length;
         if (groupCount >= template.constraints.maxPerBase) {
           return { valid: false, reason: t('groupLimitExceeded', { limit: template.constraints.maxPerBase, group: template.constraints.sharedLimitGroup }) };
@@ -1083,10 +1134,10 @@ export default function MainPlannerClient() {
             const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
             if (objLayer !== activeSettlementLayer) return false;
           }
-          const t = catalogMap[obj.typeId];
-          if (!t) return false;
-          if (t.constraints.placementType === 'wall') return false;
-          const cells = getOccupiedCells(obj.x, obj.y, t.size.w, t.size.h, obj.rotation);
+          const tObj = catalogMap[obj.typeId];
+          if (!tObj) return false;
+          if (tObj.constraints.placementType === 'wall') return false;
+          const cells = getOccupiedCells(obj.x, obj.y, tObj.size.w, tObj.size.h, obj.rotation);
           return cells.some(c => c.x === x && c.y === y);
         });
         if (objExists) {
@@ -1103,10 +1154,10 @@ export default function MainPlannerClient() {
             const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
             if (objLayer !== activeSettlementLayer) return false;
           }
-          const t = catalogMap[obj.typeId];
-          if (!t) return false;
-          if (t.constraints.placementType === 'wall') return false;
-          const cells = getOccupiedCells(obj.x, obj.y, t.size.w, t.size.h, obj.rotation);
+          const tObj = catalogMap[obj.typeId];
+          if (!tObj) return false;
+          if (tObj.constraints.placementType === 'wall') return false;
+          const cells = getOccupiedCells(obj.x, obj.y, tObj.size.w, tObj.size.h, obj.rotation);
           return cells.some(c => c.x === x && c.y === y);
         });
         if (objExists) {
@@ -1119,12 +1170,12 @@ export default function MainPlannerClient() {
             const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
             if (objLayer !== activeSettlementLayer) return false;
           }
-          const t = catalogMap[obj.typeId];
-          if (!t) return false;
-          if (t.constraints.placementType !== 'floor') return false;
-          const reqLvl = t.constraints.requiresSpecificFloorLevel || 1;
+          const tObj = catalogMap[obj.typeId];
+          if (!tObj) return false;
+          if (tObj.constraints.placementType !== 'floor') return false;
+          const reqLvl = tObj.constraints.requiresSpecificFloorLevel || 1;
           if (buildLevel < reqLvl) {
-            const cells = getOccupiedCells(obj.x, obj.y, t.size.w, t.size.h, obj.rotation);
+            const cells = getOccupiedCells(obj.x, obj.y, tObj.size.w, tObj.size.h, obj.rotation);
             return cells.some(c => c.x === x && c.y === y);
           }
           return false;
@@ -1423,8 +1474,8 @@ export default function MainPlannerClient() {
   const handleSelectBuildingType = useCallback((typeId: string) => {
     setSelectedTypeId(typeId);
     setLayerSelections(prev => ({ ...prev, [currentLayerKey]: typeId }));
-    const t = catalogMap[typeId];
-    const allowed = t?.constraints.autoTiling ? [0] : (t?.constraints.allowedRotations?.length ? t.constraints.allowedRotations : [0]);
+    const tObj = catalogMap[typeId];
+    const allowed = tObj?.constraints.autoTiling ? [0] : (tObj?.constraints.allowedRotations?.length ? tObj.constraints.allowedRotations : [0]);
     setCurrentRotation(prevRot => (allowed.includes(prevRot) ? prevRot : allowed[0]));
   }, [catalogMap, currentLayerKey]);
 
@@ -1585,20 +1636,51 @@ export default function MainPlannerClient() {
     }));
   }, [setMapState]);
 
-  const handleExportMap = useCallback(() => {
-    const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", `ldoe_base_planner_map_${safeName}.json`);
-    dlAnchor.click();
-  }, [fullMapState]);
+  const handleExportMap = useCallback(async () => {
+    try {
+      const jsonStrPayload = JSON.stringify(fullMapState);
+      if (jsonStrPayload.length > 500000) {
+        showAlert(t('exportError'), t('importError'), 'error');
+        return;
+      }
+      const compressed = await compressMapToUrl(fullMapState);
+      const shareId = cyrb53(compressed);
+      await set(ref(db, `shares/${shareId}`), fullMapState);
+
+      const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `ldoe_base_planner_map_${safeName}.json`);
+      dlAnchor.click();
+
+      showAlert(t('exportSuccess'), t('success'), 'success');
+    } catch (err) {
+      console.error('Ошибка сохранения при экспорте:', err);
+      const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `ldoe_base_planner_map_${safeName}.json`);
+      dlAnchor.click();
+
+      showAlert(t('exportSuccessOffline'), t('attention'), 'info');
+    }
+  }, [fullMapState, showAlert, t]);
 
   const handleShareMap = useCallback(async () => {
     try {
+      const jsonStrPayload = JSON.stringify(fullMapState);
+      if (jsonStrPayload.length > 500000) {
+        showAlert(t('linkCopiedError'), t('importError'), 'error');
+        return;
+      }
       const compressed = await compressMapToUrl(fullMapState);
+      const shareId = cyrb53(compressed);
+      await set(ref(db, `shares/${shareId}`), fullMapState);
+
       const url = new URL(window.location.href);
-      url.searchParams.set('share', compressed);
+      url.searchParams.set('share', shareId);
       url.searchParams.delete('map');
 
       await navigator.clipboard.writeText(url.toString());
@@ -1608,6 +1690,40 @@ export default function MainPlannerClient() {
       showAlert(t('linkCopiedError'), t('importError'), 'error');
     }
   }, [fullMapState, showAlert, t]);
+
+  const handleOpenSharedBasesPanel = useCallback(async () => {
+    setIsSharedBasesModalOpen(true);
+    setIsLoadingSharedBases(true);
+    try {
+      const snapshot = await get(ref(db, 'shares'));
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const list: MapData[] = Object.entries(val).map(([key, data]: [string, any]) => ({
+          ...data,
+          id: `shared_${key}`,
+          name: data.name || `Карта ${key}`
+        }));
+        setSharedBasesList(list);
+      } else {
+        setSharedBasesList([]);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки общедоступных баз:', err);
+      showAlert(t('sharedBasesFetchError'), t('importError'), 'error');
+    } finally {
+      setIsLoadingSharedBases(false);
+    }
+  }, [showAlert, t]);
+
+  const handleSelectSharedMap = useCallback((mapData: MapData) => {
+    setMaps(prev => {
+      const filtered = prev.filter(m => m.id !== mapData.id);
+      return [...filtered, mapData];
+    });
+    setActiveMapId(mapData.id);
+    setIsSharedBasesModalOpen(false);
+    showAlert(t('mapLoadedSuccess', { name: mapData.name }), t('success'), 'success');
+  }, [showAlert, t]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -1900,17 +2016,23 @@ export default function MainPlannerClient() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fbbf24; }
       `}} />
 
-      <div className="md:hidden flex items-center justify-between bg-neutral-900 border-b border-neutral-800 p-2.5 z-20">
+      <div className="md:hidden flex items-center justify-between gap-1.5 bg-neutral-900 border-b border-neutral-800 p-2 z-20 overflow-x-auto">
         <button
           onClick={() => setIsMobileLeftOpen(true)}
-          className="bg-neutral-800 hover:bg-neutral-700 text-amber-500 font-bold px-3 py-2 rounded text-xs border border-neutral-700 flex items-center gap-1 min-h-[40px]"
+          className="bg-neutral-800 hover:bg-neutral-700 text-amber-500 font-bold px-2.5 py-1.5 rounded text-xs border border-neutral-700 flex items-center gap-1 shrink-0 min-h-[36px]"
         >
           <span>☰</span> {t('tools')}
         </button>
-        <span className="font-black text-amber-500 text-xs tracking-wider">LDOE BASE PLANNER</span>
+        <button
+          onClick={handleOpenSharedBasesPanel}
+          className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-2.5 py-1.5 rounded text-xs border border-amber-500 flex items-center gap-1 shrink-0 min-h-[36px]"
+        >
+          <span>🌐</span> <span className="truncate max-w-[110px] xs:max-w-none">{t('publicBasesTitle')}</span>
+        </button>
+        <span className="font-black text-amber-500 text-[10px] sm:text-xs tracking-wider truncate hidden xs:inline shrink">LDOE BASE PLANNER</span>
         <button
           onClick={() => setIsMobileRightOpen(true)}
-          className="bg-neutral-800 hover:bg-neutral-700 text-amber-500 font-bold px-3 py-2 rounded text-xs border border-neutral-700 flex items-center gap-1 min-h-[40px]"
+          className="bg-neutral-800 hover:bg-neutral-700 text-amber-500 font-bold px-2.5 py-1.5 rounded text-xs border border-neutral-700 flex items-center gap-1 shrink-0 min-h-[36px]"
         >
           <span>⚙️</span> {t('catalog')}
         </button>
@@ -1983,6 +2105,16 @@ export default function MainPlannerClient() {
       )}
 
       <div className="relative flex-1 h-full overflow-hidden flex items-center justify-center z-0">
+        <div className="absolute top-3 left-3 z-20 hidden md:block">
+          <button
+            onClick={handleOpenSharedBasesPanel}
+            className="bg-neutral-800/90 hover:bg-neutral-700 text-amber-500 hover:text-amber-400 font-bold px-3.5 py-2 rounded-lg text-xs border border-neutral-700/80 shadow-lg backdrop-blur flex items-center gap-2 transition-all"
+          >
+            <span className="text-sm">🌐</span>
+            <span>{t('publicBasesTitle')}</span>
+          </button>
+        </div>
+
         <CanvasGrid
           mapState={mapState}
           catalogMap={catalogMap}
@@ -2054,6 +2186,14 @@ export default function MainPlannerClient() {
           onCloseMobile={() => setIsMobileRightOpen(false)}
         />
       </div>
+
+      <SharedBasesModal
+        isOpen={isSharedBasesModalOpen}
+        isLoading={isLoadingSharedBases}
+        sharedBasesList={sharedBasesList}
+        onClose={() => setIsSharedBasesModalOpen(false)}
+        onSelectMap={handleSelectSharedMap}
+      />
 
       <ModalInfo
         modalInfo={modalInfo}

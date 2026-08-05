@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
-import { useLanguage } from '../context/LanguageContext'
-import { getItemName, type CatalogItem, type NewBuildingState } from '../lib/initial-data'
+import { TranslationKey, useLanguage } from '../context/LanguageContext'
+import { getItemName, SettlementLayerType, type CatalogItem, type NewBuildingState } from '../lib/initial-data'
 
 interface RightSidebarProps {
   isCatalogBuilderVisible: boolean;
@@ -145,7 +145,7 @@ export const RightSidebar = memo(function RightSidebar({
               />
               <datalist id="catalog-categories-list">
                 {allCategories.map(cat => (
-                  <option key={cat} value={cat}>{t(cat)}</option>
+                  <option key={cat} value={cat}>{t(cat as TranslationKey)}</option>
                 ))}
               </datalist>
             </div>
@@ -229,7 +229,7 @@ export const RightSidebar = memo(function RightSidebar({
               <label className="block text-neutral-400 mb-1">{t('baseLabel')}</label>
               <select
                 value={newBuilding.baseType}
-                onChange={e => handleBaseTypeChange(e.target.value as any)}
+                onChange={e => handleBaseTypeChange(e.target.value as "main" | "settlement" | "both")}
                 className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
               >
                 <option value="main">{t('mainBase')}</option>
@@ -243,7 +243,7 @@ export const RightSidebar = memo(function RightSidebar({
                 <label className="block text-neutral-400 mb-1">{t('settlementLayerLabel')}</label>
                 <select
                   value={newBuilding.settlementLayer || 'objects'}
-                  onChange={e => onSetNewBuilding(prev => ({ ...prev, settlementLayer: e.target.value as any }))}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, settlementLayer: e.target.value as SettlementLayerType }))}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
                 >
                   <option value="objects">{t('itemsAndBuildings')}</option>
@@ -352,7 +352,7 @@ export const RightSidebar = memo(function RightSidebar({
                 <label className="block text-neutral-400 mb-1">{t('placementLabel')}</label>
                 <select
                   value={newBuilding.placementType}
-                  onChange={e => onSetNewBuilding(prev => ({ ...prev, placementType: e.target.value as any }))}
+                  onChange={e => onSetNewBuilding(prev => ({ ...prev, placementType: e.target.value as "floor" | "ground" | "wall" | "any" }))}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded px-2.5 py-1.5 text-white focus:border-amber-500 outline-none"
                 >
                   <option value="floor">{t('placementFloor')}</option>

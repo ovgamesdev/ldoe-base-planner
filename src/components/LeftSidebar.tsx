@@ -1,6 +1,6 @@
 import { getAssetPath } from '@/lib/grid-utils'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
+import { TranslationKey, useLanguage } from '../context/LanguageContext'
 import type { Tool, ViewMode } from '../lib/constants'
 import { ALL_ROTATIONS } from '../lib/constants'
 import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '../lib/initial-data'
@@ -388,7 +388,7 @@ export const LeftSidebar = memo(function LeftSidebar({
                 className="w-full md:w-[42%] shrink-0 bg-neutral-950 border border-neutral-800 rounded p-2.5 md:p-2 text-xs text-white focus:outline-none focus:border-amber-500 custom-scrollbar cursor-pointer"
               >
                 <option value="all">{t('allCategories')}</option>
-                {uniqueCategories.map(c => <option key={c} value={c}>{t(c)}</option>)}
+                {uniqueCategories.map(c => <option key={c} value={c}>{t(c as TranslationKey)}</option>)}
               </select>
                 <div className="relative flex-1">
               <input
@@ -454,7 +454,7 @@ export const LeftSidebar = memo(function LeftSidebar({
                         <div className="flex flex-col overflow-hidden min-w-0 flex-1">
                           <span className={`truncate text-sm md:text-xs ${selectedTypeId === item.typeId ? 'text-amber-500 font-bold' : 'text-neutral-300'}`}>{itemName}</span>
                           <span className="text-[11px] md:text-[10px] text-neutral-500 truncate">
-                            {item.size.w}x{item.size.h} • {t(item.constraints.placementType || 'floor')}
+                            {item.size.w}x{item.size.h} • {t(item.constraints.placementType as TranslationKey || 'floor')}
                             {limitInfo && (
                               <span className={`ml-1 ${limitInfo.remaining <= 0 ? 'text-red-400 font-bold' : limitInfo.current > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                                 • {limitInfo.current}/{limitInfo.max}

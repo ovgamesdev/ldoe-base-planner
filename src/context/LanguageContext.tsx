@@ -5,15 +5,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 
 export type Language = 'ru' | 'en';
 
-interface LanguageContextType {
-  language: Language;
-  setLanguage: (lang: Language) => void;
-  t: (key: string, params?: Record<string, string | number>) => string;
-}
-
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
-
-export const translations: Record<Language, Record<string, string>> = {
+export const translations = {
   ru: {
     siteTitle: 'LDOE BASE PLANNER — Планировщик базы и поселения',
     siteDescription: 'Интерактивный планировщик базы и поселения для игры Last Day on Earth: Survival (LDOE). Удобная планировка комнат, стен, полов и станков.',
@@ -79,6 +71,7 @@ export const translations: Record<Language, Record<string, string>> = {
     deleted: 'Удалено',
     protectedObject: 'Защищенный объект',
     placementError: 'Ошибка размещения',
+    placementErrorMessage: 'Не удалось разместить объект в этом месте.',
     deletionError: 'Ошибка удаления',
     levelError: 'Ошибка изменения уровня',
     buildError: 'Ошибка строительства',
@@ -86,8 +79,14 @@ export const translations: Record<Language, Record<string, string>> = {
     resetError: 'Ошибка сброса',
     rotateError: 'Ошибка поворота',
 
+    exportSuccess: 'Карта успешно экспортирована в файл JSON и стала общедоступной!',
+    exportSuccessOffline: 'Карта успешно экспортирована в файл JSON (офлайн-режим).',
+    exportError: 'Не удалось экспортировать карту',
+    sharedBasesFetchError: 'Не удалось загрузить список общедоступных баз.',
+    mapLoadedSuccess: 'Карта "{name}" успешно загружена!',
+
     failedLoadShared: 'Не удалось загрузить карту из ссылки.',
-    linkCopied: 'Ссылка на карту скопирована в буфер обмена!',
+    linkCopied: 'Ссылка на карту скопирована в буфер обмена! Карта сохранена и стала общедоступной.',
     linkCopiedError: 'Не удалось создать ссылку для карты.',
     cannotPlaceObject: 'Невозможно разместить объект в этом месте.',
     cannotPlaceGarland: 'Невозможно разместить декор в этой позиции.',
@@ -116,6 +115,18 @@ export const translations: Record<Language, Record<string, string>> = {
     catalogJsonStructureError: 'Ошибка структуры JSON каталога',
     resetCatalogFailed: 'Не удалось получить исходный каталог. Попробуйте ещё раз.',
     cannotRotateObject: 'Невозможно повернуть объект в этой позиции!',
+
+    // Общедоступные базы / Модальное окно
+    publicBasesTitle: 'Базы других игроков',
+    sharedBasesModalTitle: 'Базы игроков',
+    publicBasesDescription: 'Выберите готовую базу из списка, чтобы открыть её в редакторе.',
+    publicBasesWarning: 'Когда вы сохраняете базу или делитесь ссылкой, она появляется в этом списке и видна всем.',
+    searchBasePlaceholder: 'Поиск по названию...',
+    loadingBasePlanner: 'Загрузка баз...',
+    emptySharedBases: 'Пока нет доступных баз.',
+    openBtn: 'Открыть',
+    closeBtn: 'Закрыть',
+    openSharedBasesBtn: 'Общедоступные базы',
 
     // SelectedElementPanel
     objectsCount: 'Объекты ({count})',
@@ -313,15 +324,22 @@ export const translations: Record<Language, Record<string, string>> = {
     deleted: 'Deleted',
     protectedObject: 'Protected Object',
     placementError: 'Placement Error',
+    placementErrorMessage: 'Failed to place object in this location.',
     deletionError: 'Deletion Error',
     levelError: 'Level Change Error',
     buildError: 'Build Error',
     importError: 'Import Error',
     resetError: 'Reset Error',
     rotateError: 'Rotation Error',
-    
+
+    exportSuccess: 'Map successfully exported to JSON file and is now publicly available!',
+    exportSuccessOffline: 'Map successfully exported to JSON file (offline mode).',
+    exportError: 'Failed to export map',
+    sharedBasesFetchError: 'Failed to load community bases list.',
+    mapLoadedSuccess: 'Map "{name}" successfully loaded!',
+
     failedLoadShared: 'Failed to load map from link.',
-    linkCopied: 'Map link copied to clipboard!',
+    linkCopied: 'Map link copied to clipboard! The map is now publicly available.',
     linkCopiedError: 'Failed to create link.',
     cannotPlaceObject: 'Cannot place object in this location.',
     cannotPlaceGarland: 'Cannot place decoration in this position.',
@@ -350,6 +368,18 @@ export const translations: Record<Language, Record<string, string>> = {
     catalogJsonStructureError: 'Catalog JSON structure error',
     resetCatalogFailed: 'Failed to fetch default catalog. Try again.',
     cannotRotateObject: 'Cannot rotate object in this position!',
+
+    // Public bases / Modal
+    publicBasesTitle: 'Community Bases',
+    sharedBasesModalTitle: 'Community Bases',
+    publicBasesDescription: 'Select a saved base from the list to view and edit it in the editor.',
+    publicBasesWarning: 'When you save or share a base link, it will appear in this list for all players.',
+    searchBasePlaceholder: 'Search base by name...',
+    loadingBasePlanner: 'Loading bases...',
+    emptySharedBases: 'No community bases available yet.',
+    openBtn: 'Open',
+    closeBtn: 'Close',
+    openSharedBasesBtn: 'Public Bases',
 
     // SelectedElementPanel
     objectsCount: 'Objects ({count})',
@@ -484,6 +514,16 @@ export const translations: Record<Language, Record<string, string>> = {
   },
 };
 
+export type TranslationKey = keyof typeof translations.ru;
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
 const getInitialLanguage = (): Language => {
   if (typeof window === 'undefined') return 'ru';
 
@@ -541,7 +581,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode; initialLang
     }
   }, [language]);
 
-  const t = useCallback((key: string, params?: Record<string, string | number>): string => {
+  const t = useCallback((key: TranslationKey, params?: Record<string, string | number>): string => {
     let text = translations[language]?.[key] || translations['ru']?.[key] || key;
     if (params) {
       Object.entries(params).forEach(([paramKey, val]) => {
