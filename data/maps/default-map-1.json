@@ -1064,7 +1064,26 @@
     "layers": {
       "floors": [],
       "walls": [],
-      "objects": []
+      "objects": [
+        {
+          "instanceId": "652e6fde-a845-4998-899e-f11b35cee274",
+          "typeId": "new_base_substation",
+          "x": 22,
+          "y": 2,
+          "rotation": 90,
+          "layer": "objects",
+          "isDefault": true
+        },
+        {
+          "instanceId": "23acb8b4-ba13-4497-b59f-010d85a65682",
+          "typeId": "new_base_water_pump",
+          "x": 18,
+          "y": 16,
+          "rotation": 0,
+          "layer": "objects",
+          "isDefault": true
+        }
+      ]
     }
   }
 }
