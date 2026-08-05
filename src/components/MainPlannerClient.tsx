@@ -61,6 +61,9 @@ const firebaseConfig = {
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 }
 
@@ -71,12 +74,6 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getDatabase(firebaseApp);
-
-// Переводим базу в оффлайн по умолчанию, чтобы WS не висел
-if (typeof window !== 'undefined') {
-  goOffline(db);
-}
 
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
   try {
@@ -87,6 +84,13 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
   } catch (e) {
     console.error('App Check initialization failed:', e);
   }
+}
+
+const db = getDatabase(firebaseApp);
+
+// Переводим базу в оффлайн по умолчанию, чтобы WS не висел
+if (typeof window !== 'undefined') {
+  goOffline(db);
 }
 
 const generateUUID = (): string => {
@@ -217,6 +221,11 @@ const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: str
 
 export default function MainPlannerClient() {
   const { t, language } = useLanguage();
+
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [initialMaps, setInitialMaps] = useState<InitialMapEntry[]>([]);
@@ -619,7 +628,7 @@ export default function MainPlannerClient() {
         if (savedMaps) {
           const parsedMaps = JSON.parse(savedMaps) as MapData[];
           if (Array.isArray(parsedMaps) && parsedMaps.length > 0) {
-            const sanitizedMaps = parsedMaps.map(m => sanitizeMapData(m, t('mapPrefix')));
+            const sanitizedMaps = parsedMaps.map(m => sanitizeMapData(m, tRef.current('mapPrefix')));
             setMaps(sanitizedMaps);
             setActiveMapId(requestedInitialMapId ?? (savedActiveMapId && sanitizedMaps.some(map => map.id === savedActiveMapId)
               ? savedActiveMapId
@@ -641,18 +650,18 @@ export default function MainPlannerClient() {
             if (snapshot.exists()) {
               sharedMap = snapshot.val() as Partial<MapData>;
             } else {
-              sharedMap = await decompressMapFromUrl(shareParam, t('loadedMap'));
+              sharedMap = await decompressMapFromUrl(shareParam, tRef.current('loadedMap'));
             }
             await goOffline(db);
 
             if (sharedMap && validateMapData(sharedMap)) {
-              const sanitized = sanitizeMapData(sharedMap, t('mapPrefix'));
+              const sanitized = sanitizeMapData(sharedMap, tRef.current('mapPrefix'));
               const sharedId = `shared_${cyrb53(shareParam)}`;
               const mapObj: MapData = {
                 ...sanitized,
                 id: sharedId,
                 shareId: sanitized.shareId || shareParam,
-                name: sanitized.name || t('sharedMap')
+                name: sanitized.name || tRef.current('sharedMap')
               };
               setMaps(prev => {
                 const filtered = prev.filter(m => m.id !== mapObj.id);
@@ -664,12 +673,12 @@ export default function MainPlannerClient() {
               url.searchParams.delete('share');
               window.history.replaceState(null, '', url);
             } else {
-              showAlert(t('jsonStructureError'), t('importError'), 'error');
+              showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
             }
           } catch (err) {
             await goOffline(db);
             console.error('Ошибка загрузки карты из ссылки:', err);
-            showAlert(t('failedLoadShared'), t('importError'), 'error');
+            showAlert(tRef.current('failedLoadShared'), tRef.current('importError'), 'error');
           }
         }
 
@@ -720,7 +729,7 @@ export default function MainPlannerClient() {
         setIsLoaded(true);
       }
     })();
-  }, [language, showAlert, t]);
+  }, [showAlert]);
 
   useEffect(() => {
     if (!isLoaded || !activeMapId || initialMaps.length === 0) return;
@@ -749,7 +758,7 @@ export default function MainPlannerClient() {
         const response = await fetch(`${getBasePath()}/${entry.file}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const parsed = await response.json() as MapData;
-        const map = sanitizeMapData(parsed, t('mapPrefix'));
+        const map = sanitizeMapData(parsed, tRef.current('mapPrefix'));
         if (!validateMapData(map)) throw new Error('Invalid map data');
         if (!isCancelled) {
           skipNextPersistenceRef.current = true;
@@ -760,7 +769,7 @@ export default function MainPlannerClient() {
       }
     })();
     return () => { isCancelled = true; };
-  }, [activeMapId, initialMaps, maps, language, t]);
+  }, [activeMapId, initialMaps, maps]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -1812,7 +1821,7 @@ export default function MainPlannerClient() {
       return;
     }
     const sanitized = sanitizeMapData(mapData, t('mapPrefix'));
-    const assignedShareId = generateUUID(); // mapData.shareId || (mapData.id && mapData.id.startsWith('shared_') ? mapData.id.replace('shared_', '') : generateUUID());
+    const assignedShareId = generateUUID();
 
     const mapWithShareId: MapData = {
       ...sanitized,
@@ -1838,7 +1847,7 @@ export default function MainPlannerClient() {
           const importedMap: MapData = sanitizeMapData({
             ...parsed,
             id: parsed.id || generateUUID(),
-            shareId: generateUUID(), // parsed.shareId || undefined,
+            shareId: generateUUID(),
             name: parsed.name || file.name.replace(/\.json$/i, '') || t('importedMap')
           }, t('mapPrefix'));
 
@@ -2214,7 +2223,7 @@ export default function MainPlannerClient() {
         <div className="absolute top-3 left-3 z-20 hidden md:block">
           <button
             onClick={handleOpenSharedBasesPanel}
-            className="bg-neutral-800/90 hover:bg-neutral-700 text-amber-500 hover:text-amber-400 font-bold px-3.5 py-2 rounded-lg text-xs border border-neutral-700/80 shadow-lg backdrop-blur flex items-center gap-2 transition-all"
+            className="bg-neutral-800/90 hover:bg-neutral-700 text-amber-500 hover:text-amber-400 font-bold px-3.5 py-2 rounded-lg text-xs border border-neutral-700/80 shadow-lg backdrop-blur flex items-center gap-2 transition-all cursor-pointer"
           >
             <span className="text-sm">🌐</span>
             <span>{t('publicBasesTitle')}</span>

@@ -138,6 +138,7 @@ export const GridObjects = memo(function GridObjects({
                 width={S}
                 height={S}
                 preserveAspectRatio="xMidYMid meet"
+                style={{ pointerEvents: 'none' }}
                 transform={displayRotation !== 0 ? `rotate(${displayRotation}, ${centroid.sx}, ${centroid.sy})` : undefined}
               />
             ) : (
