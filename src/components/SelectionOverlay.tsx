@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memo } from 'react'
 import type { ViewMode } from '../lib/constants'
 import { getCornerHighlightPaths, getFinalSize, getTopVertex } from '../lib/grid-utils'
-import type { BaseData, CatalogItem } from '../lib/initial-data'
+import type { BaseData, CatalogItem, SelectedElementData } from '../lib/initial-data'
 
 interface SelectionOverlayProps {
   selectedInstanceId: string | null;
-  selectedElementData: any;
+  selectedElementData: SelectedElementData | null;
   mapState: BaseData;
   catalogMap: Record<string, CatalogItem>;
   viewMode: ViewMode;

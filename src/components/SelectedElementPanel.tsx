@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAssetPath } from '@/lib/grid-utils'
 import { memo, useEffect, useRef, useState } from 'react'
 import { TranslationKey, useLanguage } from '../context/LanguageContext'
-import { getItemName, type CatalogItem } from '../lib/initial-data'
+import { getItemName, type SelectedElementData } from '../lib/initial-data'
 
 interface SelectedElementPanelProps {
-  selectedElementData: any;
+  selectedElementData: SelectedElementData | null;
   onClose: () => void;
   onPaintObject: (instanceId: string, color: string | undefined) => void;
   onCopyObject: (typeId: string, rotation: number) => void;
@@ -168,7 +167,7 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
         
         {selectedElementData.type === 'object' && (
           <div className="overflow-y-auto max-h-[55vh] custom-scrollbar pr-1 space-y-4 touch-pan-y">
-            {selectedElementData.data.map(({ obj, template }: { obj: any; template: CatalogItem }) => {
+            {selectedElementData.data.map(({ obj, template }) => {
               if (!template) return null;
               const itemName = getItemName(template.name, language);
               const variantImage = template.colorVariants?.find(v => v.color === obj.paintColor)?.image;
@@ -294,7 +293,7 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
               <div className="pt-2 mt-2 border-t border-neutral-800">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block mb-1.5">{t('installedDecor')}</span>
                 <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1 touch-pan-y">
-                  {selectedElementData.decors.map(({ obj, template }: { obj: any; template: CatalogItem }) => {
+                  {selectedElementData.decors.map(({ obj, template }) => {
                     const itemName = getItemName(template.name, language);
                     const currentImage = template.colorVariants?.find(v => v.color === obj.paintColor)?.image || template.tooltipImage || template.image;
                     return (

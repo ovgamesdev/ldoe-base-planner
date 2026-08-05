@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { memo, useCallback, useEffect, useRef } from 'react'
 import type { Tool, ViewMode } from '../lib/constants'
 import { CELL_SIZE, ISO_H, ISO_W } from '../lib/constants'
-import type { BaseData, BaseType, CatalogItem, ObjectLayer, SettlementLayerType } from '../lib/initial-data'
+import type { BaseData, BaseType, CatalogItem, ObjectLayer, SelectedElementData, SettlementLayerType } from '../lib/initial-data'
 import { GridCells } from './GridCells'
 import { GridObjects } from './GridObjects'
 import { GridWalls } from './GridWalls'
@@ -18,7 +17,7 @@ interface CanvasGridProps {
   activeTool: Tool;
   selectedTypeId: string;
   selectedInstanceId: string | null;
-  selectedElementData: any;
+  selectedElementData: SelectedElementData | null;
   allCells: { x: number; y: number }[];
   highlightedCells?: Set<string>;
   highlightedWalls?: Set<string>;

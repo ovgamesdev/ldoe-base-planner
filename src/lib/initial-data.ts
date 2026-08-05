@@ -85,10 +85,16 @@ export interface BaseData {
   layers: { floors: FloorLayer[]; walls: WallLayer[]; objects: ObjectLayer[]; };
 }
 
+export type SelectedElementData =
+  | { type: 'floor'; data: FloorLayer }
+  | { type: 'wall'; data: WallLayer; decors: { obj: ObjectLayer; template: CatalogItem }[] }
+  | { type: 'object'; data: { obj: ObjectLayer; template: CatalogItem }[] };
+
 export interface MapData {
   id: string;
   name: string;
   shareId?: string;
+  ownerId?: string;
   mainBase: BaseData;
   settlementBase: BaseData;
 }

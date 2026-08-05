@@ -1,4 +1,5 @@
 import { getAssetPath } from '@/lib/grid-utils'
+import Link from 'next/link'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { TranslationKey, useLanguage } from '../context/LanguageContext'
 import type { Tool, ViewMode } from '../lib/constants'
@@ -34,6 +35,8 @@ interface LeftSidebarProps {
   activeSettlementLayer: SettlementLayerType;
   
   onCloseMobile?: () => void;
+  onGoogleSignIn?: () => void;
+  onSignOut?: () => void;
   onCreateMap: () => void;
   onDeleteMap: (id: string) => void;
   onRenameMap: (name: string) => void;
@@ -91,6 +94,8 @@ export const LeftSidebar = memo(function LeftSidebar({
   activeBaseType,
   activeSettlementLayer,
   onCloseMobile,
+  onGoogleSignIn,
+  onSignOut,
   onCreateMap,
   onDeleteMap,
   onRenameMap,
@@ -305,6 +310,29 @@ export const LeftSidebar = memo(function LeftSidebar({
         >
           <span>🔗</span> {t('shareBtn')}
         </button>
+        {(onGoogleSignIn || onSignOut) && (
+          <div className="flex gap-2 pt-2 border-t border-neutral-800">
+            {onGoogleSignIn && (
+              <button
+                onClick={onGoogleSignIn}
+                className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-amber-400 py-1.5 px-2 rounded text-xs transition cursor-pointer flex items-center justify-center gap-1.5 font-medium"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/>
+                </svg>
+                {t('signIn')}
+              </button>
+            )}
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-red-400 py-1.5 px-2 rounded text-xs transition cursor-pointer flex items-center justify-center gap-1.5 font-medium"
+              >
+                {t('signOut')}
+              </button>
+            )}
+          </div>
+        )}
         <input type="file" ref={fileInputRef} onChange={onImportMap} accept=".json" className="hidden" />
 
         <div className="pt-2 border-t border-neutral-800 flex items-center justify-between text-xs">
@@ -527,6 +555,16 @@ export const LeftSidebar = memo(function LeftSidebar({
           </div>
         </div>
       )}
+
+      <div className="pt-3 mt-auto border-t border-neutral-800 flex items-center justify-center gap-4 text-[11px] text-neutral-500">
+        <Link href={`/${language}/privacy`} className="hover:text-neutral-300 transition underline">
+          {t('privacyPolicy')}
+        </Link>
+        <span>•</span>
+        <Link href={`/${language}/terms`} className="hover:text-neutral-300 transition underline">
+          {t('termsOfService')}
+        </Link>
+      </div>
     </div>
   );
 });

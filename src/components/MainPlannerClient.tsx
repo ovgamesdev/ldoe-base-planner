@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { getApp, getApps, initializeApp } from 'firebase/app'
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
-import { child, get, getDatabase, goOffline, goOnline, ref, set } from 'firebase/database'
+import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
+import { child, get, goOffline, goOnline, ref, remove, set } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translations, useLanguage } from '../context/LanguageContext'
+import { trackEvent } from '../lib/analytics'
 import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, InitialMapEntry, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
+import { auth, db } from '../lib/firebase'
 import {
   getEffectiveSize,
   getOccupiedCells,
@@ -44,54 +45,9 @@ export const isDefaultMapName = (name: string): boolean => {
     return true;
   }
 
-  const defaultPattern = /^(Карта|Map)(\s+.+)?$/i;
+  const defaultPattern = /^(Карта|Map)(\s+\d+)?$/i;
   return defaultPattern.test(trimmed);
 };
-
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "",
-  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || "",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "",
-};
-
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-
-if (process.env.NODE_ENV === 'development') {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-}
-
-const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
-  try {
-    initializeAppCheck(firebaseApp, {
-      provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
-      isTokenAutoRefreshEnabled: true
-    });
-  } catch (e) {
-    console.error('App Check initialization failed:', e);
-  }
-}
-
-const db = getDatabase(firebaseApp);
-
-// Переводим базу в оффлайн по умолчанию, чтобы WS не висел
-if (typeof window !== 'undefined') {
-  goOffline(db);
-}
 
 const generateUUID = (): string => {
   if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -138,6 +94,7 @@ const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
   return {
     id: mapData?.id || generateUUID(),
     shareId: mapData?.shareId,
+    ownerId: mapData?.ownerId,
     name: mapData?.name || defaultName,
     mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase),
     settlementBase: sanitizeBase(mapData?.settlementBase, DEFAULT_MAP.settlementBase)
@@ -222,6 +179,19 @@ const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: str
 export default function MainPlannerClient() {
   const { t, language } = useLanguage();
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setCurrentUser(u);
+      } else {
+        signInAnonymously(auth).catch((e) => console.error('Auth error:', e));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   const tRef = useRef(t);
   useEffect(() => {
     tRef.current = t;
@@ -243,6 +213,47 @@ export default function MainPlannerClient() {
     setModalInfo({ message, title, type });
   }, []);
 
+  const handleGoogleSignIn = useCallback(async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await goOnline(db);
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        try {
+          await linkWithPopup(auth.currentUser, provider);
+        } catch (linkError: any) {
+          if (linkError.code === 'auth/credential-already-in-use') {
+            await signInWithPopup(auth, provider);
+          } else {
+            throw linkError;
+          }
+        }
+      } else {
+        await signInWithPopup(auth, provider);
+      }
+      await goOffline(db);
+      trackEvent('login', { method: 'google' });
+    } catch (error: any) {
+      await goOffline(db);
+      if (error?.code !== 'auth/popup-closed-by-user') {
+        console.error('Google Sign-In Error:', error);
+        showAlert(t('authError'), t('error'), 'error');
+      }
+    }
+  }, [showAlert, t]);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      await goOnline(db);
+      await signOut(auth);
+      await signInAnonymously(auth);
+      await goOffline(db);
+      trackEvent('logout');
+    } catch (error) {
+      await goOffline(db);
+      console.error('Sign-out error:', error);
+    }
+  }, []);
+
   const catalogMap = useMemo(() => {
     const map: Record<string, CatalogItem> = {};
     catalog.forEach(c => { map[c.typeId] = c; });
@@ -257,6 +268,16 @@ export default function MainPlannerClient() {
   const [activeSettlementLayer, setActiveSettlementLayer] = useState<SettlementLayerType>('objects');
 
   const [layerSelections, setLayerSelections] = useState<Record<string, string>>({});
+
+  const handleBaseTypeChange = useCallback((newType: BaseType) => {
+    setActiveBaseType(newType);
+    trackEvent('change_base_type', { base_type: newType });
+  }, []);
+
+  const handleSettlementLayerChange = useCallback((newLayer: SettlementLayerType) => {
+    setActiveSettlementLayer(newLayer);
+    trackEvent('change_settlement_layer', { layer: newLayer });
+  }, []);
 
   const currentLayerKey = useMemo(() => {
     return activeBaseType === 'main' ? 'main' : `settlement_${activeSettlementLayer}`;
@@ -478,6 +499,16 @@ export default function MainPlannerClient() {
   const [isWindowPlacement, setIsWindowPlacement] = useState<boolean>(false);
   const [isCatalogBuilderVisible, setIsCatalogBuilderVisible] = useState(false);
 
+  const handleToolChange = useCallback((tool: Tool) => {
+    setActiveTool(tool);
+    trackEvent('select_tool', { tool });
+  }, []);
+
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    trackEvent('change_view_mode', { mode });
+  }, []);
+
   const interactionRef = useRef({
     activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer
   });
@@ -672,6 +703,7 @@ export default function MainPlannerClient() {
               const url = new URL(window.location.href);
               url.searchParams.delete('share');
               window.history.replaceState(null, '', url);
+              trackEvent('map_open_via_share', { share_id: shareParam });
             } else {
               showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
             }
@@ -723,6 +755,7 @@ export default function MainPlannerClient() {
           }));
         }
         if (savedCatalogBuilderVisibility) setIsCatalogBuilderVisible(savedCatalogBuilderVisibility === 'true');
+        trackEvent('app_init');
       } catch (e) {
         console.error('Ошибка загрузки состояния из localStorage:', e);
       } finally {
@@ -955,13 +988,15 @@ export default function MainPlannerClient() {
     };
     setMaps(prev => [...prev, newMap]);
     setActiveMapId(newMap.id);
+    trackEvent('map_create', { map_id: newMap.id });
   }, [maps.length, t]);
 
   const handleRenameMap = useCallback((newName: string) => {
     setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, name: newName } : m));
+    trackEvent('map_rename', { map_id: fullMapState.id, new_name: newName });
   }, [fullMapState.id]);
 
-  const handleDeleteMap = useCallback((idToDelete: string) => {
+  const handleDeleteMap = useCallback(async (idToDelete: string) => {
     if (maps.length <= 1) {
       showAlert(t('cannotDeleteOnlyMap'), t('attention'), 'warning');
       return;
@@ -972,10 +1007,24 @@ export default function MainPlannerClient() {
     if (!window.confirm(t('confirmDeleteMapFinal'))) {
       return;
     }
+
+    const targetMap = maps.find(m => m.id === idToDelete);
+    if (targetMap?.shareId && targetMap?.ownerId && currentUser && targetMap.ownerId === currentUser.uid) {
+      try {
+        await goOnline(db);
+        await remove(ref(db, `shares/${targetMap.shareId}`));
+        await goOffline(db);
+      } catch (e) {
+        await goOffline(db);
+        console.error('Ошибка удаления карты из Firebase:', e);
+      }
+    }
+
     const nextMaps = maps.filter(m => m.id !== idToDelete);
     setMaps(nextMaps);
     if (activeMapId === idToDelete) setActiveMapId(nextMaps[0].id);
-  }, [maps, activeMapId, showAlert, t]);
+    trackEvent('map_delete', { map_id: idToDelete });
+  }, [maps, activeMapId, showAlert, t, currentUser]);
 
   const validatePlacement = useCallback((typeId: string, x: number, y: number, rotation: number, ignoreInstanceId?: string): { valid: boolean; reason?: string } => {
     const template = catalogMap[typeId];
@@ -1264,8 +1313,10 @@ export default function MainPlannerClient() {
 
       if (!isRemoving) {
         setSelectedInstanceId(`floor_${x}_${y}`);
+        trackEvent('floor_place', { level: buildLevel, x, y });
       } else if (selectedInstanceId === `floor_${x}_${y}`) {
         setSelectedInstanceId(null);
+        trackEvent('floor_remove', { x, y });
       }
     } else if (activeTool === 'nobuild') {
       if (isOutOfBounds) return;
@@ -1283,6 +1334,7 @@ export default function MainPlannerClient() {
           }
         };
       });
+      trackEvent('nobuild_toggle', { x, y });
     } else if (activeTool === 'object') {
       const template = catalogMap[selectedTypeId];
 
@@ -1290,12 +1342,12 @@ export default function MainPlannerClient() {
         return;
       }
 
-      const rotationToUse = template.constraints.autoTiling ? 0 : currentRotation;
+      const rotationToUse = template?.constraints.autoTiling ? 0 : currentRotation;
       const placementResult = validatePlacement(selectedTypeId, x, y, rotationToUse);
 
       if (placementResult.valid) {
         const newObjId = generateUUID();
-        const objTargetLayer = template.constraints.settlementLayer || 'objects';
+        const objTargetLayer = template?.constraints.settlementLayer || 'objects';
         setMapState(prev => ({
           ...prev,
           layers: {
@@ -1307,6 +1359,7 @@ export default function MainPlannerClient() {
           }
         }));
         setSelectedInstanceId(newObjId);
+        trackEvent('object_place', { type_id: selectedTypeId, base_type: activeBaseType, x, y });
       } else {
         showAlert(placementResult.reason || t('placementErrorMessage'), t('placementError'), 'error');
       }
@@ -1341,6 +1394,7 @@ export default function MainPlannerClient() {
 
         if (removedInstanceId) {
           if (removedInstanceId === selectedInstanceId) setSelectedInstanceId(null);
+          trackEvent('object_remove', { instance_id: removedInstanceId });
           return {
             ...prev,
             layers: { ...prev.layers, objects: newObjects }
@@ -1409,6 +1463,7 @@ export default function MainPlannerClient() {
 
         if (removedInstanceId) {
           if (removedInstanceId === selectedInstanceId) setSelectedInstanceId(null);
+          trackEvent('wall_decor_remove', { instance_id: removedInstanceId });
           return { ...prev, layers: { ...prev.layers, objects: newObjects } };
         }
 
@@ -1419,6 +1474,7 @@ export default function MainPlannerClient() {
 
         const wallId = `wall_${x}_${y}_${orientation}`;
         if (selectedInstanceId === wallId) setSelectedInstanceId(null);
+        trackEvent('wall_remove', { x, y, orientation });
 
         return {
           ...prev,
@@ -1481,6 +1537,7 @@ export default function MainPlannerClient() {
           }
         }));
         setSelectedInstanceId(newObjId);
+        trackEvent('wall_decor_place', { type_id: selectedTypeId, x: targetX, y: targetY });
       } else {
         showAlert(placementResult.reason || t('cannotPlaceGarland'), t('placementError'), 'error');
       }
@@ -1531,8 +1588,10 @@ export default function MainPlannerClient() {
     const wallId = `wall_${x}_${y}_${orientation}`;
     if (!isRemoving) {
       setSelectedInstanceId(wallId);
+      trackEvent('wall_place', { level: buildLevel, orientation, is_door: isDoorPlacement, is_window: isWindowPlacement, x, y });
     } else if (selectedInstanceId === wallId) {
       setSelectedInstanceId(null);
+      trackEvent('wall_remove', { x, y, orientation });
     }
   }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, mapState.layers.objects, validatePlacement, showAlert, t]);
 
@@ -1542,6 +1601,7 @@ export default function MainPlannerClient() {
     const tObj = catalogMap[typeId];
     const allowed = tObj?.constraints.autoTiling ? [0] : (tObj?.constraints.allowedRotations?.length ? tObj.constraints.allowedRotations : [0]);
     setCurrentRotation(prevRot => (allowed.includes(prevRot) ? prevRot : allowed[0]));
+    trackEvent('select_building_type', { type_id: typeId });
   }, [catalogMap, currentLayerKey]);
 
   const toggleNewBuildingRotation = useCallback((deg: number) => {
@@ -1600,6 +1660,7 @@ export default function MainPlannerClient() {
       setIsMobileRightOpen(true);
     }
     setIsCatalogBuilderVisible(true);
+    trackEvent('catalog_item_edit', { type_id: targetTypeId });
   }, [catalogMap, isMobileLeftOpen]);
 
   const saveProduct = useCallback((e: React.FormEvent) => {
@@ -1666,7 +1727,8 @@ export default function MainPlannerClient() {
     setSelectedTypeId(item.typeId);
     setLayerSelections(prev => ({ ...prev, [currentLayerKey]: item.typeId }));
     setCurrentRotation(allowedRotations[0]);
-  }, [newBuilding.typeId, newBuilding.name.ru, newBuilding.name.en, newBuilding.baseType, newBuilding.settlementLayer, newBuilding.autoTiling, newBuilding.allowedRotations, newBuilding.connectsTo, newBuilding.autoTileImages, newBuilding.category, newBuilding.w, newBuilding.h, newBuilding.image, newBuilding.tooltipImage, newBuilding.color, newBuilding.colorVariants, newBuilding.placementType, newBuilding.minFloorLvl, newBuilding.minWallLvl, newBuilding.allowWindowWall, newBuilding.allowWallDecorAbove, newBuilding.maxCount, newBuilding.sharedLimitGroup, newBuilding.isDesk, newBuilding.requiredDesk, newBuilding.requiresPower, newBuilding.requiresWater, catalogMap, showAlert, t, language, currentLayerKey]);
+    trackEvent('catalog_item_save', { type_id: item.typeId, category: item.category });
+  }, [newBuilding, catalogMap, showAlert, t, language, currentLayerKey]);
 
   const handleDeleteCatalogItem = useCallback((typeId: string) => {
     const item = catalog.find(c => c.typeId === typeId);
@@ -1689,6 +1751,7 @@ export default function MainPlannerClient() {
     }
 
     showAlert(t('itemDeletedFromCatalog', { name: itemName }), t('deleted'), 'info');
+    trackEvent('catalog_item_delete', { type_id: typeId });
   }, [catalog, language, selectedTypeId, showAlert, t]);
 
   const handlePaintObject = useCallback((instanceId: string, color: string | undefined) => {
@@ -1699,6 +1762,7 @@ export default function MainPlannerClient() {
         objects: prev.layers.objects.map(o => o.instanceId === instanceId ? { ...o, paintColor: color } : o)
       }
     }));
+    trackEvent('object_paint', { instance_id: instanceId, color: color || 'default' });
   }, [setMapState]);
 
   const handleExportMap = useCallback(async () => {
@@ -1713,14 +1777,15 @@ export default function MainPlannerClient() {
         return;
       }
       const shareId = fullMapState.shareId || generateUUID();
-      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId }, t('mapPrefix'));
+      const ownerId = fullMapState.ownerId || currentUser?.uid;
+      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix'));
 
       await goOnline(db);
       await set(ref(db, `shares/${shareId}`), mapToSave);
       await goOffline(db);
 
-      if (fullMapState.shareId !== shareId) {
-        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId } : m));
+      if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
+        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId, ownerId } : m));
       }
 
       const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
@@ -1731,6 +1796,7 @@ export default function MainPlannerClient() {
       dlAnchor.click();
 
       showAlert(t('exportSuccess'), t('success'), 'success');
+      trackEvent('map_export', { map_id: fullMapState.id, map_name: fullMapState.name });
     } catch (err) {
       await goOffline(db);
       console.error('Ошибка сохранения при экспорте:', err);
@@ -1742,8 +1808,9 @@ export default function MainPlannerClient() {
       dlAnchor.click();
 
       showAlert(t('exportSuccessOffline'), t('attention'), 'info');
+      trackEvent('map_export_offline', { map_id: fullMapState.id });
     }
-  }, [fullMapState, showAlert, t]);
+  }, [fullMapState, showAlert, t, currentUser]);
 
   const handleShareMap = useCallback(async () => {
     try {
@@ -1758,14 +1825,15 @@ export default function MainPlannerClient() {
       }
 
       const shareId = fullMapState.shareId || generateUUID();
-      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId }, t('mapPrefix'));
+      const ownerId = fullMapState.ownerId || currentUser?.uid;
+      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix'));
 
       await goOnline(db);
       await set(ref(db, `shares/${shareId}`), mapToSave);
       await goOffline(db);
 
-      if (fullMapState.shareId !== shareId) {
-        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId } : m));
+      if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
+        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId, ownerId } : m));
       }
 
       const url = new URL(window.location.href);
@@ -1774,16 +1842,36 @@ export default function MainPlannerClient() {
 
       await navigator.clipboard.writeText(url.toString());
       showAlert(t('linkCopied'), t('success'), 'success');
+      trackEvent('map_share', { map_id: fullMapState.id, share_id: shareId });
     } catch (err) {
       await goOffline(db);
       console.error('Ошибка создания ссылки:', err);
       showAlert(t('linkCopiedError'), t('importError'), 'error');
     }
-  }, [fullMapState, showAlert, t]);
+  }, [fullMapState, showAlert, t, currentUser]);
+
+  const handleDeleteCloudMap = useCallback(async (shareId: string) => {
+    if (!shareId) return;
+    if (!window.confirm(t('confirmDeleteMap'))) return;
+    try {
+      await goOnline(db);
+      await remove(ref(db, `shares/${shareId}`));
+      await goOffline(db);
+
+      setSharedBasesList(prev => prev.filter(m => m.shareId !== shareId));
+      showAlert(t('success'), t('success'), 'success');
+      trackEvent('cloud_map_delete', { share_id: shareId });
+    } catch (err) {
+      await goOffline(db);
+      console.error('Ошибка удаления базы из облака:', err);
+      showAlert(t('removeError'), t('error'), 'error');
+    }
+  }, [showAlert, t]);
 
   const handleOpenSharedBasesPanel = useCallback(async () => {
     setIsSharedBasesModalOpen(true);
     setIsLoadingSharedBases(true);
+    trackEvent('open_shared_bases_panel');
     try {
       await goOnline(db);
       const snapshot = await get(ref(db, 'shares'));
@@ -1825,7 +1913,8 @@ export default function MainPlannerClient() {
 
     const mapWithShareId: MapData = {
       ...sanitized,
-      shareId: assignedShareId
+      shareId: assignedShareId,
+      ownerId: currentUser?.uid
     };
 
     setMaps(prev => {
@@ -1835,7 +1924,8 @@ export default function MainPlannerClient() {
     setActiveMapId(mapWithShareId.id);
     setIsSharedBasesModalOpen(false);
     showAlert(t('mapLoadedSuccess', { name: mapWithShareId.name }), t('success'), 'success');
-  }, [showAlert, t]);
+    trackEvent('map_load_shared', { share_id: mapData.shareId });
+  }, [showAlert, t, currentUser]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -1848,6 +1938,7 @@ export default function MainPlannerClient() {
             ...parsed,
             id: parsed.id || generateUUID(),
             shareId: generateUUID(),
+            ownerId: currentUser?.uid,
             name: parsed.name || file.name.replace(/\.json$/i, '') || t('importedMap')
           }, t('mapPrefix'));
 
@@ -1861,18 +1952,20 @@ export default function MainPlannerClient() {
             return [...prev, importedMap];
           });
           setActiveMapId(importedMap.id);
+          trackEvent('map_import', { map_name: importedMap.name });
         } else {
           showAlert(t('jsonStructureError'), t('importError'), 'error');
         }
       } catch { showAlert(t('jsonStructureError'), t('importError'), 'error'); }
     };
     reader.readAsText(file); e.target.value = '';
-  }, [showAlert, t]);
+  }, [showAlert, t, currentUser]);
 
   const handleExportCatalog = useCallback(() => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(catalog, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", "ldoe_catalog.json"); dlAnchor.click();
+    trackEvent('catalog_export');
   }, [catalog]);
 
   const handleImportCatalog = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1888,6 +1981,7 @@ export default function MainPlannerClient() {
             }
           }));
           setCatalog(normalized);
+          trackEvent('catalog_import');
         }
       } catch { showAlert(t('catalogJsonStructureError'), t('importError'), 'error'); }
     };
@@ -1909,6 +2003,7 @@ export default function MainPlannerClient() {
       setSelectedTypeId(defaults[0]?.typeId ?? '');
       setLayerSelections(prev => ({ ...prev, [currentLayerKey]: defaults[0]?.typeId ?? '' }));
       setCurrentRotation(defaults[0]?.constraints.allowedRotations[0] ?? 0);
+      trackEvent('catalog_reset');
     } catch (error) {
       console.error('Не удалось сбросить каталог:', error);
       showAlert(t('resetCatalogFailed'), t('resetError'), 'error');
@@ -2156,62 +2251,64 @@ export default function MainPlannerClient() {
       </div>
 
       <div className={`fixed md:relative inset-y-0 left-0 z-40 w-80 max-w-[85vw] transform ${isMobileLeftOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-200 ease-in-out`}>
-      <LeftSidebar
-        gridW={GRID_W}
-        gridH={GRID_H}
-        maps={maps}
-        fullMapState={fullMapState}
-        activeMapId={activeMapId}
-        availableMaps={availableMaps}
-        catalog={filteredCatalogForCurrentLayer}
-        catalogMap={catalogMap}
-        uniqueCategories={uniqueCategories}
-        searchCategory={searchCategory}
-        searchQuery={searchQuery}
-        activeTool={activeTool}
-        viewMode={viewMode}
-        zoom={zoom}
-        buildLevel={buildLevel}
-        isDoorPlacement={isDoorPlacement}
-        isWindowPlacement={isWindowPlacement}
-        selectedTypeId={selectedTypeId}
-        selectedAllowedRotations={selectedAllowedRotations}
-        currentRotation={currentRotation}
-        dragItemIndex={dragItemIndex}
-        dragOverItemIndex={dragOverItemIndex}
-        activeBaseType={activeBaseType}
-        activeSettlementLayer={activeSettlementLayer}
-        onCreateMap={handleCreateMap}
-        onDeleteMap={handleDeleteMap}
-        onRenameMap={handleRenameMap}
-        onSetActiveMapId={setActiveMapId}
-        onExportMap={handleExportMap}
-        onImportMap={handleImportMap}
-        onShareMap={handleShareMap}
-        onExportCatalog={handleExportCatalog}
-        onImportCatalog={handleImportCatalog}
-        onResetCatalog={handleResetCatalog}
-        onSetViewMode={setViewMode}
-        onResetCamera={resetCamera}
-        onSetActiveTool={setActiveTool}
-        onSetBuildLevel={setBuildLevel}
-        onSetDoorPlacement={setIsDoorPlacement}
-        onSetWindowPlacement={setIsWindowPlacement}
-        onSetSearchCategory={setSearchCategory}
-        onSetSearchQuery={setSearchQuery}
-        onClearSearch={() => setSearchQuery('')}
-        onSelectBuildingType={handleSelectBuildingType}
-        onCurrentRotationChange={setCurrentRotation}
-        onLoadForEditing={loadForEditing}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onDragEnd={handleDragEnd}
-        onSetActiveBaseType={setActiveBaseType}
-        onSetActiveSettlementLayer={setActiveSettlementLayer}
-        objectListRef={objectListRef}
-        onCloseMobile={() => setIsMobileLeftOpen(false)}
-      />
+        <LeftSidebar
+          gridW={GRID_W}
+          gridH={GRID_H}
+          maps={maps}
+          fullMapState={fullMapState}
+          activeMapId={activeMapId}
+          availableMaps={availableMaps}
+          catalog={filteredCatalogForCurrentLayer}
+          catalogMap={catalogMap}
+          uniqueCategories={uniqueCategories}
+          searchCategory={searchCategory}
+          searchQuery={searchQuery}
+          activeTool={activeTool}
+          viewMode={viewMode}
+          zoom={zoom}
+          buildLevel={buildLevel}
+          isDoorPlacement={isDoorPlacement}
+          isWindowPlacement={isWindowPlacement}
+          selectedTypeId={selectedTypeId}
+          selectedAllowedRotations={selectedAllowedRotations}
+          currentRotation={currentRotation}
+          dragItemIndex={dragItemIndex}
+          dragOverItemIndex={dragOverItemIndex}
+          activeBaseType={activeBaseType}
+          activeSettlementLayer={activeSettlementLayer}
+          onCreateMap={handleCreateMap}
+          onDeleteMap={handleDeleteMap}
+          onRenameMap={handleRenameMap}
+          onSetActiveMapId={setActiveMapId}
+          onExportMap={handleExportMap}
+          onImportMap={handleImportMap}
+          onShareMap={handleShareMap}
+          onExportCatalog={handleExportCatalog}
+          onImportCatalog={handleImportCatalog}
+          onResetCatalog={handleResetCatalog}
+          onSetViewMode={handleViewModeChange}
+          onResetCamera={resetCamera}
+          onSetActiveTool={handleToolChange}
+          onSetBuildLevel={setBuildLevel}
+          onSetDoorPlacement={setIsDoorPlacement}
+          onSetWindowPlacement={setIsWindowPlacement}
+          onSetSearchCategory={setSearchCategory}
+          onSetSearchQuery={setSearchQuery}
+          onClearSearch={() => setSearchQuery('')}
+          onSelectBuildingType={handleSelectBuildingType}
+          onCurrentRotationChange={setCurrentRotation}
+          onLoadForEditing={loadForEditing}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onDragEnd={handleDragEnd}
+          onSetActiveBaseType={handleBaseTypeChange}
+          onSetActiveSettlementLayer={handleSettlementLayerChange}
+          objectListRef={objectListRef}
+          onCloseMobile={() => setIsMobileLeftOpen(false)}
+          onGoogleSignIn={currentUser && !currentUser.isAnonymous ? undefined : handleGoogleSignIn}
+          onSignOut={currentUser && !currentUser.isAnonymous ? handleSignOut : undefined}
+        />
       </div>
 
       {isMobileLeftOpen && (
@@ -2307,15 +2404,17 @@ export default function MainPlannerClient() {
       <SharedBasesModal
         isOpen={isSharedBasesModalOpen}
         isLoading={isLoadingSharedBases}
+        currentUser={currentUser}
         sharedBasesList={sharedBasesList}
         onClose={() => setIsSharedBasesModalOpen(false)}
         onSelectMap={handleSelectSharedMap}
+        onDeleteCloudMap={handleDeleteCloudMap}
       />
 
       <ModalInfo
         modalInfo={modalInfo}
         onClose={() => setModalInfo(null)}
-      />
+        />
     </div>
   );
 }
