@@ -1907,12 +1907,13 @@ export default function MainPlannerClient() {
 
       setCatalog(defaults);
       setSelectedTypeId(defaults[0]?.typeId ?? '');
+      setLayerSelections(prev => ({ ...prev, [currentLayerKey]: defaults[0]?.typeId ?? '' }));
       setCurrentRotation(defaults[0]?.constraints.allowedRotations[0] ?? 0);
     } catch (error) {
       console.error('Не удалось сбросить каталог:', error);
       showAlert(t('resetCatalogFailed'), t('resetError'), 'error');
     }
-  }, [showAlert, t]);
+  }, [currentLayerKey, showAlert, t]);
 
   const allCells = useMemo(() => {
     const cells: { x: number; y: number }[] = [];
@@ -2018,9 +2019,10 @@ export default function MainPlannerClient() {
   const handleCopyObject = useCallback((typeId: string, rotation: number) => {
     setActiveTool('object');
     setSelectedTypeId(typeId);
+    setLayerSelections(prev => ({ ...prev, [currentLayerKey]: typeId }));
     setCurrentRotation(rotation);
     setSelectedInstanceId(null);
-  }, []);
+  }, [currentLayerKey]);
 
   const handleRotateSelectedObject = useCallback((obj: { instanceId: string; typeId: string; x: number; y: number; rotation: number }) => {
     const template = catalogMap[obj.typeId];
