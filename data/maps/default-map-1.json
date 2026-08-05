@@ -1,6 +1,6 @@
 {
   "id": "default-map-1",
-  "name": "Основная база",
+  "name": "Default map",
   "mainBase": {
     "mapConfig": {
       "width": 20,
