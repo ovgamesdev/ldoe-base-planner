@@ -5,6 +5,7 @@ import type { Tool, ViewMode } from '../lib/constants'
 import { ALL_ROTATIONS } from '../lib/constants'
 import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '../lib/initial-data'
 import { getItemName, searchMatchesName } from '../lib/initial-data'
+import { isDefaultMapName } from './MainPlannerClient'
 
 interface LeftSidebarProps {
   gridW: number;
@@ -153,7 +154,7 @@ export const LeftSidebar = memo(function LeftSidebar({
   };
 
   const handleExportMap = () => {
-    if (fullMapState.name.trim() === 'Default map' || fullMapState.name.trim() === 'Основная база') {
+    if (isDefaultMapName(fullMapState.name)) {
       alert(t('renameMapBeforeExport'));
       setIsEditingMapName(true);
       return;
@@ -162,7 +163,7 @@ export const LeftSidebar = memo(function LeftSidebar({
   };
 
   const handleShareMap = () => {
-    if (fullMapState.name.trim() === 'Default map' || fullMapState.name.trim() === 'Основная база') {
+    if (isDefaultMapName(fullMapState.name)) {
       alert(t('renameMapBeforeShare'));
       setIsEditingMapName(true);
       return;

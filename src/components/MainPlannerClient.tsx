@@ -5,7 +5,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app'
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
 import { child, get, getDatabase, goOffline, goOnline, ref, set } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
+import { translations, useLanguage } from '../context/LanguageContext'
 import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, InitialMapEntry, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
 import {
   getEffectiveSize,
@@ -22,6 +22,31 @@ import { ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
 import { SelectedElementPanel } from './SelectedElementPanel'
 import { SharedBasesModal } from './SharedBasesModal'
+
+export const isDefaultMapName = (name: string): boolean => {
+  if (!name) return true;
+  const trimmed = name.trim();
+
+  const exactDefaults = [
+    translations.ru.mapPrefix,
+    translations.en.mapPrefix,
+    translations.ru.defaultMap,
+    translations.en.defaultMap,
+    translations.ru.loadedMap,
+    translations.en.loadedMap,
+    translations.ru.sharedMap,
+    translations.en.sharedMap,
+    translations.ru.importedMap,
+    translations.en.importedMap,
+  ];
+
+  if (exactDefaults.includes(trimmed)) {
+    return true;
+  }
+
+  const defaultPattern = /^(Карта|Map)(\s+.+)?$/i;
+  return defaultPattern.test(trimmed);
+};
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
@@ -73,6 +98,48 @@ const generateUUID = (): string => {
   );
 };
 
+const validateMapData = (mapData: any): mapData is MapData => {
+  if (!mapData || typeof mapData !== 'object') return false;
+
+  const validateBase = (base: any) => {
+    if (!base || typeof base !== 'object') return false;
+    if (!base.layers || typeof base.layers !== 'object') return false;
+    if (!Array.isArray(base.layers.floors) || !Array.isArray(base.layers.walls) || !Array.isArray(base.layers.objects)) {
+      return false;
+    }
+    if (!base.mapConfig || typeof base.mapConfig !== 'object') return false;
+    return true;
+  };
+
+  return validateBase(mapData.mainBase) && validateBase(mapData.settlementBase);
+};
+
+const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
+  const sanitizeBase = (base: any, defaultBase: BaseData): BaseData => {
+    if (!base || typeof base !== 'object') return defaultBase;
+    return {
+      mapConfig: {
+        width: base.mapConfig?.width ?? defaultBase.mapConfig.width,
+        height: base.mapConfig?.height ?? defaultBase.mapConfig.height,
+        noBuildZones: Array.isArray(base.mapConfig?.noBuildZones) ? base.mapConfig.noBuildZones : []
+      },
+      layers: {
+        floors: Array.isArray(base.layers?.floors) ? base.layers.floors : [],
+        walls: Array.isArray(base.layers?.walls) ? base.layers.walls : [],
+        objects: Array.isArray(base.layers?.objects) ? base.layers.objects : []
+      }
+    };
+  };
+
+  return {
+    id: mapData?.id || generateUUID(),
+    shareId: mapData?.shareId,
+    name: mapData?.name || defaultName,
+    mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase),
+    settlementBase: sanitizeBase(mapData?.settlementBase, DEFAULT_MAP.settlementBase)
+  };
+};
+
 const cyrb53 = (str: string, seed = 0) => {
   let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
   for (let i = 0, ch; i < str.length; i++) {
@@ -89,7 +156,7 @@ const cyrb53 = (str: string, seed = 0) => {
 
 const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const decompressMapFromUrl = async (base64urlStr: string): Promise<Partial<MapData>> => {
+const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: string): Promise<Partial<MapData>> => {
   let jsonStr = '';
   try {
     let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
@@ -120,7 +187,7 @@ const decompressMapFromUrl = async (base64urlStr: string): Promise<Partial<MapDa
 
   return {
     id: generateUUID(),
-    name: m.n || 'Загруженная карта',
+    name: m.n || defaultLoadedName,
     mainBase: {
       mapConfig: {
         width: DEFAULT_MAP.mainBase.mapConfig.width,
@@ -191,8 +258,22 @@ export default function MainPlannerClient() {
   }, [maps, activeMapId]);
 
   const mapState = useMemo(() => {
-    const base = activeBaseType === 'main' ? fullMapState.mainBase : fullMapState.settlementBase;
-    return base || (activeBaseType === 'main' ? DEFAULT_MAP.mainBase : DEFAULT_MAP.settlementBase);
+    const base = activeBaseType === 'main' ? fullMapState?.mainBase : fullMapState?.settlementBase;
+    const defaultBase = activeBaseType === 'main' ? DEFAULT_MAP.mainBase : DEFAULT_MAP.settlementBase;
+    if (!base) return defaultBase;
+
+    return {
+      mapConfig: {
+        width: base.mapConfig?.width ?? defaultBase.mapConfig.width,
+        height: base.mapConfig?.height ?? defaultBase.mapConfig.height,
+        noBuildZones: Array.isArray(base.mapConfig?.noBuildZones) ? base.mapConfig.noBuildZones : []
+      },
+      layers: {
+        floors: Array.isArray(base.layers?.floors) ? base.layers.floors : [],
+        walls: Array.isArray(base.layers?.walls) ? base.layers.walls : [],
+        objects: Array.isArray(base.layers?.objects) ? base.layers.objects : []
+      }
+    };
   }, [fullMapState, activeBaseType]);
 
   const { width: GRID_W, height: GRID_H } = mapState.mapConfig;
@@ -538,10 +619,11 @@ export default function MainPlannerClient() {
         if (savedMaps) {
           const parsedMaps = JSON.parse(savedMaps) as MapData[];
           if (Array.isArray(parsedMaps) && parsedMaps.length > 0) {
-            setMaps(parsedMaps);
-            setActiveMapId(requestedInitialMapId ?? (savedActiveMapId && parsedMaps.some(map => map.id === savedActiveMapId)
+            const sanitizedMaps = parsedMaps.map(m => sanitizeMapData(m, t('mapPrefix')));
+            setMaps(sanitizedMaps);
+            setActiveMapId(requestedInitialMapId ?? (savedActiveMapId && sanitizedMaps.some(map => map.id === savedActiveMapId)
               ? savedActiveMapId
-              : parsedMaps[0].id));
+              : sanitizedMaps[0].id));
             restoredMap = true;
           }
         }
@@ -559,18 +641,18 @@ export default function MainPlannerClient() {
             if (snapshot.exists()) {
               sharedMap = snapshot.val() as Partial<MapData>;
             } else {
-              sharedMap = await decompressMapFromUrl(shareParam);
+              sharedMap = await decompressMapFromUrl(shareParam, t('loadedMap'));
             }
             await goOffline(db);
 
-            if (sharedMap?.mainBase) {
+            if (sharedMap && validateMapData(sharedMap)) {
+              const sanitized = sanitizeMapData(sharedMap, t('mapPrefix'));
               const sharedId = `shared_${cyrb53(shareParam)}`;
               const mapObj: MapData = {
+                ...sanitized,
                 id: sharedId,
-                shareId: sharedMap.shareId || shareParam,
-                name: sharedMap.name || 'Общая карта',
-                mainBase: sharedMap.mainBase || DEFAULT_MAP.mainBase,
-                settlementBase: sharedMap.settlementBase || DEFAULT_MAP.settlementBase
+                shareId: sanitized.shareId || shareParam,
+                name: sanitized.name || t('sharedMap')
               };
               setMaps(prev => {
                 const filtered = prev.filter(m => m.id !== mapObj.id);
@@ -581,6 +663,8 @@ export default function MainPlannerClient() {
               const url = new URL(window.location.href);
               url.searchParams.delete('share');
               window.history.replaceState(null, '', url);
+            } else {
+              showAlert(t('jsonStructureError'), t('importError'), 'error');
             }
           } catch (err) {
             await goOffline(db);
@@ -665,13 +749,8 @@ export default function MainPlannerClient() {
         const response = await fetch(`${getBasePath()}/${entry.file}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const parsed = await response.json() as MapData;
-        const map: MapData = {
-           ...parsed,
-           id: parsed.id || generateUUID(),
-           mainBase: parsed.mainBase || DEFAULT_MAP.mainBase,
-           settlementBase: parsed.settlementBase || DEFAULT_MAP.settlementBase
-        };
-        if (!map?.mainBase) throw new Error('Invalid map data');
+        const map = sanitizeMapData(parsed, t('mapPrefix'));
+        if (!validateMapData(map)) throw new Error('Invalid map data');
         if (!isCancelled) {
           skipNextPersistenceRef.current = true;
           setMaps(prev => [...prev.filter(item => item.id !== map.id), map]);
@@ -681,7 +760,7 @@ export default function MainPlannerClient() {
       }
     })();
     return () => { isCancelled = true; };
-  }, [activeMapId, initialMaps, maps]);
+  }, [activeMapId, initialMaps, maps, language, t]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -839,7 +918,7 @@ export default function MainPlannerClient() {
   const handleCreateMap = useCallback(() => {
     const newMap: MapData = {
       id: generateUUID(),
-      name: `Карта ${maps.length + 1}`,
+      name: `${t('mapPrefix')} ${maps.length + 1}`,
       mainBase: {
         ...DEFAULT_MAP.mainBase,
         layers: {
@@ -867,7 +946,7 @@ export default function MainPlannerClient() {
     };
     setMaps(prev => [...prev, newMap]);
     setActiveMapId(newMap.id);
-  }, [maps.length]);
+  }, [maps.length, t]);
 
   const handleRenameMap = useCallback((newName: string) => {
     setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, name: newName } : m));
@@ -1615,13 +1694,17 @@ export default function MainPlannerClient() {
 
   const handleExportMap = useCallback(async () => {
     try {
+      if (!validateMapData(fullMapState)) {
+        showAlert(t('jsonStructureError'), t('importError'), 'error');
+        return;
+      }
       const jsonStrPayload = JSON.stringify(fullMapState);
       if (jsonStrPayload.length > 500000) {
         showAlert(t('exportError'), t('importError'), 'error');
         return;
       }
       const shareId = fullMapState.shareId || generateUUID();
-      const mapToSave: MapData = { ...fullMapState, shareId };
+      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId }, t('mapPrefix'));
 
       await goOnline(db);
       await set(ref(db, `shares/${shareId}`), mapToSave);
@@ -1655,14 +1738,18 @@ export default function MainPlannerClient() {
 
   const handleShareMap = useCallback(async () => {
     try {
+      if (!validateMapData(fullMapState)) {
+        showAlert(t('linkCopiedError'), t('importError'), 'error');
+        return;
+      }
       const jsonStrPayload = JSON.stringify(fullMapState);
       if (jsonStrPayload.length > 500000) {
         showAlert(t('linkCopiedError'), t('importError'), 'error');
         return;
       }
-      
+
       const shareId = fullMapState.shareId || generateUUID();
-      const mapToSave: MapData = { ...fullMapState, shareId };
+      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId }, t('mapPrefix'));
 
       await goOnline(db);
       await set(ref(db, `shares/${shareId}`), mapToSave);
@@ -1695,12 +1782,17 @@ export default function MainPlannerClient() {
 
       if (snapshot.exists()) {
         const val = snapshot.val();
-        const list: MapData[] = Object.entries(val).map(([key, data]: [string, any]) => ({
-          ...data,
-          id: `shared_${key}`,
-          shareId: data.shareId || key,
-          name: data.name || `Карта ${key}`
-        }));
+        const list: MapData[] = Object.entries(val)
+          .map(([key, data]: [string, any]) => {
+            const sanitized = sanitizeMapData(data, t('mapPrefix'));
+            return {
+              ...sanitized,
+              id: `shared_${key}`,
+              shareId: sanitized.shareId || key,
+              name: sanitized.name || `${t('mapPrefix')} ${key}`
+            };
+          })
+          .filter(map => validateMapData(map));
         setSharedBasesList(list);
       } else {
         setSharedBasesList([]);
@@ -1715,13 +1807,25 @@ export default function MainPlannerClient() {
   }, [showAlert, t]);
 
   const handleSelectSharedMap = useCallback((mapData: MapData) => {
+    if (!validateMapData(mapData)) {
+      showAlert(t('jsonStructureError'), t('importError'), 'error');
+      return;
+    }
+    const sanitized = sanitizeMapData(mapData, t('mapPrefix'));
+    const assignedShareId = generateUUID(); // mapData.shareId || (mapData.id && mapData.id.startsWith('shared_') ? mapData.id.replace('shared_', '') : generateUUID());
+
+    const mapWithShareId: MapData = {
+      ...sanitized,
+      shareId: assignedShareId
+    };
+
     setMaps(prev => {
-      const filtered = prev.filter(m => m.id !== mapData.id);
-      return [...filtered, mapData];
+      const filtered = prev.filter(m => m.id !== mapWithShareId.id);
+      return [...filtered, mapWithShareId];
     });
-    setActiveMapId(mapData.id);
+    setActiveMapId(mapWithShareId.id);
     setIsSharedBasesModalOpen(false);
-    showAlert(t('mapLoadedSuccess', { name: mapData.name }), t('success'), 'success');
+    showAlert(t('mapLoadedSuccess', { name: mapWithShareId.name }), t('success'), 'success');
   }, [showAlert, t]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1730,15 +1834,13 @@ export default function MainPlannerClient() {
     reader.onload = (evt) => {
       try {
         const parsed = JSON.parse(evt.target?.result as string);
-        if (parsed.mainBase) {
-          const importedMap: MapData = {
+        if (parsed && validateMapData(parsed)) {
+          const importedMap: MapData = sanitizeMapData({
             ...parsed,
             id: parsed.id || generateUUID(),
-            shareId: parsed.shareId || undefined,
-            name: parsed.name || file.name.replace(/\.json$/i, '') || 'Импортированная карта',
-            mainBase: parsed.mainBase,
-            settlementBase: parsed.settlementBase || DEFAULT_MAP.settlementBase
-          };
+            shareId: generateUUID(), // parsed.shareId || undefined,
+            name: parsed.name || file.name.replace(/\.json$/i, '') || t('importedMap')
+          }, t('mapPrefix'));
 
           setMaps(prev => {
             const existingIndex = prev.findIndex(m => m.id === importedMap.id);
@@ -1750,6 +1852,8 @@ export default function MainPlannerClient() {
             return [...prev, importedMap];
           });
           setActiveMapId(importedMap.id);
+        } else {
+          showAlert(t('jsonStructureError'), t('importError'), 'error');
         }
       } catch { showAlert(t('jsonStructureError'), t('importError'), 'error'); }
     };
@@ -1855,7 +1959,9 @@ export default function MainPlannerClient() {
       return 0;
     };
 
-    return mapState.layers.objects
+    const objects = mapState?.layers?.objects || [];
+
+    return objects
       .map(obj => ({ obj, template: catalogMap[obj.typeId] }))
       .filter((o): o is { obj: ObjectLayer; template: CatalogItem } => !!o.template)
       .sort((a, b) => {
@@ -1867,7 +1973,7 @@ export default function MainPlannerClient() {
         const depthB = b.obj.x + b.obj.y;
         return depthA - depthB;
       });
-  }, [mapState.layers.objects, catalogMap]);
+  }, [mapState, catalogMap]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (activeTool !== 'hand' && e.button !== 1 && e.button !== 2) return;

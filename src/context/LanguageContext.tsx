@@ -10,6 +10,12 @@ export const translations = {
     siteTitle: 'LDOE BASE PLANNER — Планировщик базы и поселения',
     siteDescription: 'Интерактивный планировщик базы и поселения для игры Last Day on Earth: Survival (LDOE). Удобная планировка комнат, стен, полов и станков.',
 
+    defaultMap: 'Основная база',
+    loadedMap: 'Загруженная карта',
+    sharedMap: 'Общая карта',
+    mapPrefix: 'Карта',
+    importedMap: 'Импортированная карта',
+
     // Navigation / UI
     grid: 'Сетка',
     cells: 'клеток',
@@ -264,6 +270,12 @@ export const translations = {
   en: {
     siteTitle: 'LDOE BASE PLANNER — Base & Settlement Planner',
     siteDescription: 'Interactive base and settlement planner for Last Day on Earth: Survival (LDOE). Easy planning for rooms, walls, floors, and workbenches.',
+    
+    defaultMap: 'Default map',
+    loadedMap: 'Loaded map',
+    sharedMap: 'Shared map',
+    mapPrefix: 'Map',
+    importedMap: 'Imported map',
     
     // Navigation / UI
     grid: 'Grid',
