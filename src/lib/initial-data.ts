@@ -88,6 +88,7 @@ export interface BaseData {
 export interface MapData {
   id: string;
   name: string;
+  shareId?: string;
   mainBase: BaseData;
   settlementBase: BaseData;
 }

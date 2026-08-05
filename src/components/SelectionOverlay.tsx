@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { memo } from 'react'
 import type { ViewMode } from '../lib/constants'
 import { getCornerHighlightPaths, getFinalSize, getTopVertex } from '../lib/grid-utils'

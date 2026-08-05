@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAssetPath } from '@/lib/grid-utils'
 import { memo, useEffect, useRef, useState } from 'react'
 import { TranslationKey, useLanguage } from '../context/LanguageContext'

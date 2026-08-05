@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { memo, useCallback, useEffect, useRef } from 'react'
 import type { Tool, ViewMode } from '../lib/constants'
 import { CELL_SIZE, ISO_H, ISO_W } from '../lib/constants'

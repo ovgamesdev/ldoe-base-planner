@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { getApp, getApps, initializeApp } from 'firebase/app'
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
-import { child, get, getDatabase, ref, set } from 'firebase/database'
+import { child, get, getDatabase, goOffline, goOnline, ref, set } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, InitialMapEntry, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
@@ -47,6 +48,11 @@ if (process.env.NODE_ENV === 'development') {
 const firebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(firebaseApp);
 
+// Переводим базу в оффлайн по умолчанию, чтобы WS не висел
+if (typeof window !== 'undefined') {
+  goOffline(db);
+}
+
 if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
   try {
     initializeAppCheck(firebaseApp, {
@@ -82,40 +88,6 @@ const cyrb53 = (str: string, seed = 0) => {
 };
 
 const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH || '';
-
-const compressMapToUrl = async (map: MapData): Promise<string> => {
-  const minimalMap = {
-    n: map.name,
-    mb: {
-      l: {
-        f: map.mainBase?.layers?.floors?.map(f => [f.x, f.y, f.level]) || [],
-        w: map.mainBase?.layers?.walls?.map(w => [w.x, w.y, w.orientation === 'horizontal' ? 0 : 1, w.level, w.isDoor ? 1 : 0, w.isWindow ? 1 : 0]) || [],
-        o: map.mainBase?.layers?.objects?.map(o => [o.typeId, o.x, o.y, o.rotation || 0, o.paintColor || '']) || []
-      },
-      c: map.mainBase?.mapConfig?.noBuildZones?.map(nb => [nb.x, nb.y]) || []
-    },
-    sb: {
-      l: {
-        f: map.settlementBase?.layers?.floors?.map(f => [f.x, f.y, f.level]) || [],
-        w: map.settlementBase?.layers?.walls?.map(w => [w.x, w.y, w.orientation === 'horizontal' ? 0 : 1, w.level, w.isDoor ? 1 : 0, w.isWindow ? 1 : 0]) || [],
-        o: map.settlementBase?.layers?.objects?.map(o => [o.typeId, o.x, o.y, o.rotation || 0, o.layer || 'objects', o.paintColor || '']) || []
-      },
-      c: map.settlementBase?.mapConfig?.noBuildZones?.map(nb => [nb.x, nb.y, nb.layer || 'objects']) || []
-    }
-  };
-
-  const jsonStr = JSON.stringify(minimalMap);
-  const blob = new Blob([jsonStr]);
-  const cs = new CompressionStream('deflate-raw');
-  const compressedStream = blob.stream().pipeThrough(cs);
-  const buffer = await new Response(compressedStream).arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-};
 
 const decompressMapFromUrl = async (base64urlStr: string): Promise<Partial<MapData>> => {
   let jsonStr = '';
@@ -582,17 +554,20 @@ export default function MainPlannerClient() {
         if (shareParam) {
           try {
             let sharedMap: Partial<MapData> | null = null;
+            await goOnline(db);
             const snapshot = await get(child(ref(db), `shares/${shareParam}`));
             if (snapshot.exists()) {
               sharedMap = snapshot.val() as Partial<MapData>;
             } else {
               sharedMap = await decompressMapFromUrl(shareParam);
             }
+            await goOffline(db);
 
             if (sharedMap?.mainBase) {
               const sharedId = `shared_${cyrb53(shareParam)}`;
               const mapObj: MapData = {
                 id: sharedId,
+                shareId: sharedMap.shareId || shareParam,
                 name: sharedMap.name || 'Общая карта',
                 mainBase: sharedMap.mainBase || DEFAULT_MAP.mainBase,
                 settlementBase: sharedMap.settlementBase || DEFAULT_MAP.settlementBase
@@ -608,6 +583,7 @@ export default function MainPlannerClient() {
               window.history.replaceState(null, '', url);
             }
           } catch (err) {
+            await goOffline(db);
             console.error('Ошибка загрузки карты из ссылки:', err);
             showAlert(t('failedLoadShared'), t('importError'), 'error');
           }
@@ -1303,6 +1279,7 @@ export default function MainPlannerClient() {
         }
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [GRID_W, GRID_H, mapState.layers.floors, mapState.layers.objects, catalogMap, selectedInstanceId, setMapState, validatePlacement, activeBaseType, activeSettlementLayer, showAlert, t]);
 
   const handleWallClick = useCallback((x: number, y: number, orientation: 'horizontal' | 'vertical', e: React.MouseEvent) => {
@@ -1643,12 +1620,19 @@ export default function MainPlannerClient() {
         showAlert(t('exportError'), t('importError'), 'error');
         return;
       }
-      const compressed = await compressMapToUrl(fullMapState);
-      const shareId = cyrb53(compressed);
-      await set(ref(db, `shares/${shareId}`), fullMapState);
+      const shareId = fullMapState.shareId || generateUUID();
+      const mapToSave: MapData = { ...fullMapState, shareId };
+
+      await goOnline(db);
+      await set(ref(db, `shares/${shareId}`), mapToSave);
+      await goOffline(db);
+
+      if (fullMapState.shareId !== shareId) {
+        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId } : m));
+      }
 
       const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mapToSave, null, 2));
       const dlAnchor = document.createElement('a');
       dlAnchor.setAttribute("href", dataStr);
       dlAnchor.setAttribute("download", `ldoe_base_planner_map_${safeName}.json`);
@@ -1656,6 +1640,7 @@ export default function MainPlannerClient() {
 
       showAlert(t('exportSuccess'), t('success'), 'success');
     } catch (err) {
+      await goOffline(db);
       console.error('Ошибка сохранения при экспорте:', err);
       const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
@@ -1675,9 +1660,17 @@ export default function MainPlannerClient() {
         showAlert(t('linkCopiedError'), t('importError'), 'error');
         return;
       }
-      const compressed = await compressMapToUrl(fullMapState);
-      const shareId = cyrb53(compressed);
-      await set(ref(db, `shares/${shareId}`), fullMapState);
+      
+      const shareId = fullMapState.shareId || generateUUID();
+      const mapToSave: MapData = { ...fullMapState, shareId };
+
+      await goOnline(db);
+      await set(ref(db, `shares/${shareId}`), mapToSave);
+      await goOffline(db);
+
+      if (fullMapState.shareId !== shareId) {
+        setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId } : m));
+      }
 
       const url = new URL(window.location.href);
       url.searchParams.set('share', shareId);
@@ -1686,6 +1679,7 @@ export default function MainPlannerClient() {
       await navigator.clipboard.writeText(url.toString());
       showAlert(t('linkCopied'), t('success'), 'success');
     } catch (err) {
+      await goOffline(db);
       console.error('Ошибка создания ссылки:', err);
       showAlert(t('linkCopiedError'), t('importError'), 'error');
     }
@@ -1695,12 +1689,16 @@ export default function MainPlannerClient() {
     setIsSharedBasesModalOpen(true);
     setIsLoadingSharedBases(true);
     try {
+      await goOnline(db);
       const snapshot = await get(ref(db, 'shares'));
+      await goOffline(db);
+
       if (snapshot.exists()) {
         const val = snapshot.val();
         const list: MapData[] = Object.entries(val).map(([key, data]: [string, any]) => ({
           ...data,
           id: `shared_${key}`,
+          shareId: data.shareId || key,
           name: data.name || `Карта ${key}`
         }));
         setSharedBasesList(list);
@@ -1708,6 +1706,7 @@ export default function MainPlannerClient() {
         setSharedBasesList([]);
       }
     } catch (err) {
+      await goOffline(db);
       console.error('Ошибка загрузки общедоступных баз:', err);
       showAlert(t('sharedBasesFetchError'), t('importError'), 'error');
     } finally {
@@ -1735,6 +1734,7 @@ export default function MainPlannerClient() {
           const importedMap: MapData = {
             ...parsed,
             id: parsed.id || generateUUID(),
+            shareId: parsed.shareId || undefined,
             name: parsed.name || file.name.replace(/\.json$/i, '') || 'Импортированная карта',
             mainBase: parsed.mainBase,
             settlementBase: parsed.settlementBase || DEFAULT_MAP.settlementBase

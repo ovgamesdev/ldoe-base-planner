@@ -152,6 +152,24 @@ export const LeftSidebar = memo(function LeftSidebar({
     }
   };
 
+  const handleExportMap = () => {
+    if (fullMapState.name.trim() === 'Default map' || fullMapState.name.trim() === 'Основная база') {
+      alert(t('renameMapBeforeExport'));
+      setIsEditingMapName(true);
+      return;
+    }
+    onExportMap();
+  };
+
+  const handleShareMap = () => {
+    if (fullMapState.name.trim() === 'Default map' || fullMapState.name.trim() === 'Основная база') {
+      alert(t('renameMapBeforeShare'));
+      setIsEditingMapName(true);
+      return;
+    }
+    onShareMap();
+  };
+
   const handleResetCatalog = () => {
     if (window.confirm(t('resetCatalogConfirm'))) {
       onResetCatalog();
@@ -277,11 +295,11 @@ export const LeftSidebar = memo(function LeftSidebar({
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
-          <button onClick={onExportMap} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('exportBtn')}</button>
+          <button onClick={handleExportMap} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('exportBtn')}</button>
           <button onClick={() => fileInputRef.current?.click()} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('importBtn')}</button>
         </div>
         <button
-          onClick={onShareMap}
+          onClick={handleShareMap}
           className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer flex items-center justify-center gap-1.5 font-bold"
         >
           <span>🔗</span> {t('shareBtn')}

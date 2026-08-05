@@ -115,6 +115,8 @@ export const translations = {
     catalogJsonStructureError: 'Ошибка структуры JSON каталога',
     resetCatalogFailed: 'Не удалось получить исходный каталог. Попробуйте ещё раз.',
     cannotRotateObject: 'Невозможно повернуть объект в этой позиции!',
+    renameMapBeforeExport: 'Пожалуйста, измените название карты перед экспортом.',
+    renameMapBeforeShare: 'Пожалуйста, измените название карты перед тем, как поделиться ссылкой.',
 
     // Общедоступные базы / Модальное окно
     publicBasesTitle: 'Базы других игроков',
@@ -368,6 +370,8 @@ export const translations = {
     catalogJsonStructureError: 'Catalog JSON structure error',
     resetCatalogFailed: 'Failed to fetch default catalog. Try again.',
     cannotRotateObject: 'Cannot rotate object in this position!',
+    renameMapBeforeExport: 'Please change the map name before exporting.',
+    renameMapBeforeShare: 'Please change the map name before sharing.',
 
     // Public bases / Modal
     publicBasesTitle: 'Community Bases',
