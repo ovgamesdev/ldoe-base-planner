@@ -97,6 +97,8 @@ export interface MapData {
   ownerId?: string;
   mainBase: BaseData;
   settlementBase: BaseData;
+  createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface ModalInfoState {

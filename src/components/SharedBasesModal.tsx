@@ -1,6 +1,5 @@
 'use client';
 
-import { User } from 'firebase/auth'
 import React, { useEffect, useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import type { MapData } from '../lib/initial-data'
@@ -8,25 +7,55 @@ import type { MapData } from '../lib/initial-data'
 interface SharedBasesModalProps {
   isOpen: boolean;
   isLoading: boolean;
-  sharedBasesList: MapData[];  
-  currentUser: User | null;
+  bases: MapData[];
+  currentUserId?: string;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  filterMode: 'all' | 'my';
+  onFilterModeChange: (mode: 'all' | 'my') => void;
   onClose: () => void;
-  onSelectMap: (mapData: MapData) => void;
-  onDeleteCloudMap: (shareId: string) => void;
+  onSelectBase: (mapData: MapData) => void;
+  onDeleteBase: (shareId: string) => void;
 }
+
+// Timestamps are stored as UTC milliseconds (Firebase ServerValue.TIMESTAMP), so
+// formatting without an explicit timeZone renders them in each viewer's own
+// local timezone automatically.
+const formatShareDate = (timestamp?: number): string | null => {
+  if (typeof timestamp !== 'number') return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(timestamp));
+  } catch {
+    return null;
+  }
+};
 
 export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   isOpen,
   isLoading,
-  sharedBasesList,
-  currentUser,
+  bases = [],
+  currentUserId,
+  currentPage,
+  totalPages,
+  onPageChange,
+  searchQuery,
+  onSearchQueryChange,
+  filterMode,
+  onFilterModeChange,
   onClose,
-  onSelectMap,
-  onDeleteCloudMap
+  onSelectBase,
+  onDeleteBase
 }) => {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterMode, setFilterMode] = useState<'all' | 'my'>('all');
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -54,17 +83,6 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   }, [isOpen, onClose]);
 
   if (!isRendered && !isOpen) return null;
-
-  const filteredBases = sharedBasesList.filter((base) => {
-    const matchesSearch = base.name.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
-
-    if (filterMode === 'my') {
-      return currentUser && base.ownerId === currentUser.uid;
-    }
-
-    return true;
-  });
 
   return (
     <div
@@ -106,14 +124,14 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder={t('searchBasePlaceholder')}
             className="flex-1 bg-neutral-950 border border-neutral-800 focus:border-amber-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors placeholder-neutral-500"
           />
           <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-0.5 shrink-0">
             <button
-              onClick={() => setFilterMode('all')}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
+              onClick={() => onFilterModeChange('all')}
+              className={`flex-1 text-center w-24 px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
                 filterMode === 'all'
                   ? 'bg-amber-600 text-white font-semibold'
                   : 'text-neutral-400 hover:text-white'
@@ -122,8 +140,8 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
               {t('allBases')}
             </button>
             <button
-              onClick={() => setFilterMode('my')}
-              className={`px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
+              onClick={() => onFilterModeChange('my')}
+              className={`flex-1 text-center w-24 px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
                 filterMode === 'my'
                   ? 'bg-amber-600 text-white font-semibold'
                   : 'text-neutral-400 hover:text-white'
@@ -140,17 +158,20 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
             <div className="flex items-center justify-center h-32 text-xs text-neutral-400">
               <span className="animate-pulse">{t('loadingBasePlanner')}</span>
             </div>
-          ) : filteredBases.length === 0 ? (
+          ) : bases.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-xs text-neutral-500">
               {t('emptySharedBases')}
             </div>
           ) : (
-            filteredBases.map((base) => {
-              const isOwner = currentUser && base.ownerId === currentUser.uid;
+            bases.map((base) => {
+              const isOwner = Boolean(currentUserId && base.ownerId === currentUserId);
+              const createdLabel = formatShareDate(base.createdAt);
+              const updatedLabel = formatShareDate(base.updatedAt);
+              const showUpdated = Boolean(updatedLabel && updatedLabel !== createdLabel);
 
               return (
                 <div
-                  key={base.id}
+                  key={`${base.id}_${base.shareId}`}
                   className="flex items-center justify-between p-3 bg-neutral-950/60 hover:bg-neutral-800/60 border border-neutral-800/80 rounded-lg transition-all group"
                 >
                   <div className="flex flex-col gap-0.5">
@@ -158,13 +179,19 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
                       {base.name}
                     </span>
                     <span className="text-[10px] text-neutral-500">
-                      ID: {base.id}
+                      ID: {base.shareId}
                     </span>
+                    {(createdLabel || showUpdated) && (
+                      <span className="text-[10px] text-neutral-600 flex flex-wrap gap-x-3">
+                        {createdLabel && <span>🕐 {t('createdLabel')}: {createdLabel}</span>}
+                        {showUpdated && <span>✎ {t('updatedLabel')}: {updatedLabel}</span>}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {isOwner && base.shareId && (
                       <button
-                        onClick={() => onDeleteCloudMap(base.shareId!)}
+                        onClick={() => onDeleteBase(base.shareId!)}
                         className="bg-red-900/40 hover:bg-red-800/60 text-red-300 font-bold px-2.5 py-1.5 rounded text-xs border border-red-700/50 transition-colors cursor-pointer"
                         title={t('deleteBtn')}
                       >
@@ -172,7 +199,7 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
                       </button>
                     )}
                     <button
-                      onClick={() => onSelectMap(base)}
+                      onClick={() => onSelectBase(base)}
                       className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded text-xs border border-amber-500 transition-colors shadow-sm cursor-pointer"
                     >
                       {t('openBtn')}
@@ -183,6 +210,29 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
             })
           )}
         </div>
+
+        {/* Пагинация */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-3 mt-2 border-t border-neutral-800 text-xs">
+            <button
+              disabled={currentPage <= 1}
+              onClick={() => onPageChange(currentPage - 1)}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:hover:bg-neutral-800 text-neutral-300 font-semibold rounded-lg border border-neutral-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              ◀
+            </button>
+            <span className="text-neutral-400 font-medium">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              disabled={currentPage >= totalPages}
+              onClick={() => onPageChange(currentPage + 1)}
+              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 disabled:hover:bg-neutral-800 text-neutral-300 font-semibold rounded-lg border border-neutral-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+            >
+              ▶
+            </button>
+          </div>
+        )}
 
         {/* Футер */}
         <div className="mt-4 pt-3 border-t border-neutral-800 flex justify-end">

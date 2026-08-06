@@ -3,12 +3,6 @@ import type { AutoTileVariant, MapData } from './initial-data'
 export type Tool = 'floor' | 'wall' | 'object' | 'nobuild' | 'eraser' | 'hand';
 export type ViewMode = 'isometric' | 'topDown' | 'topDown45';
 
-export interface InitialMapEntry {
-  id: string;
-  name: string;
-  file: string;
-}
-
 export const ALL_ROTATIONS = [0, 90, 180, 270];
 
 export const EMPTY_AUTO_TILE_IMAGES: Record<AutoTileVariant, string> = {

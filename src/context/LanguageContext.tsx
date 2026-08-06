@@ -139,6 +139,8 @@ export const translations = {
     closeBtn: 'Закрыть',
     openSharedBasesBtn: 'Общедоступные базы',
     myBases: 'Мои базы',
+    createdLabel: 'Создано',
+    updatedLabel: 'Изменено',
 
     cookieSettings: 'Настройки cookies',
     cookieBannerTitle: 'Уведомление о cookies',
@@ -482,6 +484,8 @@ export const translations = {
     closeBtn: 'Close',
     openSharedBasesBtn: 'Public Bases',
     myBases: 'My Bases',
+    createdLabel: 'Created',
+    updatedLabel: 'Updated',
 
     cookieSettings: 'Cookie settings',
     cookieBannerTitle: 'Cookie Notice',

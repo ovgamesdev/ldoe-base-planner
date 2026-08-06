@@ -2,11 +2,11 @@
 'use client';
 
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, goOffline, goOnline, ref, remove, set } from 'firebase/database'
+import { child, get, goOffline, goOnline, ref, remove, serverTimestamp, set } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { translations, useLanguage } from '../context/LanguageContext'
 import { trackEvent } from '../lib/analytics'
-import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, InitialMapEntry, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
+import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
 import { auth, db } from '../lib/firebase'
 import {
   getEffectiveSize,
@@ -92,13 +92,123 @@ const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
     };
   };
 
-  return {
+  const res: MapData = {
     id: mapData?.id || generateUUID(),
-    shareId: mapData?.shareId,
-    ownerId: mapData?.ownerId,
     name: mapData?.name || defaultName,
     mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase),
     settlementBase: sanitizeBase(mapData?.settlementBase, DEFAULT_MAP.settlementBase)
+  };
+
+  if (mapData?.shareId) res.shareId = mapData.shareId;
+  if (mapData?.ownerId) res.ownerId = mapData.ownerId;
+  if (typeof mapData?.createdAt === 'number') res.createdAt = mapData.createdAt;
+  if (typeof mapData?.updatedAt === 'number') res.updatedAt = mapData.updatedAt;
+
+  return res;
+};
+
+const buildBlankMap = (name: string): MapData => {
+  const id = generateUUID();
+  return {
+    id,
+    shareId: id,
+    name,
+    mainBase: {
+      ...DEFAULT_MAP.mainBase,
+      layers: {
+        ...DEFAULT_MAP.mainBase.layers,
+        floors: [...DEFAULT_MAP.mainBase.layers.floors],
+        walls: [...DEFAULT_MAP.mainBase.layers.walls],
+        objects: DEFAULT_MAP.mainBase.layers.objects.map((obj) => ({
+          ...obj,
+          instanceId: generateUUID(),
+        })),
+      },
+    },
+    settlementBase: {
+      ...DEFAULT_MAP.settlementBase,
+      layers: {
+        ...DEFAULT_MAP.settlementBase.layers,
+        floors: [...DEFAULT_MAP.settlementBase.layers.floors],
+        walls: [...DEFAULT_MAP.settlementBase.layers.walls],
+        objects: DEFAULT_MAP.settlementBase.layers.objects.map((obj) => ({
+          ...obj,
+          instanceId: generateUUID(),
+        })),
+      },
+    },
+  };
+};
+
+/**
+ * Resolves the createdAt value for a shares/{shareId} write.
+ *
+ * createdAt must be set exactly once, at creation, and never change again — the
+ * database rules enforce this server-side. So:
+ * - a brand-new share gets a fresh server timestamp (timezone-agnostic UTC ms;
+ *   each viewer's UI formats it in their own local timezone).
+ * - an edit of a base we already know the createdAt for (kept in local state)
+ *   simply reuses that exact value.
+ * - an edit of an older local map that predates this field (so we don't know its
+ *   createdAt) looks it up on the server, so re-saving/re-sharing it doesn't reset
+ *   its history. If the server doesn't have one either, it's treated as new.
+ */
+const resolveShareCreatedAt = async (
+  shareId: string,
+  isNewShare: boolean,
+  knownCreatedAt?: number
+): Promise<number | object> => {
+  if (isNewShare) return serverTimestamp();
+  if (typeof knownCreatedAt === 'number') return knownCreatedAt;
+
+  try {
+    const snap = await get(child(ref(db), `shares/${shareId}/createdAt`));
+    if (snap.exists() && typeof snap.val() === 'number') return snap.val();
+  } catch {
+    // Fall through — treat it as a new creation if the lookup fails.
+  }
+  return serverTimestamp();
+};
+
+/**
+ * Decides the id/shareId/ownerId a map should get whenever it's loaded from an
+ * outside source (a "?share=" link, the community gallery, or an imported .json file).
+ *
+ * - If the current user is the owner (ownerId matches), the original id/shareId are
+ *   kept, so a later export overwrites the very same cloud record instead of creating
+ *   a duplicate.
+ * - Otherwise the map is treated as "not mine": its local `id` becomes the shareId it
+ *   was loaded from (so it's always obvious where the copy came from), and it gets a
+ *   brand-new `shareId` (and ownerId is cleared) so exporting/sharing this local copy
+ *   can never overwrite the original owner's base in the database.
+ */
+const resolveImportedMapOwnership = (
+  sanitized: MapData,
+  currentUserId: string | undefined,
+  fallbackSourceShareId?: string
+): MapData => {
+  const sourceShareId = sanitized.shareId || fallbackSourceShareId;
+  const isOwner = Boolean(sanitized.ownerId) && sanitized.ownerId === currentUserId;
+
+  if (isOwner) {
+    return { ...sanitized, shareId: sourceShareId };
+  }
+
+  if (!sourceShareId) {
+    // Never exported/shared before — nothing to reassign, just make sure it doesn't
+    // carry someone else's ownerId.
+    return { ...sanitized, shareId: undefined, ownerId: undefined, createdAt: undefined, updatedAt: undefined };
+  }
+
+  return {
+    ...sanitized,
+    id: sourceShareId,
+    shareId: generateUUID(),
+    ownerId: undefined,
+    // This local copy hasn't been shared under the current user's ownership yet,
+    // so it gets its own creation/edit history starting from the next save.
+    createdAt: undefined,
+    updatedAt: undefined
   };
 };
 
@@ -199,7 +309,6 @@ export default function MainPlannerClient() {
   }, [t]);
 
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-  const [initialMaps, setInitialMaps] = useState<InitialMapEntry[]>([]);
 
   const [isMobileLeftOpen, setIsMobileLeftOpen] = useState(false);
   const [isMobileRightOpen, setIsMobileRightOpen] = useState(false);
@@ -207,8 +316,12 @@ export default function MainPlannerClient() {
   const [modalInfo, setModalInfo] = useState<ModalInfoState | null>(null);
 
   const [isSharedBasesModalOpen, setIsSharedBasesModalOpen] = useState(false);
-  const [sharedBasesList, setSharedBasesList] = useState<MapData[]>([]);
+  const [sharedBasesList, setSharedBasesList] = useState<Partial<MapData>[]>([]);
   const [isLoadingSharedBases, setIsLoadingSharedBases] = useState(false);
+  const [sharedBasesPage, setSharedBasesPage] = useState<number>(1);
+  const [sharedBasesSearchQuery, setSharedBasesSearchQuery] = useState('');
+  const [sharedBasesFilterMode, setSharedBasesFilterMode] = useState<'all' | 'my'>('all');
+  const SHARED_BASES_PER_PAGE = 50;
 
   const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info') => {
     setModalInfo({ message, title, type });
@@ -490,6 +603,7 @@ export default function MainPlannerClient() {
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoadingShareParam, setIsLoadingShareParam] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{x: number, y: number} | null>(null);
 
   const [activeTool, setActiveTool] = useState<Tool>('hand');
@@ -586,12 +700,8 @@ export default function MainPlannerClient() {
   }, [isLoaded, currentLayerKey, filteredCatalogForCurrentLayer, layerSelections, catalogMap, selectedTypeId]);
 
   const availableMaps = useMemo(() => {
-    const loadedMaps = maps.map(map => ({ id: map.id, name: map.name }));
-    const unloadedInitialMaps = initialMaps
-      .filter(initialMap => !maps.some(map => map.id === initialMap.id))
-      .map(({ id, name }) => ({ id, name }));
-    return [...loadedMaps, ...unloadedInitialMaps];
-  }, [initialMaps, maps]);
+    return maps.map(map => ({ id: map.id, name: map.name }));
+  }, [maps]);
 
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const lastPointerRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -624,21 +734,12 @@ export default function MainPlannerClient() {
   useEffect(() => {
     void (async () => {
       try {
-        const [catalogResponse, mapsResponse] = await Promise.all([
-          fetch(`${getBasePath()}/data/catalog.json`),
-          fetch(`${getBasePath()}/data/maps.json`)
-        ]);
-        if (!catalogResponse.ok || !mapsResponse.ok) throw new Error('Initial data request failed');
+        const catalogResponse = await fetch(`${getBasePath()}/data/catalog.json`);
+        if (!catalogResponse.ok) throw new Error('Initial data request failed');
         const defaults = await catalogResponse.json() as CatalogItem[];
-        const mapIndex = await mapsResponse.json() as InitialMapEntry[];
-        if (!Array.isArray(defaults) || !Array.isArray(mapIndex)) {
+        if (!Array.isArray(defaults)) {
           throw new Error('Invalid initial data');
         }
-        setInitialMaps(mapIndex);
-        const mapIdFromUrl = new URLSearchParams(window.location.search).get('map');
-        const requestedInitialMapId = mapIdFromUrl && mapIndex.some(map => map.id === mapIdFromUrl)
-          ? mapIdFromUrl
-          : null;
 
         const savedCatalog = localStorage.getItem('ldoe_catalog');
         const savedMaps = localStorage.getItem('ldoe_maps');
@@ -662,57 +763,17 @@ export default function MainPlannerClient() {
           if (Array.isArray(parsedMaps) && parsedMaps.length > 0) {
             const sanitizedMaps = parsedMaps.map(m => sanitizeMapData(m, tRef.current('mapPrefix')));
             setMaps(sanitizedMaps);
-            setActiveMapId(requestedInitialMapId ?? (savedActiveMapId && sanitizedMaps.some(map => map.id === savedActiveMapId)
+            setActiveMapId(savedActiveMapId && sanitizedMaps.some(map => map.id === savedActiveMapId)
               ? savedActiveMapId
-              : sanitizedMaps[0].id));
+              : sanitizedMaps[0].id);
             restoredMap = true;
           }
         }
 
         if (!restoredMap) {
-          setActiveMapId(requestedInitialMapId ?? mapIndex[0]?.id ?? '');
-        }
-
-        const shareParam = new URLSearchParams(window.location.search).get('share');
-        if (shareParam) {
-          try {
-            let sharedMap: Partial<MapData> | null = null;
-            await goOnline(db);
-            const snapshot = await get(child(ref(db), `shares/${shareParam}`));
-            if (snapshot.exists()) {
-              sharedMap = snapshot.val() as Partial<MapData>;
-            } else {
-              sharedMap = await decompressMapFromUrl(shareParam, tRef.current('loadedMap'));
-            }
-            await goOffline(db);
-
-            if (sharedMap && validateMapData(sharedMap)) {
-              const sanitized = sanitizeMapData(sharedMap, tRef.current('mapPrefix'));
-              const sharedId = `shared_${cyrb53(shareParam)}`;
-              const mapObj: MapData = {
-                ...sanitized,
-                id: sharedId,
-                shareId: sanitized.shareId || shareParam,
-                name: sanitized.name || tRef.current('sharedMap')
-              };
-              setMaps(prev => {
-                const filtered = prev.filter(m => m.id !== mapObj.id);
-                return [...filtered, mapObj];
-              });
-              setActiveMapId(mapObj.id);
-
-              const url = new URL(window.location.href);
-              url.searchParams.delete('share');
-              window.history.replaceState(null, '', url);
-              trackEvent('map_open_via_share', { share_id: shareParam });
-            } else {
-              showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
-            }
-          } catch (err) {
-            await goOffline(db);
-            console.error('Ошибка загрузки карты из ссылки:', err);
-            showAlert(tRef.current('failedLoadShared'), tRef.current('importError'), 'error');
-          }
+          const blankMap = buildBlankMap(tRef.current('mapPrefix'));
+          setMaps([blankMap]);
+          setActiveMapId(blankMap.id);
         }
 
         if (savedViewMode) setViewMode(savedViewMode as ViewMode);
@@ -765,45 +826,64 @@ export default function MainPlannerClient() {
     })();
   }, [showAlert]);
 
+  const shareParamHandledRef = useRef(false);
   useEffect(() => {
-    if (!isLoaded || !activeMapId || initialMaps.length === 0) return;
-
-    const url = new URL(window.location.href);
-    const isInitialMap = activeMapId === initialMaps[0].id;
-    const isPublicMap = initialMaps.some(map => map.id === activeMapId);
-
-    if (isPublicMap && !isInitialMap) {
-      url.searchParams.set('map', activeMapId);
-    } else {
-      url.searchParams.delete('map');
+    if (!isLoaded || !currentUser || shareParamHandledRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const paramName = params.has('share') ? 'share' : (params.has('map') ? 'map' : null);
+    const shareParam = paramName ? params.get(paramName) : null;
+    if (!shareParam) {
+      shareParamHandledRef.current = true;
+      return;
     }
-    url.searchParams.delete('share');
-    window.history.replaceState(null, '', url);
-  }, [activeMapId, initialMaps, isLoaded]);
+    shareParamHandledRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoadingShareParam(true);
 
-  useEffect(() => {
-    if (!activeMapId || maps.some(map => map.id === activeMapId)) return;
-    const entry = initialMaps.find(map => map.id === activeMapId);
-    if (!entry) return;
-
-    let isCancelled = false;
     void (async () => {
       try {
-        const response = await fetch(`${getBasePath()}/${entry.file}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const parsed = await response.json() as MapData;
-        const map = sanitizeMapData(parsed, tRef.current('mapPrefix'));
-        if (!validateMapData(map)) throw new Error('Invalid map data');
-        if (!isCancelled) {
-          skipNextPersistenceRef.current = true;
-          setMaps(prev => [...prev.filter(item => item.id !== map.id), map]);
+        let sharedMap: Partial<MapData> | null = null;
+        await goOnline(db);
+        const snapshot = await get(child(ref(db), `shares/${shareParam}`));
+        if (snapshot.exists()) {
+          sharedMap = snapshot.val() as Partial<MapData>;
+        } else {
+          sharedMap = await decompressMapFromUrl(shareParam, tRef.current('loadedMap'));
         }
-      } catch (error) {
-        console.error('Не удалось загрузить карту:', error);
+        await goOffline(db);
+
+        if (sharedMap && validateMapData(sharedMap)) {
+          const sanitized = sanitizeMapData(sharedMap, tRef.current('mapPrefix'));
+          const owned = resolveImportedMapOwnership(sanitized, currentUser.uid, shareParam);
+          const isOwner = Boolean(sanitized.ownerId) && sanitized.ownerId === currentUser.uid;
+          const mapObj: MapData = {
+            ...owned,
+            id: owned.id || `shared_${cyrb53(shareParam)}`,
+            name: owned.name || tRef.current('sharedMap')
+          };
+          setMaps(prev => {
+            const filtered = prev.filter(m => m.id !== mapObj.id);
+            return [...filtered, mapObj];
+          });
+          setActiveMapId(mapObj.id);
+
+          const url = new URL(window.location.href);
+          url.searchParams.delete('share');
+          url.searchParams.delete('map');
+          window.history.replaceState(null, '', url);
+          trackEvent('map_open_via_share', { share_id: shareParam, is_owner: isOwner, source: paramName || 'share' });
+        } else {
+          showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
+        }
+      } catch (err) {
+        await goOffline(db);
+        console.error('Ошибка загрузки карты из ссылки:', err);
+        showAlert(tRef.current('failedLoadShared'), tRef.current('importError'), 'error');
+      } finally {
+        setIsLoadingShareParam(false);
       }
     })();
-    return () => { isCancelled = true; };
-  }, [activeMapId, initialMaps, maps]);
+  }, [isLoaded, currentUser, showAlert]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -959,34 +1039,7 @@ export default function MainPlannerClient() {
   }, []);
 
   const handleCreateMap = useCallback(() => {
-    const newMap: MapData = {
-      id: generateUUID(),
-      name: `${t('mapPrefix')} ${maps.length + 1}`,
-      mainBase: {
-        ...DEFAULT_MAP.mainBase,
-        layers: {
-          ...DEFAULT_MAP.mainBase.layers,
-          floors: [...DEFAULT_MAP.mainBase.layers.floors],
-          walls: [...DEFAULT_MAP.mainBase.layers.walls],
-          objects: DEFAULT_MAP.mainBase.layers.objects.map((obj) => ({
-            ...obj,
-            instanceId: generateUUID(),
-          })),
-        },
-      },
-      settlementBase: {
-        ...DEFAULT_MAP.settlementBase,
-        layers: {
-          ...DEFAULT_MAP.settlementBase.layers,
-          floors: [...DEFAULT_MAP.settlementBase.layers.floors],
-          walls: [...DEFAULT_MAP.settlementBase.layers.walls],
-          objects: DEFAULT_MAP.settlementBase.layers.objects.map((obj) => ({
-            ...obj,
-            instanceId: generateUUID(),
-          })),
-        },
-      },
-    };
+    const newMap = buildBlankMap(`${t('mapPrefix')} ${maps.length + 1}`);
     setMaps(prev => [...prev, newMap]);
     setActiveMapId(newMap.id);
     trackEvent('map_create', { map_id: newMap.id });
@@ -1014,6 +1067,7 @@ export default function MainPlannerClient() {
       try {
         await goOnline(db);
         await remove(ref(db, `shares/${targetMap.shareId}`));
+        await remove(ref(db, `shares_summary/${targetMap.shareId}`));
         await goOffline(db);
       } catch (e) {
         await goOffline(db);
@@ -1789,12 +1843,36 @@ export default function MainPlannerClient() {
         showAlert(t('exportError'), t('importError'), 'error');
         return;
       }
-      const shareId = fullMapState.shareId || generateUUID();
-      const ownerId = fullMapState.ownerId || currentUser?.uid;
-      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix'));
+      // Only reuse the existing shareId/ownerId if this map is actually ours — a map
+      // whose ownerId belongs to someone else must always get a fresh shareId, so we
+      // never overwrite that other person's cloud copy.
+      const isOwner = !fullMapState.ownerId || fullMapState.ownerId === currentUser?.uid;
+      const shareId = isOwner ? (fullMapState.shareId || generateUUID()) : generateUUID();
+      const ownerId = isOwner ? (fullMapState.ownerId || currentUser?.uid) : currentUser?.uid;
+      const isNewShare = !isOwner || !fullMapState.shareId;
 
       await goOnline(db);
+      const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
+      const updatedAt = serverTimestamp();
+      // Attached after sanitizeMapData, since createdAt/updatedAt here may be a
+      // serverTimestamp() placeholder object rather than a plain number.
+      const mapToSave: MapData = {
+        ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
+        createdAt: createdAt as unknown as number,
+        updatedAt: updatedAt as unknown as number
+      };
+
+      const summaryData = {
+        id: mapToSave.id,
+        name: mapToSave.name,
+        ownerId: mapToSave.ownerId,
+        shareId: mapToSave.shareId,
+        createdAt: mapToSave.createdAt,
+        updatedAt: mapToSave.updatedAt
+      };
+
       await set(ref(db, `shares/${shareId}`), mapToSave);
+      await set(ref(db, `shares_summary/${shareId}`), summaryData);
       await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
@@ -1837,12 +1915,37 @@ export default function MainPlannerClient() {
         return;
       }
 
-      const shareId = fullMapState.shareId || generateUUID();
-      const ownerId = fullMapState.ownerId || currentUser?.uid;
-      const mapToSave: MapData = sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix'));
+      const uid = currentUser?.uid || auth.currentUser?.uid;
+      if (!uid) {
+        showAlert(t('authError'), t('error'), 'error');
+        return;
+      }
+
+      const isOwner = !fullMapState.ownerId || fullMapState.ownerId === currentUser?.uid;
+      const shareId = isOwner ? (fullMapState.shareId || generateUUID()) : generateUUID();
+      const ownerId = isOwner ? (fullMapState.ownerId || currentUser?.uid) : currentUser?.uid;
+      const isNewShare = !isOwner || !fullMapState.shareId;
 
       await goOnline(db);
+      const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
+      const updatedAt = serverTimestamp();
+      const mapToSave: MapData = {
+        ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
+        createdAt: createdAt as unknown as number,
+        updatedAt: updatedAt as unknown as number
+      };
+
+      const summaryData = {
+        id: mapToSave.id,
+        name: mapToSave.name,
+        ownerId: mapToSave.ownerId || null,
+        shareId: mapToSave.shareId,
+        createdAt: mapToSave.createdAt,
+        updatedAt: mapToSave.updatedAt
+      };
+
       await set(ref(db, `shares/${shareId}`), mapToSave);
+      await set(ref(db, `shares_summary/${shareId}`), summaryData);
       await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
@@ -1869,6 +1972,7 @@ export default function MainPlannerClient() {
     try {
       await goOnline(db);
       await remove(ref(db, `shares/${shareId}`));
+      await remove(ref(db, `shares_summary/${shareId}`));
       await goOffline(db);
 
       setSharedBasesList(prev => prev.filter(m => m.shareId !== shareId));
@@ -1881,64 +1985,120 @@ export default function MainPlannerClient() {
     }
   }, [showAlert, t]);
 
-  const handleOpenSharedBasesPanel = useCallback(async () => {
-    setIsSharedBasesModalOpen(true);
+  const loadSharedBases = useCallback(async () => {
     setIsLoadingSharedBases(true);
-    trackEvent('open_shared_bases_panel');
     try {
       await goOnline(db);
-      const snapshot = await get(ref(db, 'shares'));
+
+      const summarySnapshot = await get(ref(db, 'shares_summary'));
+      let list: Partial<MapData>[] = [];
+
+      if (summarySnapshot.exists()) {
+        const val = summarySnapshot.val();
+        list = Object.entries(val).map(([key, data]: [string, any]) => ({
+          id: data.id || `shared_${key}`,
+          name: data.name || `${tRef.current('mapPrefix')} ${key}`,
+          ownerId: data.ownerId,
+          shareId: data.shareId || key,
+          createdAt: typeof data.createdAt === 'number' ? data.createdAt : undefined,
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : undefined
+        }));
+      }
       await goOffline(db);
 
-      if (snapshot.exists()) {
-        const val = snapshot.val();
-        const list: MapData[] = Object.entries(val)
-          .map(([key, data]: [string, any]) => {
-            const sanitized = sanitizeMapData(data, t('mapPrefix'));
-            return {
-              ...sanitized,
-              id: `shared_${key}`,
-              shareId: sanitized.shareId || key,
-              name: sanitized.name || `${t('mapPrefix')} ${key}`
-            };
-          })
-          .filter(map => validateMapData(map));
-        setSharedBasesList(list);
-      } else {
-        setSharedBasesList([]);
-      }
+      list.reverse();
+      setSharedBasesList(list);
     } catch (err) {
       await goOffline(db);
       console.error('Ошибка загрузки общедоступных баз:', err);
-      showAlert(t('sharedBasesFetchError'), t('importError'), 'error');
+      showAlert(tRef.current('sharedBasesFetchError'), tRef.current('importError'), 'error');
     } finally {
       setIsLoadingSharedBases(false);
     }
-  }, [showAlert, t]);
+  }, [showAlert]);
 
-  const handleSelectSharedMap = useCallback((mapData: MapData) => {
-    if (!validateMapData(mapData)) {
-      showAlert(t('jsonStructureError'), t('importError'), 'error');
-      return;
+  const handleOpenSharedBasesPanel = useCallback(async () => {
+    setIsSharedBasesModalOpen(true);
+    setSharedBasesPage(1);
+    setSharedBasesSearchQuery('');
+    setSharedBasesFilterMode('all');
+    trackEvent('open_shared_bases_panel');
+    await loadSharedBases();
+  }, [loadSharedBases]);
+
+  const handleSharedBasesPageChange = useCallback((newPage: number) => {
+    setSharedBasesPage(newPage);
+  }, []);
+
+  const handleSharedBasesSearchChange = useCallback((newQuery: string) => {
+    setSharedBasesSearchQuery(newQuery);
+    setSharedBasesPage(1);
+  }, []);
+
+  const handleSharedBasesFilterModeChange = useCallback((newMode: 'all' | 'my') => {
+    setSharedBasesFilterMode(newMode);
+    setSharedBasesPage(1);
+  }, []);
+
+  const handleSelectSharedMap = useCallback(async (mapSummary: Partial<MapData>) => {
+    setIsLoadingSharedBases(true);
+    try {
+      let fullData: Partial<MapData> | null = mapSummary;
+      if ((!mapSummary.mainBase || !mapSummary.settlementBase) && mapSummary.shareId) {
+        await goOnline(db);
+        const snapshot = await get(ref(db, `shares/${mapSummary.shareId}`));
+        await goOffline(db);
+        if (snapshot.exists()) {
+          fullData = snapshot.val() as Partial<MapData>;
+        }
+      }
+
+      if (!fullData || !validateMapData(fullData)) {
+        showAlert(t('jsonStructureError'), t('importError'), 'error');
+        return;
+      }
+
+      const sanitized = sanitizeMapData(fullData, t('mapPrefix'));
+      const mapToLoad = resolveImportedMapOwnership(sanitized, currentUser?.uid, mapSummary.shareId);
+
+      setMaps(prev => {
+        const filtered = prev.filter(m => m.id !== mapToLoad.id);
+        return [...filtered, mapToLoad];
+      });
+      setActiveMapId(mapToLoad.id);
+      setIsSharedBasesModalOpen(false);
+      showAlert(t('mapLoadedSuccess', { name: mapToLoad.name }), t('success'), 'success');
+      trackEvent('map_load_shared', { share_id: mapToLoad.shareId });
+    } catch (err) {
+      await goOffline(db);
+      console.error('Ошибка загрузки базы:', err);
+      showAlert(t('failedLoadShared'), t('importError'), 'error');
+    } finally {
+      setIsLoadingSharedBases(false);
     }
-    const sanitized = sanitizeMapData(mapData, t('mapPrefix'));
-    const assignedShareId = generateUUID();
-
-    const mapWithShareId: MapData = {
-      ...sanitized,
-      shareId: assignedShareId,
-      ownerId: currentUser?.uid
-    };
-
-    setMaps(prev => {
-      const filtered = prev.filter(m => m.id !== mapWithShareId.id);
-      return [...filtered, mapWithShareId];
-    });
-    setActiveMapId(mapWithShareId.id);
-    setIsSharedBasesModalOpen(false);
-    showAlert(t('mapLoadedSuccess', { name: mapWithShareId.name }), t('success'), 'success');
-    trackEvent('map_load_shared', { share_id: mapData.shareId });
   }, [showAlert, t, currentUser]);
+
+  const filteredSharedBases = useMemo(() => {
+    const q = sharedBasesSearchQuery.trim().toLowerCase();
+    return sharedBasesList.filter((base) => {
+      const matchesSearch = !q || (base.name || '').toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      if (sharedBasesFilterMode === 'my') {
+        return Boolean(currentUser?.uid && base.ownerId === currentUser.uid);
+      }
+      return true;
+    });
+  }, [sharedBasesList, sharedBasesSearchQuery, sharedBasesFilterMode, currentUser]);
+
+  const totalSharedBasesPages = useMemo(() => {
+    return Math.max(1, Math.ceil(filteredSharedBases.length / SHARED_BASES_PER_PAGE));
+  }, [filteredSharedBases.length]);
+
+  const paginatedSharedBases = useMemo(() => {
+    const safePage = Math.min(sharedBasesPage, totalSharedBasesPages);
+    const startIndex = (safePage - 1) * SHARED_BASES_PER_PAGE;
+    return filteredSharedBases.slice(startIndex, startIndex + SHARED_BASES_PER_PAGE);
+  }, [filteredSharedBases, sharedBasesPage, totalSharedBasesPages]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -1947,13 +2107,12 @@ export default function MainPlannerClient() {
       try {
         const parsed = JSON.parse(evt.target?.result as string);
         if (parsed && validateMapData(parsed)) {
-          const importedMap: MapData = sanitizeMapData({
-            ...parsed,
-            id: parsed.id || generateUUID(),
-            shareId: generateUUID(),
-            ownerId: currentUser?.uid,
+          const sanitized = sanitizeMapData(parsed, t('mapPrefix'));
+          const owned = resolveImportedMapOwnership(sanitized, currentUser?.uid);
+          const importedMap: MapData = {
+            ...owned,
             name: parsed.name || file.name.replace(/\.json$/i, '') || t('importedMap')
-          }, t('mapPrefix'));
+          };
 
           setMaps(prev => {
             const existingIndex = prev.findIndex(m => m.id === importedMap.id);
@@ -2224,7 +2383,7 @@ export default function MainPlannerClient() {
     }));
   }, [mapState.layers.objects, setMapState, showAlert, t]);
 
-  if (!isLoaded) {
+  if (!isLoaded || isLoadingShareParam) {
     return (
       <div className="w-screen h-screen bg-neutral-950 text-amber-500 flex items-center justify-center text-lg font-bold">
         {t('loadingPlanner')}
@@ -2417,11 +2576,18 @@ export default function MainPlannerClient() {
       <SharedBasesModal
         isOpen={isSharedBasesModalOpen}
         isLoading={isLoadingSharedBases}
-        currentUser={currentUser}
-        sharedBasesList={sharedBasesList}
+        currentUserId={currentUser?.uid}
+        currentPage={sharedBasesPage}
+        totalPages={totalSharedBasesPages}
+        onPageChange={handleSharedBasesPageChange}
+        bases={paginatedSharedBases as MapData[]}
+        searchQuery={sharedBasesSearchQuery}
+        onSearchQueryChange={handleSharedBasesSearchChange}
+        filterMode={sharedBasesFilterMode}
+        onFilterModeChange={handleSharedBasesFilterModeChange}
         onClose={() => setIsSharedBasesModalOpen(false)}
-        onSelectMap={handleSelectSharedMap}
-        onDeleteCloudMap={handleDeleteCloudMap}
+        onSelectBase={handleSelectSharedMap}
+        onDeleteBase={handleDeleteCloudMap}
       />
 
       <ModalInfo

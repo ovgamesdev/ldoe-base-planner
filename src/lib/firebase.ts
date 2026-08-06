@@ -33,7 +33,7 @@ if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY)
   try {
     initializeAppCheck(firebaseApp, {
       provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
-      isTokenAutoRefreshEnabled: true
+      isTokenAutoRefreshEnabled: false
     });
   } catch (e) {
     console.error('App Check initialization failed:', e);
