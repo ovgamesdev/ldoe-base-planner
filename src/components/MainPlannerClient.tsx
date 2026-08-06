@@ -65,7 +65,11 @@ const validateMapData = (mapData: any): mapData is MapData => {
   const validateBase = (base: any) => {
     if (!base || typeof base !== 'object') return false;
     if (!base.layers || typeof base.layers !== 'object') return false;
-    if (!Array.isArray(base.layers.floors) || !Array.isArray(base.layers.walls) || !Array.isArray(base.layers.objects)) {
+    if (
+      (base.layers.floors !== undefined && !Array.isArray(base.layers.floors)) ||
+      (base.layers.walls !== undefined && !Array.isArray(base.layers.walls)) ||
+      (base.layers.objects !== undefined && !Array.isArray(base.layers.objects))
+    ){
       return false;
     }
     if (!base.mapConfig || typeof base.mapConfig !== 'object') return false;
