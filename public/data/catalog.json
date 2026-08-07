@@ -5116,6 +5116,39 @@
     }
   },
   {
+    "typeId": "robodog_docking_station",
+    "category": "special_unique",
+    "name": {
+      "ru": "Док-станция Робособаки (TODO)",
+      "en": "Robodog Docking Station (TODO)"
+    },
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/robodog_docking_station.webp",
+    "tooltipImage": "/assets/robodog_docking_station.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1,
+      "baseType": "main",
+      "settlementLayer": "objects",
+      "isDesk": "storehouse"
+    }
+  },
+  {
     "typeId": "chopper",
     "category": "special_transport",
     "name": {
@@ -5231,6 +5264,38 @@
       "maxPerBase": 1,
       "baseType": "main",
       "settlementLayer": "objects"
+    }
+  },
+  {
+    "typeId": "atv_garage",
+    "category": "special_transport",
+    "name": {
+      "ru": "Гараж для Вездехода (TODO)",
+      "en": "ATV Garage (TODO)"
+    },
+    "size": {
+      "w": 4,
+      "h": 5
+    },
+    "image": "/assets/atv_garage.webp",
+    "tooltipImage": "/assets/atv_garage.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": false,
+      "maxPerBase": 1,
+      "baseType": "main",
+      "settlementLayer": "objects",
+      "isDesk": "storehouse"
     }
   },
   {
