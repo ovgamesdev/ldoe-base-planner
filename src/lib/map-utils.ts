@@ -187,62 +187,61 @@ export const resolveImportedMapOwnership = (
     updatedAt: undefined
   };
 };
+// export const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: string): Promise<Partial<MapData>> => {
+//   let jsonStr = '';
+//   try {
+//     let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
+//     while (base64.length % 4) base64 += '=';
+//     const binary = atob(base64);
+//     const bytes = new Uint8Array(binary.length);
+//     for (let i = 0; i < binary.length; i++) {
+//       bytes[i] = binary.charCodeAt(i);
+//     }
+//     const ds = new DecompressionStream('deflate-raw');
+//     const blob = new Blob([bytes]);
+//     const decompressedStream = blob.stream().pipeThrough(ds);
+//     const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
+//     jsonStr = new TextDecoder().decode(decompressedBuffer);
+//   } catch {
+//     try {
+//       jsonStr = decodeURIComponent(atob(base64urlStr));
+//     } catch {
+//       jsonStr = base64urlStr;
+//     }
+//   }
 
-export const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: string): Promise<Partial<MapData>> => {
-  let jsonStr = '';
-  try {
-    let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const ds = new DecompressionStream('deflate-raw');
-    const blob = new Blob([bytes]);
-    const decompressedStream = blob.stream().pipeThrough(ds);
-    const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
-    jsonStr = new TextDecoder().decode(decompressedBuffer);
-  } catch {
-    try {
-      jsonStr = decodeURIComponent(atob(base64urlStr));
-    } catch {
-      jsonStr = base64urlStr;
-    }
-  }
+//   const m = JSON.parse(jsonStr);
 
-  const m = JSON.parse(jsonStr);
+//   if (m.mainBase) {
+//     return m;
+//   }
 
-  if (m.mainBase) {
-    return m;
-  }
-
-  return {
-    id: generateUUID(),
-    name: m.n || defaultLoadedName,
-    mainBase: {
-      mapConfig: {
-        width: DEFAULT_MAP.mainBase.mapConfig.width,
-        height: DEFAULT_MAP.mainBase.mapConfig.height,
-        noBuildZones: (m.mb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1] }))
-      },
-      layers: {
-        floors: (m.mb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
-        walls: (m.mb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
-        objects: (m.mb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], paintColor: o[4] || undefined }))
-      }
-    },
-    settlementBase: {
-      mapConfig: {
-        width: DEFAULT_MAP.settlementBase.mapConfig.width,
-        height: DEFAULT_MAP.settlementBase.mapConfig.height,
-        noBuildZones: (m.sb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1], layer: nb[2] || 'objects' }))
-      },
-      layers: {
-        floors: (m.sb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
-        walls: (m.sb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
-        objects: (m.sb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], layer: o[4] || 'objects', paintColor: o[5] || undefined }))
-      }
-    }
-  };
-};
+//   return {
+//     id: generateUUID(),
+//     name: m.n || defaultLoadedName,
+//     mainBase: {
+//       mapConfig: {
+//         width: DEFAULT_MAP.mainBase.mapConfig.width,
+//         height: DEFAULT_MAP.mainBase.mapConfig.height,
+//         noBuildZones: (m.mb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1] }))
+//       },
+//       layers: {
+//         floors: (m.mb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
+//         walls: (m.mb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
+//         objects: (m.mb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], paintColor: o[4] || undefined }))
+//       }
+//     },
+//     settlementBase: {
+//       mapConfig: {
+//         width: DEFAULT_MAP.settlementBase.mapConfig.width,
+//         height: DEFAULT_MAP.settlementBase.mapConfig.height,
+//         noBuildZones: (m.sb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1], layer: nb[2] || 'objects' }))
+//       },
+//       layers: {
+//         floors: (m.sb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
+//         walls: (m.sb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
+//         objects: (m.sb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], layer: o[4] || 'objects', paintColor: o[5] || undefined }))
+//       }
+//     }
+//   };
+// };

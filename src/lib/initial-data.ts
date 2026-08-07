@@ -101,10 +101,18 @@ export interface MapData {
   updatedAt?: number;
 }
 
-export interface ModalInfoState {
+export interface ModalInfoData {
   title?: string;
   message: string;
   type?: 'error' | 'info' | 'success' | 'warning';
+  // Optional confirmation-style actions. When `cancelText` is set, a second
+  // button is rendered. `onConfirm`/`onCancel` fire (in addition to the
+  // normal close) when the respective button is pressed; closing via the
+  // backdrop, the ✕ button, or Escape is treated as a cancel.
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
 /**

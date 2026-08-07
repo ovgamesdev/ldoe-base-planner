@@ -19,10 +19,9 @@ import {
   isWallCrossingObjectFootprint,
   isWallDecorValid
 } from '@/lib/grid-utils'
-import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type CatalogOverlay, type MapData, type ModalInfoState, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '@/lib/initial-data'
+import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type CatalogOverlay, type MapData, type ModalInfoData, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '@/lib/initial-data'
 import {
   buildBlankMap,
-  decompressMapFromUrl,
   resolveImportedMapOwnership,
   resolveShareCreatedAt,
   sanitizeMapData,
@@ -30,7 +29,7 @@ import {
 } from '@/lib/map-utils'
 import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, goOffline, goOnline, ref, remove, serverTimestamp, set } from 'firebase/database'
+import { child, get, goOffline, goOnline, ref, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
@@ -70,7 +69,7 @@ export default function MainPlannerClient() {
   const [isMobileLeftOpen, setIsMobileLeftOpen] = useState(false);
   const [isMobileRightOpen, setIsMobileRightOpen] = useState(false);
 
-  const [modalInfo, setModalInfo] = useState<ModalInfoState | null>(null);
+  const [modalInfo, setModalInfo] = useState<ModalInfoData | null>(null);
 
   const [isSharedBasesModalOpen, setIsSharedBasesModalOpen] = useState(false);
   const [sharedBasesList, setSharedBasesList] = useState<Partial<MapData>[]>([]);
@@ -83,6 +82,24 @@ export default function MainPlannerClient() {
   const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info') => {
     setModalInfo({ message, title, type });
   }, []);
+
+  // Warns an owner that opening their own shared/imported map will overwrite
+  // the existing local map with the same id, offering a "View" escape hatch
+  // that mints a fresh id (a new copy) instead of overwriting.
+  // Resolves `true` to overwrite (keep the same id), `false` to view as a new copy.
+  const confirmOwnerOverwrite = useCallback((mapName: string) => {
+    return new Promise<boolean>((resolve) => {
+      setModalInfo({
+        message: t('ownerOverwriteWarning', { name: mapName }),
+        title: t('attention'),
+        type: 'warning',
+        confirmText: t('overwriteBtn'),
+        cancelText: t('viewAsNewBtn'),
+        onConfirm: () => resolve(true),
+        onCancel: () => resolve(false)
+      });
+    });
+  }, [t]);
 
   const handleGoogleSignIn = useCallback(async () => {
     const provider = new GoogleAuthProvider();
@@ -132,8 +149,29 @@ export default function MainPlannerClient() {
   }, [catalog]);
 
   const [maps, setMaps] = useState<MapData[]>([]);
+  const mapsRef = useRef<MapData[]>([]);
+  useEffect(() => {
+    mapsRef.current = maps;
+  }, [maps]);
   const [activeMapId, setActiveMapId] = useState<string>('');
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
+
+  // Id of a map that was just opened via a `?share=`/`?map=` link and hasn't been
+  // "unlocked" for editing yet. While set, the map is a read-only preview: it's
+  // excluded from what gets written to localStorage, and any attempt to mutate its
+  // floors/walls/objects is blocked with a prompt to click "Edit" first. Clicking
+  // Edit clears this, which lets the persistence effect start saving it and removes
+  // the `share`/`map` param from the URL.
+  const [sharedPreviewMapId, setSharedPreviewMapId] = useState<string | null>(null);
+  // Which URL query param (and value) currently points at sharedPreviewMapId, so we
+  // can restore it verbatim when the user switches back to that tab, and know what
+  // to strip when they switch away. Cleared whenever the preview is edited, deleted,
+  // or replaced by a different shared preview.
+  const [sharedPreviewUrlParam, setSharedPreviewUrlParam] = useState<{ key: 'share' | 'map'; value: string } | null>(null);
+  const sharedPreviewMapIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    sharedPreviewMapIdRef.current = sharedPreviewMapId;
+  }, [sharedPreviewMapId]);
 
   const [activeBaseType, setActiveBaseType] = useState<BaseType>('main');
   const [activeSettlementLayer, setActiveSettlementLayer] = useState<SettlementLayerType>('objects');
@@ -339,6 +377,10 @@ export default function MainPlannerClient() {
   }, [selectedInstanceId, selectedElementData]);
 
   const setMapState = useCallback((action: BaseData | ((prev: BaseData) => BaseData)) => {
+    if (activeMapId === sharedPreviewMapId) {
+      showAlert(tRef.current('sharedPreviewEditPrompt'), tRef.current('attention'), 'info');
+      return;
+    }
     setMaps(prevMaps =>
       prevMaps.map(m => {
         if (m.id === activeMapId) {
@@ -354,7 +396,7 @@ export default function MainPlannerClient() {
         return m;
       })
     );
-  }, [activeMapId, activeBaseType]);
+  }, [activeMapId, activeBaseType, sharedPreviewMapId, showAlert]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('topDown');
   const [zoom, setZoom] = useState<number>(1);
@@ -625,8 +667,6 @@ export default function MainPlannerClient() {
         const snapshot = await get(child(ref(db), `shares/${shareParam}`));
         if (snapshot.exists()) {
           sharedMap = snapshot.val() as Partial<MapData>;
-        } else {
-          sharedMap = await decompressMapFromUrl(shareParam, tRef.current('loadedMap'));
         }
         await goOffline(db);
 
@@ -639,16 +679,47 @@ export default function MainPlannerClient() {
             id: owned.id || `shared_${cyrb53(shareParam)}`,
             name: owned.name || tRef.current('sharedMap')
           };
-          setMaps(prev => {
-            const filtered = prev.filter(m => m.id !== mapObj.id);
-            return [...filtered, mapObj];
-          });
-          setActiveMapId(mapObj.id);
+          let resolvedId = mapObj.id;
 
-          const url = new URL(window.location.href);
-          url.searchParams.delete('share');
-          url.searchParams.delete('map');
-          window.history.replaceState(null, '', url);
+          // If you're the owner and this id already matches a map you have
+          // locally, opening it will replace that map once you hit "Edit" —
+          // warn and let you view it as a new copy instead.
+          if (isOwner) {
+            const currentPreviewId = sharedPreviewMapIdRef.current;
+            const hasRealConflict = mapsRef.current.some(m => m.id === resolvedId && m.id !== currentPreviewId);
+            if (hasRealConflict) {
+              // The full-screen loader below (`isLoadingShareParam`) replaces the
+              // entire tree, including <ModalInfo/>, so it must be cleared before
+              // awaiting user input here — otherwise the confirmation dialog has
+              // nowhere to render and this await never resolves.
+              setIsLoadingShareParam(false);
+              const shouldOverwrite = await confirmOwnerOverwrite(mapObj.name);
+              if (!shouldOverwrite) resolvedId = generateUUID();
+            }
+          }
+
+          setMaps(prev => {
+            const currentPreviewId = sharedPreviewMapIdRef.current;
+            // If the resolved id collides with a map that's already here for a
+            // different reason (e.g. a locally-created map's own id happens to
+            // match this share's id) and it isn't just the preview slot we're
+            // about to replace, don't clobber it — mint a fresh id for the
+            // incoming preview instead.
+            const collidesWithReal = !isOwner && prev.some(m => m.id === resolvedId && m.id !== currentPreviewId);
+            if (collidesWithReal) resolvedId = generateUUID();
+            const finalMapObj = resolvedId === mapObj.id ? mapObj : { ...mapObj, id: resolvedId };
+
+            // Drop the previous unedited shared preview (if any) so opening a new
+            // shared link doesn't pile up read-only preview tabs.
+            const filtered = prev.filter(m => m.id !== finalMapObj.id && m.id !== currentPreviewId);
+            return [...filtered, finalMapObj];
+          });
+          setActiveMapId(resolvedId);
+          // Read-only preview until the person clicks "Edit": not persisted to
+          // localStorage yet, and the `share`/`map` URL param stays put so a reload
+          // (or sharing the current tab's URL) still lands on the same preview.
+          setSharedPreviewMapId(resolvedId);
+          setSharedPreviewUrlParam(paramName ? { key: paramName as 'share' | 'map', value: shareParam } : null);
           trackEvent('map_open_via_share', { share_id: shareParam, is_owner: isOwner, source: paramName || 'share' });
         } else {
           showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
@@ -661,7 +732,7 @@ export default function MainPlannerClient() {
         setIsLoadingShareParam(false);
       }
     })();
-  }, [isLoaded, currentUser, showAlert]);
+  }, [isLoaded, currentUser, showAlert, confirmOwnerOverwrite]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -673,8 +744,13 @@ export default function MainPlannerClient() {
     const nextCatalogOverlay = buildCatalogOverlay(catalog, catalogDefaultsRef.current, catalogOverlayRef.current);
     catalogOverlayRef.current = nextCatalogOverlay;
     writeCatalogOverlay(nextCatalogOverlay);
-    localStorage.setItem('ldoe_maps', JSON.stringify(maps));
-    localStorage.setItem('ldoe_activeMapId', activeMapId);
+    // A still-unedited shared preview map is intentionally excluded here — it only
+    // gets persisted once the person clicks "Edit" (which clears sharedPreviewMapId).
+    const mapsToPersist = sharedPreviewMapId ? maps.filter(m => m.id !== sharedPreviewMapId) : maps;
+    localStorage.setItem('ldoe_maps', JSON.stringify(mapsToPersist));
+    if (activeMapId !== sharedPreviewMapId) {
+      localStorage.setItem('ldoe_activeMapId', activeMapId);
+    }
     localStorage.setItem('ldoe_viewMode', viewMode);
     localStorage.setItem('ldoe_zoom', zoom.toString());
     localStorage.setItem('ldoe_pan', JSON.stringify(pan));
@@ -691,7 +767,7 @@ export default function MainPlannerClient() {
     }));
     localStorage.setItem('ldoe_newBuilding', JSON.stringify(newBuilding));
     localStorage.setItem('ldoe_catalogBuilderVisible', String(isCatalogBuilderVisible));
-  }, [catalog, maps, activeMapId, viewMode, zoom, pan, isLoaded, activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, newBuilding, isCatalogBuilderVisible, activeBaseType, activeSettlementLayer, layerSelections]);
+  }, [catalog, maps, activeMapId, viewMode, zoom, pan, isLoaded, activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, newBuilding, isCatalogBuilderVisible, activeBaseType, activeSettlementLayer, layerSelections, sharedPreviewMapId]);
 
   const scrollListToSelected = useCallback(() => {
     if (!objectListRef.current || !selectedTypeId) return;
@@ -825,6 +901,38 @@ export default function MainPlannerClient() {
     trackEvent('map_create', { map_id: newMap.id });
   }, [maps.length, t]);
 
+  const handleEditSharedPreview = useCallback(() => {
+    if (!sharedPreviewMapId) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('share');
+    url.searchParams.delete('map');
+    window.history.replaceState(null, '', url);
+
+    setSharedPreviewMapId(null);
+    setSharedPreviewUrlParam(null);
+    showAlert(t('sharedPreviewEditStarted'), t('attention'), 'info');
+    trackEvent('map_edit_shared_preview', { map_id: sharedPreviewMapId });
+  }, [sharedPreviewMapId, showAlert, t]);
+
+  // Wraps setActiveMapId for manual tab switching (as opposed to the internal
+  // setActiveMapId calls used when creating/loading/deleting a map, which manage
+  // the URL themselves). Selecting the shared preview tab restores its `share`/
+  // `map` param; selecting anything else strips those params from the URL.
+  const handleSetActiveMapId = useCallback((mapId: string) => {
+    setActiveMapId(mapId);
+
+    const url = new URL(window.location.href);
+    if (mapId === sharedPreviewMapId && sharedPreviewUrlParam) {
+      url.searchParams.set(sharedPreviewUrlParam.key, sharedPreviewUrlParam.value);
+      url.searchParams.delete(sharedPreviewUrlParam.key === 'share' ? 'map' : 'share');
+    } else {
+      url.searchParams.delete('share');
+      url.searchParams.delete('map');
+    }
+    window.history.replaceState(null, '', url);
+  }, [sharedPreviewMapId, sharedPreviewUrlParam]);
+
   const handleRenameMap = useCallback((newName: string) => {
     setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, name: newName } : m));
     trackEvent('map_rename', { map_id: fullMapState.id, new_name: newName });
@@ -846,8 +954,10 @@ export default function MainPlannerClient() {
     if (targetMap?.shareId && targetMap?.ownerId && currentUser && targetMap.ownerId === currentUser.uid) {
       try {
         await goOnline(db);
-        await remove(ref(db, `shares/${targetMap.shareId}`));
-        await remove(ref(db, `shares_summary/${targetMap.shareId}`));
+        await update(ref(db), {
+          [`shares/${targetMap.shareId}`]: null,
+          [`shares_summary/${targetMap.shareId}`]: null
+        });
         await goOffline(db);
       } catch (e) {
         await goOffline(db);
@@ -858,8 +968,16 @@ export default function MainPlannerClient() {
     const nextMaps = maps.filter(m => m.id !== idToDelete);
     setMaps(nextMaps);
     if (activeMapId === idToDelete) setActiveMapId(nextMaps[0].id);
+    if (sharedPreviewMapId === idToDelete) {
+      setSharedPreviewMapId(null);
+      setSharedPreviewUrlParam(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('share');
+      url.searchParams.delete('map');
+      window.history.replaceState(null, '', url);
+    }
     trackEvent('map_delete', { map_id: idToDelete });
-  }, [maps, activeMapId, showAlert, t, currentUser]);
+  }, [maps, activeMapId, showAlert, t, currentUser, sharedPreviewMapId]);
 
   const validatePlacement = useCallback((typeId: string, x: number, y: number, rotation: number, ignoreInstanceId?: string): { valid: boolean; reason?: string } => {
     const template = catalogMap[typeId];
@@ -1667,8 +1785,10 @@ export default function MainPlannerClient() {
         updatedAt: mapToSave.updatedAt
       };
 
-      await set(ref(db, `shares/${shareId}`), mapToSave);
-      await set(ref(db, `shares_summary/${shareId}`), summaryData);
+      await update(ref(db), {
+        [`shares/${shareId}`]: mapToSave,
+        [`shares_summary/${shareId}`]: summaryData
+      });
       await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
@@ -1755,8 +1875,10 @@ export default function MainPlannerClient() {
         updatedAt: mapToSave.updatedAt
       };
 
-      await set(ref(db, `shares/${shareId}`), mapToSave);
-      await set(ref(db, `shares_summary/${shareId}`), summaryData);
+      await update(ref(db), {
+        [`shares/${shareId}`]: mapToSave,
+        [`shares_summary/${shareId}`]: summaryData
+      });
       await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
@@ -1782,8 +1904,10 @@ export default function MainPlannerClient() {
     if (!window.confirm(t('confirmDeleteMap'))) return;
     try {
       await goOnline(db);
-      await remove(ref(db, `shares/${shareId}`));
-      await remove(ref(db, `shares_summary/${shareId}`));
+      await update(ref(db), {
+        [`shares/${shareId}`]: null,
+        [`shares_summary/${shareId}`]: null
+      });
       await goOffline(db);
 
       setSharedBasesList(prev => prev.filter(m => m.shareId !== shareId));
@@ -1870,14 +1994,61 @@ export default function MainPlannerClient() {
       }
 
       const sanitized = sanitizeMapData(fullData, t('mapPrefix'));
+      const isOwner = Boolean(sanitized.ownerId) && sanitized.ownerId === currentUser?.uid;
       const mapToLoad = resolveImportedMapOwnership(sanitized, currentUser?.uid, mapSummary.shareId);
 
+      let resolvedId = mapToLoad.id;
+
+      // If you're the owner and this id already matches a map you have
+      // locally, loading it would overwrite that map — warn and let you view
+      // it as a new copy instead.
+      if (isOwner) {
+        const hasRealConflict = mapsRef.current.some(m => m.id === resolvedId && m.id !== sharedPreviewMapId);
+        if (hasRealConflict) {
+          const shouldOverwrite = await confirmOwnerOverwrite(mapToLoad.name);
+          if (!shouldOverwrite) resolvedId = generateUUID();
+        }
+      }
+
       setMaps(prev => {
-        const filtered = prev.filter(m => m.id !== mapToLoad.id);
-        return [...filtered, mapToLoad];
+        const currentPreviewId = sharedPreviewMapId;
+        // If the resolved id collides with a map that's already here for a
+        // different reason (e.g. a locally-created map's own id happens to match
+        // this share's id) and it isn't just the preview slot we're about to
+        // replace, don't clobber it — mint a fresh id for the incoming preview
+        // instead.
+        const collidesWithReal = !isOwner && prev.some(m => m.id === resolvedId && m.id !== currentPreviewId);
+        if (collidesWithReal) resolvedId = generateUUID();
+        const finalMap = resolvedId === mapToLoad.id ? mapToLoad : { ...mapToLoad, id: resolvedId };
+
+        // Drop the previous unedited shared preview (if any) so opening another
+        // shared base doesn't pile up read-only preview tabs.
+        const filtered = prev.filter(m => m.id !== finalMap.id && m.id !== currentPreviewId);
+        return [...filtered, finalMap];
       });
-      setActiveMapId(mapToLoad.id);
+      setActiveMapId(resolvedId);
       setIsSharedBasesModalOpen(false);
+
+      // Same read-only preview treatment as opening a `?share=` link: someone else's
+      // base isn't written to localStorage and stays out of the map list until the
+      // person explicitly clicks "Edit". The URL is kept in sync too, so reloading
+      // (or copying the tab's URL) lands back on the same preview.
+      if (isOwner) {
+        setSharedPreviewMapId(null);
+        setSharedPreviewUrlParam(null);
+      } else {
+        setSharedPreviewMapId(resolvedId);
+        if (mapToLoad.shareId) {
+          const url = new URL(window.location.href);
+          url.searchParams.set('share', mapToLoad.shareId);
+          url.searchParams.delete('map');
+          window.history.replaceState(null, '', url);
+          setSharedPreviewUrlParam({ key: 'share', value: mapToLoad.shareId });
+        } else {
+          setSharedPreviewUrlParam(null);
+        }
+      }
+
       showAlert(t('mapLoadedSuccess', { name: mapToLoad.name }), t('success'), 'success');
       trackEvent('map_load_shared', { share_id: mapToLoad.shareId });
     } catch (err) {
@@ -1887,7 +2058,7 @@ export default function MainPlannerClient() {
     } finally {
       setIsLoadingSharedBases(false);
     }
-  }, [showAlert, t, currentUser]);
+  }, [showAlert, t, currentUser, sharedPreviewMapId, confirmOwnerOverwrite]);
 
   const filteredSharedBases = useMemo(() => {
     const q = sharedBasesSearchQuery.trim().toLowerCase();
@@ -1914,27 +2085,46 @@ export default function MainPlannerClient() {
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const parsed = JSON.parse(evt.target?.result as string);
         if (parsed && validateMapData(parsed)) {
           const sanitized = sanitizeMapData(parsed, t('mapPrefix'));
+          const isOwner = Boolean(sanitized.ownerId) && sanitized.ownerId === currentUser?.uid;
           const owned = resolveImportedMapOwnership(sanitized, currentUser?.uid);
           const importedMap: MapData = {
             ...owned,
             name: parsed.name || file.name.replace(/\.json$/i, '') || t('importedMap')
           };
 
+          let resolvedId = importedMap.id;
+
+          // If you're the owner and this id already matches a map you have
+          // locally, importing it would overwrite that map — warn and let you
+          // view it as a new copy instead.
+          if (isOwner && mapsRef.current.some(m => m.id === resolvedId)) {
+            const shouldOverwrite = await confirmOwnerOverwrite(importedMap.name);
+            if (!shouldOverwrite) resolvedId = generateUUID();
+          }
+
           setMaps(prev => {
-            const existingIndex = prev.findIndex(m => m.id === importedMap.id);
-            if (existingIndex >= 0) {
-              const next = [...prev];
-              next[existingIndex] = importedMap;
-              return next;
+            const existingIndex = prev.findIndex(m => m.id === resolvedId);
+            if (existingIndex < 0) {
+              const finalMap = resolvedId === importedMap.id ? importedMap : { ...importedMap, id: resolvedId };
+              return [...prev, finalMap];
             }
-            return [...prev, importedMap];
+            // Not our own map re-imported — a genuine id collision with something
+            // else already in the list. Give the import a fresh id instead of
+            // overwriting the existing (unrelated) map.
+            if (!isOwner) {
+              resolvedId = generateUUID();
+              return [...prev, { ...importedMap, id: resolvedId }];
+            }
+            const next = [...prev];
+            next[existingIndex] = { ...importedMap, id: resolvedId };
+            return next;
           });
-          setActiveMapId(importedMap.id);
+          setActiveMapId(resolvedId);
           trackEvent('map_import', { map_name: importedMap.name });
         } else {
           showAlert(t('jsonStructureError'), t('importError'), 'error');
@@ -1942,7 +2132,7 @@ export default function MainPlannerClient() {
       } catch { showAlert(t('jsonStructureError'), t('importError'), 'error'); }
     };
     reader.readAsText(file); e.target.value = '';
-  }, [showAlert, t, currentUser]);
+  }, [showAlert, t, currentUser, confirmOwnerOverwrite]);
 
   const handleExportCatalog = useCallback(() => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(catalog, null, 2));
@@ -2263,10 +2453,12 @@ export default function MainPlannerClient() {
           dragOverItemIndex={dragOverItemIndex}
           activeBaseType={activeBaseType}
           activeSettlementLayer={activeSettlementLayer}
+          isSharedPreview={activeMapId === sharedPreviewMapId}
+          onEditSharedPreview={handleEditSharedPreview}
           onCreateMap={handleCreateMap}
           onDeleteMap={handleDeleteMap}
           onRenameMap={handleRenameMap}
-          onSetActiveMapId={setActiveMapId}
+          onSetActiveMapId={handleSetActiveMapId}
           onExportMap={handleExportMap}
           onImportMap={handleImportMap}
           onShareMap={handleShareMap}

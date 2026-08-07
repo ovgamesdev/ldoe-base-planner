@@ -34,10 +34,12 @@ interface LeftSidebarProps {
   dragOverItemIndex: number | null;
   activeBaseType: BaseType;
   activeSettlementLayer: SettlementLayerType;
-  
+  isSharedPreview: boolean;
+
   onCloseMobile?: () => void;
   onGoogleSignIn?: () => void;
   onSignOut?: () => void;
+  onEditSharedPreview: () => void;
   onCreateMap: () => void;
   onDeleteMap: (id: string) => void;
   onRenameMap: (name: string) => void;
@@ -94,9 +96,11 @@ export const LeftSidebar = memo(function LeftSidebar({
   dragOverItemIndex,
   activeBaseType,
   activeSettlementLayer,
+  isSharedPreview,
   onCloseMobile,
   onGoogleSignIn,
   onSignOut,
+  onEditSharedPreview,
   onCreateMap,
   onDeleteMap,
   onRenameMap,
@@ -261,6 +265,21 @@ export const LeftSidebar = memo(function LeftSidebar({
           </button>
         </div>
 
+        {isSharedPreview && (
+          <div className="bg-amber-500/10 border border-amber-500/40 rounded p-2 space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
+              <span>👁️</span> {t('sharedPreviewBadge')}
+            </div>
+            <p className="text-[11px] text-neutral-300 leading-relaxed">{t('sharedPreviewDescription')}</p>
+            <button
+              onClick={onEditSharedPreview}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold py-1.5 rounded text-xs transition cursor-pointer"
+            >
+              {t('editBtn')}
+            </button>
+          </div>
+        )}
+
         <div>
           <label className="block text-[11px] text-neutral-400 mb-1">{t('selectMapLabel')}</label>
           {isEditingMapName ? (
@@ -287,34 +306,41 @@ export const LeftSidebar = memo(function LeftSidebar({
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
-              <div className="flex gap-1 mt-1">
-                <button
-                  onClick={() => setIsEditingMapName(true)}
-                  className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-amber-500 py-1.5 rounded text-xs transition cursor-pointer"
-                  title={t('rename')}
-                >
-                  {t('renameBtn')}
-                </button>
-                {maps.length > 1 && (
-                  <button onClick={handleDeleteMap} className="flex-1 bg-red-900/40 hover:bg-red-800 text-red-300 border border-red-800/50 py-1.5 rounded text-xs transition cursor-pointer" title={t('deleteMap')}>
-                    {t('deleteMapBtn')}
+              {!isSharedPreview && (
+                <div className="flex gap-1 mt-1">
+                  <button
+                    onClick={() => setIsEditingMapName(true)}
+                    className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-amber-500 py-1.5 rounded text-xs transition cursor-pointer"
+                    title={t('rename')}
+                  >
+                    {t('renameBtn')}
                   </button>
-                )}
-              </div>
+                  {maps.length > 1 && (
+                    <button onClick={handleDeleteMap} className="flex-1 bg-red-900/40 hover:bg-red-800 text-red-300 border border-red-800/50 py-1.5 rounded text-xs transition cursor-pointer" title={t('deleteMap')}>
+                      {t('deleteMapBtn')}
+                    </button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
-          <button onClick={handleExportMap} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('exportBtn')}</button>
-          <button onClick={() => fileInputRef.current?.click()} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('importBtn')}</button>
-        </div>
-        <button
-          onClick={handleShareMap}
-          className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer flex items-center justify-center gap-1.5 font-bold"
-        >
-          <span>🔗</span> {t('shareBtn')}
-        </button>
+        {!isSharedPreview && (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-neutral-800">
+            <button onClick={handleExportMap} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('exportBtn')}</button>
+            <button onClick={() => fileInputRef.current?.click()} className="bg-neutral-800 hover:bg-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer text-white">{t('importBtn')}</button>
+          </div>
+        )}
+        {!isSharedPreview && (
+          <button
+            onClick={handleShareMap}
+            className="w-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/40 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer flex items-center justify-center gap-1.5 font-bold"
+          >
+            <span>🔗</span> {t('shareBtn')}
+          </button>
+        )}
+
         {(onGoogleSignIn || onSignOut) && (
           <div className="flex gap-2 pt-2 border-t border-neutral-800">
             {onGoogleSignIn && (

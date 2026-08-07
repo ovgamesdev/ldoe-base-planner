@@ -1,11 +1,6 @@
 import { useLanguage } from '@/context/LanguageContext'
+import { ModalInfoData } from '@/lib/initial-data'
 import { memo, useEffect, useRef, useState } from 'react'
-
-export interface ModalInfoData {
-  title?: string;
-  message: string;
-  type?: 'error' | 'info' | 'success' | 'warning';
-}
 
 interface ModalInfoProps {
   modalInfo: ModalInfoData | null;
@@ -34,14 +29,25 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
     }
   }, [modalInfo]);
 
+  const handleConfirm = () => {
+    modalInfoRef.current?.onConfirm?.();
+    onClose();
+  };
+
+  const handleCancel = () => {
+    modalInfoRef.current?.onCancel?.();
+    onClose();
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && modalInfo) {
-        onClose();
+        handleCancel();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalInfo, onClose]);
 
   if (!isRendered && !modalInfo) return null;
@@ -76,13 +82,14 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
   const currentType = modalInfoRef.current?.type || 'info';
   const config = typeConfig[currentType];
   const title = modalInfoRef.current?.title || config.defaultTitle;
+  const cancelText = modalInfoRef.current?.cancelText;
 
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-opacity duration-200 ease-out select-none ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
-      onClick={onClose}
+      onClick={handleCancel}
     >
       <div
         className={`bg-neutral-900 border ${config.border} rounded-xl p-5 max-w-md w-full shadow-2xl transform transition-all duration-200 ease-out ${
@@ -96,7 +103,7 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
             <h3 className="text-sm font-bold text-white uppercase tracking-wider">{title}</h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-neutral-400 hover:text-white rounded-lg p-1 transition cursor-pointer text-sm"
           >
             ✕
@@ -107,12 +114,20 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
           {modalInfoRef.current?.message}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          {cancelText && (
+            <button
+              onClick={handleCancel}
+              className="px-4 py-2 rounded text-xs transition cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold border border-neutral-700"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
-            onClick={onClose}
+            onClick={handleConfirm}
             className={`px-4 py-2 rounded text-xs transition cursor-pointer ${config.button}`}
           >
-            {t('gotItBtn')}
+            {modalInfoRef.current?.confirmText || t('gotItBtn')}
           </button>
         </div>
       </div>

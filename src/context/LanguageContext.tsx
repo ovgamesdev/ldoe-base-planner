@@ -128,6 +128,12 @@ export const translations = {
     renameMapBeforeExport: 'Пожалуйста, измените название карты перед экспортом.',
     renameMapBeforeShare: 'Пожалуйста, измените название карты перед тем, как поделиться ссылкой.',
 
+    sharedPreviewBadge: 'Просмотр чужой карты',
+    sharedPreviewDescription: 'Это карта другого игрока. Она не сохранится у вас, пока вы не нажмёте «Редактировать».',
+    sharedPreviewEditPrompt: 'Чтобы редактировать эту карту, сначала нажмите «Редактировать».',
+    sharedPreviewEditStarted: 'Карта добавлена в ваш список и теперь доступна для редактирования. Пожалуйста, измените её название, чтобы не путать со своими картами.',
+    editBtn: 'Редактировать',
+
     // Общедоступные базы / Модальное окно
     publicBasesTitle: 'Базы других игроков',
     sharedBasesModalTitle: 'Базы игроков',
@@ -291,6 +297,9 @@ export const translations = {
     successTitle: 'Успешно',
     infoTitle: 'Информация',
     gotItBtn: 'Понятно',
+    overwriteBtn: 'Заменить',
+    viewAsNewBtn: 'Просмотреть',
+    ownerOverwriteWarning: 'Вы являетесь владельцем карты «{name}». При открытии она заменит вашу существующую карту с этим же ID. Нажмите «Просмотреть», чтобы открыть её как новую копию с новым ID, не затронув текущую версию.',
 
     // Legal / Footer
     privacyPolicy: 'Политика конфиденциальности',
@@ -474,6 +483,12 @@ export const translations = {
     renameMapBeforeExport: 'Please change the map name before exporting.',
     renameMapBeforeShare: 'Please change the map name before sharing.',
 
+    sharedPreviewBadge: 'Viewing another player\'s base',
+    sharedPreviewDescription: 'This base belongs to another player. It won\'t be saved to your maps until you click "Edit".',
+    sharedPreviewEditPrompt: 'To edit this base, click "Edit" first.',
+    sharedPreviewEditStarted: 'The base has been added to your maps and is now editable. Please change its name so it\'s not confused with your own bases.',
+    editBtn: 'Edit',
+
     // Public bases / Modal
     publicBasesTitle: 'Community Bases',
     sharedBasesModalTitle: 'Community Bases',
@@ -637,6 +652,9 @@ export const translations = {
     successTitle: 'Success',
     infoTitle: 'Information',
     gotItBtn: 'Got it',
+    overwriteBtn: 'Overwrite',
+    viewAsNewBtn: 'View',
+    ownerOverwriteWarning: 'You are the owner of the map "{name}". Opening it will overwrite your existing map with this same ID. Click "View" to open it as a new copy with a new ID, without affecting the current version.',
 
     // Legal / Footer
     privacyPolicy: 'Privacy Policy',
