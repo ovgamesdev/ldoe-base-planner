@@ -1,9 +1,9 @@
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext'
+import { hasConsentDecision, onConsentReopenRequest, setConsent } from '@/lib/cookie-consent'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
-import { hasConsentDecision, onConsentReopenRequest, setConsent } from '../lib/cookie-consent'
 
 export default function CookieConsentBanner() {
   const { t, language } = useLanguage();

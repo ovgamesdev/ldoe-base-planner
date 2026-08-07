@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, goOffline, goOnline, ref, remove, serverTimestamp, set } from 'firebase/database'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { translations, useLanguage } from '../context/LanguageContext'
-import { trackEvent } from '../lib/analytics'
-import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, LOADING_MAP, Tool, ViewMode } from '../lib/constants'
-import { auth, db } from '../lib/firebase'
+import { useLanguage } from '@/context/LanguageContext'
+import { trackEvent } from '@/lib/analytics'
+import {
+  applyCatalogOverlay,
+  buildCatalogOverlay,
+  cleanupCatalogOverlay, LEGACY_CATALOG_STORAGE_KEY, readCatalogOverlay,
+  writeCatalogOverlay
+} from '@/lib/catalog-overlay'
+import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, LOADING_MAP, Tool, ViewMode } from '@/lib/constants'
+import { auth, db } from '@/lib/firebase'
 import {
   getEffectiveSize,
   getOccupiedCells,
@@ -15,8 +18,20 @@ import {
   hasValidWallForDecor,
   isWallCrossingObjectFootprint,
   isWallDecorValid
-} from '../lib/grid-utils'
-import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type MapData, type ModalInfoState, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '../lib/initial-data'
+} from '@/lib/grid-utils'
+import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type CatalogOverlay, type MapData, type ModalInfoState, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '@/lib/initial-data'
+import {
+  buildBlankMap,
+  decompressMapFromUrl,
+  resolveImportedMapOwnership,
+  resolveShareCreatedAt,
+  sanitizeMapData,
+  validateMapData
+} from '@/lib/map-utils'
+import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
+import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
+import { child, get, goOffline, goOnline, ref, remove, serverTimestamp, set } from 'firebase/database'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
 import { LeftSidebar } from './LeftSidebar'
@@ -24,272 +39,6 @@ import { ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
 import { SelectedElementPanel } from './SelectedElementPanel'
 import { SharedBasesModal } from './SharedBasesModal'
-
-export const isDefaultMapName = (name: string): boolean => {
-  if (!name) return true;
-  const trimmed = name.trim();
-
-  const exactDefaults = [
-    translations.ru.mapPrefix,
-    translations.en.mapPrefix,
-    translations.ru.defaultMap,
-    translations.en.defaultMap,
-    translations.ru.loadedMap,
-    translations.en.loadedMap,
-    translations.ru.sharedMap,
-    translations.en.sharedMap,
-    translations.ru.importedMap,
-    translations.en.importedMap,
-  ];
-
-  if (exactDefaults.includes(trimmed)) {
-    return true;
-  }
-
-  const defaultPattern = /^(Карта|Map)(\s+\d+)?$/i;
-  return defaultPattern.test(trimmed);
-};
-
-const generateUUID = (): string => {
-  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
-    (+c ^ ((typeof window !== 'undefined' && window.crypto ? window.crypto.getRandomValues(new Uint8Array(1))[0] : Math.floor(Math.random() * 256)) & (15 >> (+c / 4)))).toString(16)
-  );
-};
-
-const validateMapData = (mapData: any): mapData is MapData => {
-  if (!mapData || typeof mapData !== 'object') return false;
-
-  const validateBase = (base: any) => {
-    if (!base || typeof base !== 'object') return false;
-    if (!base.layers || typeof base.layers !== 'object') return false;
-    if (
-      (base.layers.floors !== undefined && !Array.isArray(base.layers.floors)) ||
-      (base.layers.walls !== undefined && !Array.isArray(base.layers.walls)) ||
-      (base.layers.objects !== undefined && !Array.isArray(base.layers.objects))
-    ){
-      return false;
-    }
-    if (!base.mapConfig || typeof base.mapConfig !== 'object') return false;
-    return true;
-  };
-
-  return validateBase(mapData.mainBase) && validateBase(mapData.settlementBase);
-};
-
-const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
-  const sanitizeBase = (base: any, defaultBase: BaseData): BaseData => {
-    if (!base || typeof base !== 'object') return defaultBase;
-    return {
-      mapConfig: {
-        width: base.mapConfig?.width ?? defaultBase.mapConfig.width,
-        height: base.mapConfig?.height ?? defaultBase.mapConfig.height,
-        noBuildZones: Array.isArray(base.mapConfig?.noBuildZones) ? base.mapConfig.noBuildZones : []
-      },
-      layers: {
-        floors: Array.isArray(base.layers?.floors) ? base.layers.floors : [],
-        walls: Array.isArray(base.layers?.walls) ? base.layers.walls : [],
-        objects: Array.isArray(base.layers?.objects) ? base.layers.objects : []
-      }
-    };
-  };
-
-  const res: MapData = {
-    id: mapData?.id || generateUUID(),
-    name: mapData?.name || defaultName,
-    mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase),
-    settlementBase: sanitizeBase(mapData?.settlementBase, DEFAULT_MAP.settlementBase)
-  };
-
-  if (mapData?.shareId) res.shareId = mapData.shareId;
-  if (mapData?.ownerId) res.ownerId = mapData.ownerId;
-  if (typeof mapData?.createdAt === 'number') res.createdAt = mapData.createdAt;
-  if (typeof mapData?.updatedAt === 'number') res.updatedAt = mapData.updatedAt;
-
-  return res;
-};
-
-const buildBlankMap = (name: string): MapData => {
-  const id = generateUUID();
-  return {
-    id,
-    shareId: id,
-    name,
-    mainBase: {
-      ...DEFAULT_MAP.mainBase,
-      layers: {
-        ...DEFAULT_MAP.mainBase.layers,
-        floors: [...DEFAULT_MAP.mainBase.layers.floors],
-        walls: [...DEFAULT_MAP.mainBase.layers.walls],
-        objects: DEFAULT_MAP.mainBase.layers.objects.map((obj) => ({
-          ...obj,
-          instanceId: generateUUID(),
-        })),
-      },
-    },
-    settlementBase: {
-      ...DEFAULT_MAP.settlementBase,
-      layers: {
-        ...DEFAULT_MAP.settlementBase.layers,
-        floors: [...DEFAULT_MAP.settlementBase.layers.floors],
-        walls: [...DEFAULT_MAP.settlementBase.layers.walls],
-        objects: DEFAULT_MAP.settlementBase.layers.objects.map((obj) => ({
-          ...obj,
-          instanceId: generateUUID(),
-        })),
-      },
-    },
-  };
-};
-
-/**
- * Resolves the createdAt value for a shares/{shareId} write.
- *
- * createdAt must be set exactly once, at creation, and never change again — the
- * database rules enforce this server-side. So:
- * - a brand-new share gets a fresh server timestamp (timezone-agnostic UTC ms;
- *   each viewer's UI formats it in their own local timezone).
- * - an edit of a base we already know the createdAt for (kept in local state)
- *   simply reuses that exact value.
- * - an edit of an older local map that predates this field (so we don't know its
- *   createdAt) looks it up on the server, so re-saving/re-sharing it doesn't reset
- *   its history. If the server doesn't have one either, it's treated as new.
- */
-const resolveShareCreatedAt = async (
-  shareId: string,
-  isNewShare: boolean,
-  knownCreatedAt?: number
-): Promise<number | object> => {
-  if (isNewShare) return serverTimestamp();
-  if (typeof knownCreatedAt === 'number') return knownCreatedAt;
-
-  try {
-    const snap = await get(child(ref(db), `shares/${shareId}/createdAt`));
-    if (snap.exists() && typeof snap.val() === 'number') return snap.val();
-  } catch {
-    // Fall through — treat it as a new creation if the lookup fails.
-  }
-  return serverTimestamp();
-};
-
-/**
- * Decides the id/shareId/ownerId a map should get whenever it's loaded from an
- * outside source (a "?share=" link, the community gallery, or an imported .json file).
- *
- * - If the current user is the owner (ownerId matches), the original id/shareId are
- *   kept, so a later export overwrites the very same cloud record instead of creating
- *   a duplicate.
- * - Otherwise the map is treated as "not mine": its local `id` becomes the shareId it
- *   was loaded from (so it's always obvious where the copy came from), and it gets a
- *   brand-new `shareId` (and ownerId is cleared) so exporting/sharing this local copy
- *   can never overwrite the original owner's base in the database.
- */
-const resolveImportedMapOwnership = (
-  sanitized: MapData,
-  currentUserId: string | undefined,
-  fallbackSourceShareId?: string
-): MapData => {
-  const sourceShareId = sanitized.shareId || fallbackSourceShareId;
-  const isOwner = Boolean(sanitized.ownerId) && sanitized.ownerId === currentUserId;
-
-  if (isOwner) {
-    return { ...sanitized, shareId: sourceShareId };
-  }
-
-  if (!sourceShareId) {
-    // Never exported/shared before — nothing to reassign, just make sure it doesn't
-    // carry someone else's ownerId.
-    return { ...sanitized, shareId: undefined, ownerId: undefined, createdAt: undefined, updatedAt: undefined };
-  }
-
-  return {
-    ...sanitized,
-    id: sourceShareId,
-    shareId: generateUUID(),
-    ownerId: undefined,
-    // This local copy hasn't been shared under the current user's ownership yet,
-    // so it gets its own creation/edit history starting from the next save.
-    createdAt: undefined,
-    updatedAt: undefined
-  };
-};
-
-const cyrb53 = (str: string, seed = 0) => {
-  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-  for (let i = 0, ch; i < str.length; i++) {
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
-  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
-};
-
-const getBasePath = () => process.env.NEXT_PUBLIC_BASE_PATH || '';
-
-const decompressMapFromUrl = async (base64urlStr: string, defaultLoadedName: string): Promise<Partial<MapData>> => {
-  let jsonStr = '';
-  try {
-    let base64 = base64urlStr.replace(/-/g, '+').replace(/_/g, '/');
-    while (base64.length % 4) base64 += '=';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const ds = new DecompressionStream('deflate-raw');
-    const blob = new Blob([bytes]);
-    const decompressedStream = blob.stream().pipeThrough(ds);
-    const decompressedBuffer = await new Response(decompressedStream).arrayBuffer();
-    jsonStr = new TextDecoder().decode(decompressedBuffer);
-  } catch {
-    try {
-      jsonStr = decodeURIComponent(atob(base64urlStr));
-    } catch {
-      jsonStr = base64urlStr;
-    }
-  }
-
-  const m = JSON.parse(jsonStr);
-
-  if (m.mainBase) {
-    return m;
-  }
-
-  return {
-    id: generateUUID(),
-    name: m.n || defaultLoadedName,
-    mainBase: {
-      mapConfig: {
-        width: DEFAULT_MAP.mainBase.mapConfig.width,
-        height: DEFAULT_MAP.mainBase.mapConfig.height,
-        noBuildZones: (m.mb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1] }))
-      },
-      layers: {
-        floors: (m.mb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
-        walls: (m.mb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
-        objects: (m.mb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], paintColor: o[4] || undefined }))
-      }
-    },
-    settlementBase: {
-      mapConfig: {
-        width: DEFAULT_MAP.settlementBase.mapConfig.width,
-        height: DEFAULT_MAP.settlementBase.mapConfig.height,
-        noBuildZones: (m.sb?.c || []).map((nb: any) => ({ x: nb[0], y: nb[1], layer: nb[2] || 'objects' }))
-      },
-      layers: {
-        floors: (m.sb?.l?.f || []).map((f: any) => ({ x: f[0], y: f[1], level: f[2] })),
-        walls: (m.sb?.l?.w || []).map((w: any) => ({ x: w[0], y: w[1], orientation: w[2] === 0 ? 'horizontal' : 'vertical', level: w[3], isDoor: !!w[4], isWindow: !!w[5] })),
-        objects: (m.sb?.l?.o || []).map((o: any) => ({ instanceId: generateUUID(), typeId: o[0], x: o[1], y: o[2], rotation: o[3], layer: o[4] || 'objects', paintColor: o[5] || undefined }))
-      }
-    }
-  };
-};
 
 export default function MainPlannerClient() {
   const { t, language } = useLanguage();
@@ -313,6 +62,10 @@ export default function MainPlannerClient() {
   }, [t]);
 
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  // Live copy of /data/catalog.json (as last fetched) and the local overlay diffed
+  // against it — see the catalog persistence helpers above `validateMapData`.
+  const catalogDefaultsRef = useRef<CatalogItem[]>([]);
+  const catalogOverlayRef = useRef<CatalogOverlay>({});
 
   const [isMobileLeftOpen, setIsMobileLeftOpen] = useState(false);
   const [isMobileRightOpen, setIsMobileRightOpen] = useState(false);
@@ -745,7 +498,6 @@ export default function MainPlannerClient() {
           throw new Error('Invalid initial data');
         }
 
-        const savedCatalog = localStorage.getItem('ldoe_catalog');
         const savedMaps = localStorage.getItem('ldoe_maps');
         const savedActiveMapId = localStorage.getItem('ldoe_activeMapId');
         const savedViewMode = localStorage.getItem('ldoe_viewMode');
@@ -757,9 +509,31 @@ export default function MainPlannerClient() {
         const savedNewBuilding = localStorage.getItem('ldoe_newBuilding');
         const savedCatalogBuilderVisibility = localStorage.getItem('ldoe_catalogBuilderVisible');
 
-        const parsedCatalog = savedCatalog ? JSON.parse(savedCatalog) as CatalogItem[] : null;
-        const restoredCatalog = Array.isArray(parsedCatalog) && parsedCatalog.length > 0 ? parsedCatalog : defaults;
-        setCatalog(restoredCatalog);
+        catalogDefaultsRef.current = defaults;
+
+        let overlay = readCatalogOverlay();
+        if (Object.keys(overlay).length === 0) {
+          // One-time migration from the old "full catalog copy" storage format.
+          const legacyRaw = localStorage.getItem(LEGACY_CATALOG_STORAGE_KEY);
+          if (legacyRaw) {
+            try {
+              const legacyCatalog = JSON.parse(legacyRaw) as CatalogItem[];
+              if (Array.isArray(legacyCatalog) && legacyCatalog.length > 0) {
+                overlay = buildCatalogOverlay(legacyCatalog, defaults, {});
+              }
+            } catch {
+              // Ignore malformed legacy data — fall back to defaults.
+            }
+          }
+        }
+        localStorage.removeItem(LEGACY_CATALOG_STORAGE_KEY);
+
+        // Drop any overlay entries catalog.json has already caught up with.
+        overlay = cleanupCatalogOverlay(overlay, defaults);
+        catalogOverlayRef.current = overlay;
+        writeCatalogOverlay(overlay);
+
+        setCatalog(applyCatalogOverlay(defaults, overlay));
 
         let restoredMap = false;
         if (savedMaps) {
@@ -896,7 +670,9 @@ export default function MainPlannerClient() {
       return;
     }
 
-    localStorage.setItem('ldoe_catalog', JSON.stringify(catalog));
+    const nextCatalogOverlay = buildCatalogOverlay(catalog, catalogDefaultsRef.current, catalogOverlayRef.current);
+    catalogOverlayRef.current = nextCatalogOverlay;
+    writeCatalogOverlay(nextCatalogOverlay);
     localStorage.setItem('ldoe_maps', JSON.stringify(maps));
     localStorage.setItem('ldoe_activeMapId', activeMapId);
     localStorage.setItem('ldoe_viewMode', viewMode);
@@ -2174,6 +1950,10 @@ export default function MainPlannerClient() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const defaults = await response.json() as CatalogItem[];
       if (!Array.isArray(defaults)) throw new Error('Invalid catalog data');
+
+      catalogDefaultsRef.current = defaults;
+      catalogOverlayRef.current = {};
+      writeCatalogOverlay({});
 
       setCatalog(defaults);
       setSelectedTypeId(defaults[0]?.typeId ?? '');

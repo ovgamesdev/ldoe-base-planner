@@ -1,5 +1,5 @@
+import { useLanguage } from '@/context/LanguageContext'
 import { memo, useEffect, useRef, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
 
 export interface ModalInfoData {
   title?: string;

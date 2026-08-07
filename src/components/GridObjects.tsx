@@ -1,7 +1,6 @@
-import { memo } from 'react'
-import { useLanguage } from '../context/LanguageContext'
-import type { Tool, ViewMode } from '../lib/constants'
-import { AUTO_TILE_APPEARANCE_BY_MASK, CELL_SIZE, ISO_W } from '../lib/constants'
+import { useLanguage } from '@/context/LanguageContext'
+import type { Tool, ViewMode } from '@/lib/constants'
+import { AUTO_TILE_APPEARANCE_BY_MASK, CELL_SIZE, ISO_W } from '@/lib/constants'
 import {
   footprintCentroid,
   footprintPoints,
@@ -10,9 +9,10 @@ import {
   getEffectiveSize,
   getFinalSize,
   getTopVertex
-} from '../lib/grid-utils'
-import type { BaseType, CatalogItem, ObjectLayer, SettlementLayerType } from '../lib/initial-data'
-import { getItemName } from '../lib/initial-data'
+} from '@/lib/grid-utils'
+import type { BaseType, CatalogItem, ObjectLayer, SettlementLayerType } from '@/lib/initial-data'
+import { getItemName } from '@/lib/initial-data'
+import { memo } from 'react'
 
 interface GridObjectsProps {
   sortedRootObjects: { obj: ObjectLayer; template: CatalogItem }[];

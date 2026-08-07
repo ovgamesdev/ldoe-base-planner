@@ -1,6 +1,6 @@
+import { TranslationKey, useLanguage } from '@/context/LanguageContext'
+import { getItemName, SettlementLayerType, type CatalogItem, type NewBuildingState } from '@/lib/initial-data'
 import React, { memo } from 'react'
-import { TranslationKey, useLanguage } from '../context/LanguageContext'
-import { getItemName, SettlementLayerType, type CatalogItem, type NewBuildingState } from '../lib/initial-data'
 
 interface RightSidebarProps {
   isCatalogBuilderVisible: boolean;

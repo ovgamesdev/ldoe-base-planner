@@ -1,7 +1,7 @@
+import type { ViewMode } from '@/lib/constants'
+import { getCornerHighlightPaths, getFinalSize, getTopVertex } from '@/lib/grid-utils'
+import type { BaseData, CatalogItem, SelectedElementData } from '@/lib/initial-data'
 import { memo } from 'react'
-import type { ViewMode } from '../lib/constants'
-import { getCornerHighlightPaths, getFinalSize, getTopVertex } from '../lib/grid-utils'
-import type { BaseData, CatalogItem, SelectedElementData } from '../lib/initial-data'
 
 interface SelectionOverlayProps {
   selectedInstanceId: string | null;

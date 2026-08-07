@@ -1,7 +1,7 @@
+import type { Tool, ViewMode } from '@/lib/constants'
+import { diamondPoints, getFloorFill } from '@/lib/grid-utils'
+import type { BaseType, MapData, SettlementLayerType } from '@/lib/initial-data'
 import { memo } from 'react'
-import type { Tool, ViewMode } from '../lib/constants'
-import { diamondPoints, getFloorFill } from '../lib/grid-utils'
-import type { BaseType, MapData, SettlementLayerType } from '../lib/initial-data'
 
 interface GridCellsProps {
   allCells: { x: number; y: number }[];

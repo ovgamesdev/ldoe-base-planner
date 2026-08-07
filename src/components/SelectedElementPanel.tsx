@@ -1,7 +1,7 @@
+import { TranslationKey, useLanguage } from '@/context/LanguageContext'
 import { getAssetPath } from '@/lib/grid-utils'
+import { getItemName, type SelectedElementData } from '@/lib/initial-data'
 import { memo, useEffect, useRef, useState } from 'react'
-import { TranslationKey, useLanguage } from '../context/LanguageContext'
-import { getItemName, type SelectedElementData } from '../lib/initial-data'
 
 interface SelectedElementPanelProps {
   selectedElementData: SelectedElementData | null;

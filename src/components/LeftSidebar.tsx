@@ -1,13 +1,13 @@
+import { TranslationKey, useLanguage } from '@/context/LanguageContext'
+import type { Tool, ViewMode } from '@/lib/constants'
+import { ALL_ROTATIONS } from '@/lib/constants'
+import { clearConsent } from '@/lib/cookie-consent'
 import { getAssetPath } from '@/lib/grid-utils'
+import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '@/lib/initial-data'
+import { getItemName, searchMatchesName } from '@/lib/initial-data'
+import { isDefaultMapName } from '@/lib/map-utils'
 import Link from 'next/link'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { TranslationKey, useLanguage } from '../context/LanguageContext'
-import type { Tool, ViewMode } from '../lib/constants'
-import { ALL_ROTATIONS } from '../lib/constants'
-import { clearConsent } from '../lib/cookie-consent'
-import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '../lib/initial-data'
-import { getItemName, searchMatchesName } from '../lib/initial-data'
-import { isDefaultMapName } from './MainPlannerClient'
 
 interface LeftSidebarProps {
   gridW: number;

@@ -1,7 +1,7 @@
+import type { Tool, ViewMode } from '@/lib/constants'
+import { getTopVertex, getWallColor } from '@/lib/grid-utils'
+import type { BaseType, SettlementLayerType, WallLayer } from '@/lib/initial-data'
 import React, { memo } from 'react'
-import type { Tool, ViewMode } from '../lib/constants'
-import { getTopVertex, getWallColor } from '../lib/grid-utils'
-import type { BaseType, SettlementLayerType, WallLayer } from '../lib/initial-data'
 
 interface GridWallsProps {
   wallLines: { x: number; y: number; orientation: 'horizontal' | 'vertical' }[];

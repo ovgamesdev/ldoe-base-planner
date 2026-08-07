@@ -1,8 +1,8 @@
 'use client';
 
+import { useLanguage } from '@/context/LanguageContext'
+import type { MapData } from '@/lib/initial-data'
 import React, { useEffect, useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
-import type { MapData } from '../lib/initial-data'
 
 interface SharedBasesModalProps {
   isOpen: boolean;
