@@ -5259,7 +5259,7 @@
       ],
       "placementType": "floor",
       "requiresFloor": true,
-      "requiresSpecificFloorLevel": 4,
+      "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "baseType": "main",
