@@ -93,6 +93,7 @@ export const translations = {
     exportError: 'Не удалось экспортировать карту',
     sharedBasesFetchError: 'Не удалось загрузить список общедоступных баз.',
     mapLoadedSuccess: 'Карта "{name}" успешно загружена!',
+    emptyBase: 'База не может быть пустой. Элементы должны присутствовать и на главной базе, и в поселении.',
 
     failedLoadShared: 'Не удалось загрузить карту из ссылки.',
     linkCopied: 'Ссылка на карту скопирована в буфер обмена! Карта сохранена и стала общедоступной.',
@@ -438,6 +439,7 @@ export const translations = {
     exportError: 'Failed to export map',
     sharedBasesFetchError: 'Failed to load community bases list.',
     mapLoadedSuccess: 'Map "{name}" successfully loaded!',
+    emptyBase: 'Base cannot be empty. Both the main base and settlement must contain elements.',
 
     failedLoadShared: 'Failed to load map from link.',
     linkCopied: 'Map link copied to clipboard! The map is now publicly available.',

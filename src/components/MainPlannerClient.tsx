@@ -1695,6 +1695,21 @@ export default function MainPlannerClient() {
         return;
       }
 
+      const isMainEmpty =
+        (fullMapState.mainBase?.layers?.floors?.length ?? 0) === 0 &&
+        (fullMapState.mainBase?.layers?.walls?.length ?? 0) === 0 &&
+        (fullMapState.mainBase?.layers?.objects?.length ?? 0) === 0;
+
+      const isSettlementEmpty =
+        (fullMapState.settlementBase?.layers?.floors?.length ?? 0) === 0 &&
+        (fullMapState.settlementBase?.layers?.walls?.length ?? 0) === 0 &&
+        (fullMapState.settlementBase?.layers?.objects?.length ?? 0) === 0;
+
+      if (isMainEmpty || isSettlementEmpty) {
+        showAlert(t('emptyBase'), t('error'), 'error');
+        return;
+      }
+
       const uid = currentUser?.uid || auth.currentUser?.uid;
       if (!uid) {
         showAlert(t('authError'), t('error'), 'error');
