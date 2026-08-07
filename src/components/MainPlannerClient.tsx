@@ -1623,6 +1623,22 @@ export default function MainPlannerClient() {
         showAlert(t('exportError'), t('importError'), 'error');
         return;
       }
+      
+      const isMainEmpty =
+        (fullMapState.mainBase?.layers?.floors?.length ?? 0) === 0 &&
+        (fullMapState.mainBase?.layers?.walls?.length ?? 0) === 0 &&
+        (fullMapState.mainBase?.layers?.objects?.length ?? 0) === 0;
+
+      const isSettlementEmpty =
+        (fullMapState.settlementBase?.layers?.floors?.length ?? 0) === 0 &&
+        (fullMapState.settlementBase?.layers?.walls?.length ?? 0) === 0 &&
+        (fullMapState.settlementBase?.layers?.objects?.length ?? 0) === 0;
+
+      if (isMainEmpty || isSettlementEmpty) {
+        showAlert(t('emptyBase'), t('error'), 'error');
+        return;
+      }
+
       // Only reuse the existing shareId/ownerId if this map is actually ours — a map
       // whose ownerId belongs to someone else must always get a fresh shareId, so we
       // never overwrite that other person's cloud copy.
