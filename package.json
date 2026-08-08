@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "assets:build": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/build-assets.ps1",
+    "og:build": "node scripts/generate-og-images.mjs",
     "predev": "npm run assets:build",
     "dev": "next dev",
     "prebuild": "npm run assets:build",
@@ -20,6 +21,7 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -28,6 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "gh-pages": "^6.3.0",
+    "satori": "^0.29.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

@@ -4,12 +4,12 @@ import "./globals.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
@@ -41,6 +41,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      // { url: "/favicon.svg", type: "image/svg+xml" },
       { url: basePath + "/favicon.ico", sizes: "any" },
       { url: basePath + "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
       { url: basePath + "/android-chrome-192x192.png", type: "image/png", sizes: "192x192" },

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: `${basePath}/og-image.png`,
+        url: `/og-image-ru.png`,
         width: 1200,
         height: 630,
         alt: "LDOE BASE PLANNER Preview",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LDOE BASE PLANNER — Планировщик базы и поселения",
     description: "Интерактивный планировщик базы и поселения для игры Last Day on Earth: Survival.",
     creator: "ovgamesdev",
-    images: [`${basePath}/og-image.png`],
+    images: [`/og-image-ru.png`],
   },
 };
 

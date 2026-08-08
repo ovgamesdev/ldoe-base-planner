@@ -75,6 +75,20 @@ export const GridObjects = memo(function GridObjects({
         const foX = centroid.sx - S / 2;
         const foY = centroid.sy - S / 2;
 
+        // Визуальный вылет картинки за пределы footprint'а (не влияет на занятость клеток).
+        // Считается в локальной системе координат объекта (до поворота) — поворот
+        // применяется ниже через тот же SVG-transform, что и к самой картинке.
+        const overflow = template.constraints.visualOverflow;
+        const cellPx = S / Math.max(fw, fh);
+        const ovLeft = (overflow?.left ?? 0) * cellPx;
+        const ovRight = (overflow?.right ?? 0) * cellPx;
+        const ovTop = (overflow?.top ?? 0) * cellPx;
+        const ovBottom = (overflow?.bottom ?? 0) * cellPx;
+        const renderX = foX - ovLeft;
+        const renderY = foY - ovTop;
+        const renderW = S + ovLeft + ovRight;
+        const renderH = S + ovTop + ovBottom;
+
         const chipW = Math.max(fw, fh) * (viewMode === 'isometric' ? ISO_W * 0.62 : CELL_SIZE * 0.85);
         const chipH = 30;
         const clipId = `clip-obj-${obj.instanceId || index}`;
@@ -133,10 +147,10 @@ export const GridObjects = memo(function GridObjects({
             {currentImage ? (
               <image
                 href={getAssetPath(currentImage)}
-                x={foX}
-                y={foY}
-                width={S}
-                height={S}
+                x={renderX}
+                y={renderY}
+                width={renderW}
+                height={renderH}
                 preserveAspectRatio="xMidYMid meet"
                 style={{ pointerEvents: 'none' }}
                 transform={displayRotation !== 0 ? `rotate(${displayRotation}, ${centroid.sx}, ${centroid.sy})` : undefined}

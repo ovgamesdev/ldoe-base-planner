@@ -187,6 +187,36 @@ export const RightSidebar = memo(function RightSidebar({
             </div>
 
             <div>
+              <label className="block text-neutral-400 mb-1">
+                {t('visualOverflowLabel')}
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {([
+                  ['visualOverflowTop', 'top'],
+                  ['visualOverflowRight', 'right'],
+                  ['visualOverflowBottom', 'bottom'],
+                  ['visualOverflowLeft', 'left']
+                ] as const).map(([field, label]) => (
+                  <div key={field}>
+                    <span className="block text-neutral-500 text-[10px] text-center mb-0.5">{label}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={5}
+                      step={0.05}
+                      value={newBuilding[field]}
+                      onChange={e => onSetNewBuilding(prev => ({ ...prev, [field]: Math.max(0, parseFloat(e.target.value) || 0) }))}
+                      className="w-full bg-neutral-950 border border-neutral-800 rounded px-1.5 py-1.5 text-white text-center focus:border-amber-500 outline-none"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-neutral-500 text-[10px] mt-1">
+                {t('visualOverflowHint')}
+              </p>
+            </div>
+
+            <div>
               <label className="block text-neutral-400 mb-1">{t('tooltipImageLabel')}</label>
               <input
                 type="text"

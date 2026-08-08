@@ -141,12 +141,12 @@ export const CanvasGrid = memo(function CanvasGrid({
   const { width: GRID_W, height: GRID_H } = mapState.mapConfig;
 
   const svgWidth = viewMode === 'isometric'
-    ? (GRID_W + GRID_H) * (ISO_W / 2) + ISO_W
-    : GRID_W * CELL_SIZE + CELL_SIZE * 2;
+    ? (GRID_W + GRID_H) * (ISO_W / 2) + ISO_W * 2
+    : GRID_W * CELL_SIZE + CELL_SIZE * 3;
 
   const svgHeight = viewMode === 'isometric'
-    ? (GRID_W + GRID_H) * (ISO_H / 2) + ISO_H * 2
-    : GRID_H * CELL_SIZE + CELL_SIZE * 2;
+    ? (GRID_W + GRID_H) * (ISO_H / 2) + ISO_H * 3
+    : GRID_H * CELL_SIZE + CELL_SIZE * 3;
 
   const selectedTemplate = catalogMap[selectedTypeId];
   const wasDraggingRef = useRef(false);

@@ -4989,9 +4989,7 @@
       "rotatable": true,
       "allowedRotations": [
         0,
-        90,
-        180,
-        270
+        90
       ],
       "placementType": "floor",
       "requiresFloor": true,
@@ -5124,7 +5122,7 @@
     },
     "size": {
       "w": 4,
-      "h": 5
+      "h": 4
     },
     "image": "/assets/atv_garage.webp",
     "tooltipImage": "/assets/preview/atv_garage.webp",
@@ -5142,7 +5140,10 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main"
+      "baseType": "main",
+      "visualOverflow": {
+        "bottom": 1
+      }
     }
   },
   {

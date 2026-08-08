@@ -22,6 +22,18 @@ export interface Constraints {
   requiredDesk?: string;
   requiresPower?: boolean;
   requiresWater?: boolean;
+  /**
+   * Насколько картинка объекта визуально вылезает за пределы его footprint'а
+   * (занимаемых клеток), в долях клетки. Задаётся в локальной системе координат
+   * объекта до поворота (top/left — направления -y/-x, right/bottom — +x/+y);
+   * при повороте объекта вылет поворачивается вместе с картинкой автоматически
+   * (через SVG-transform), пересчитывать вручную не нужно.
+   *
+   * Влияет только на рендер (GridObjects) — не на занятость клеток
+   * (getOccupiedCells/effSize), поэтому на "вылезшую" клетку по-прежнему можно
+   * ставить другие объекты, и вылет может уходить за пределы карты.
+   */
+  visualOverflow?: { top?: number; right?: number; bottom?: number; left?: number };
 }
 
 export interface NewBuildingState {
@@ -51,6 +63,10 @@ export interface NewBuildingState {
   requiredDesk: string;
   requiresPower?: boolean;
   requiresWater?: boolean;
+  visualOverflowTop: number;
+  visualOverflowRight: number;
+  visualOverflowBottom: number;
+  visualOverflowLeft: number;
 }
 
 export interface ColorVariant {

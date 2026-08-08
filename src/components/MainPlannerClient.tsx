@@ -528,7 +528,11 @@ export default function MainPlannerClient() {
     isDesk: '',
     requiredDesk: '',
     requiresPower: false,
-    requiresWater: false
+    requiresWater: false,
+    visualOverflowTop: 0,
+    visualOverflowRight: 0,
+    visualOverflowBottom: 0,
+    visualOverflowLeft: 0
   });
 
   const objectListRef = useRef<HTMLDivElement>(null);
@@ -636,7 +640,11 @@ export default function MainPlannerClient() {
             isDesk: savedBuilding.isDesk || '',
             requiredDesk: savedBuilding.requiredDesk || '',
             requiresPower: savedBuilding.requiresPower ?? false,
-            requiresWater: savedBuilding.requiresWater ?? false
+            requiresWater: savedBuilding.requiresWater ?? false,
+            visualOverflowTop: savedBuilding.visualOverflowTop ?? 0,
+            visualOverflowRight: savedBuilding.visualOverflowRight ?? 0,
+            visualOverflowBottom: savedBuilding.visualOverflowBottom ?? 0,
+            visualOverflowLeft: savedBuilding.visualOverflowLeft ?? 0
           }));
         }
         if (savedCatalogBuilderVisibility) setIsCatalogBuilderVisible(savedCatalogBuilderVisibility === 'true');
@@ -1615,7 +1623,11 @@ export default function MainPlannerClient() {
       isDesk: item.constraints.isDesk || '',
       requiredDesk: item.constraints.requiredDesk || '',
       requiresPower: item.constraints.requiresPower || false,
-      requiresWater: item.constraints.requiresWater || false
+      requiresWater: item.constraints.requiresWater || false,
+      visualOverflowTop: item.constraints.visualOverflow?.top || 0,
+      visualOverflowRight: item.constraints.visualOverflow?.right || 0,
+      visualOverflowBottom: item.constraints.visualOverflow?.bottom || 0,
+      visualOverflowLeft: item.constraints.visualOverflow?.left || 0
     });
     if (isMobileLeftOpen) {
       setIsMobileLeftOpen(false);
@@ -1658,6 +1670,22 @@ export default function MainPlannerClient() {
     // so it's dropped here rather than silently saved.
     const isNewItem = !catalogMap[trimmedTypeId];
 
+    // visualOverflow не имеет собственной секции видимости (актуально для любого
+    // baseType/placementType) — просто отбрасываем нулевые/пустые значения, чтобы
+    // не засорять item.constraints, если вылет никто не задавал.
+    const ovTop = Number(newBuilding.visualOverflowTop) || 0;
+    const ovRight = Number(newBuilding.visualOverflowRight) || 0;
+    const ovBottom = Number(newBuilding.visualOverflowBottom) || 0;
+    const ovLeft = Number(newBuilding.visualOverflowLeft) || 0;
+    const visualOverflow = (ovTop || ovRight || ovBottom || ovLeft)
+      ? {
+          top: ovTop || undefined,
+          right: ovRight || undefined,
+          bottom: ovBottom || undefined,
+          left: ovLeft || undefined
+        }
+      : undefined;
+
     const item: CatalogItem = {
       typeId: trimmedTypeId,
       category: newBuilding.category,
@@ -1689,7 +1717,8 @@ export default function MainPlannerClient() {
         isDesk: showDesksAndRooms ? (newBuilding.isDesk.trim() || undefined) : undefined,
         requiredDesk: showDesksAndRooms ? (newBuilding.requiredDesk.trim() || undefined) : undefined,
         requiresPower: isSettlementOrBoth ? newBuilding.requiresPower : undefined,
-        requiresWater: isSettlementOrBoth ? newBuilding.requiresWater : undefined
+        requiresWater: isSettlementOrBoth ? newBuilding.requiresWater : undefined,
+        visualOverflow
       }
     };
 
