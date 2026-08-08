@@ -11,6 +11,7 @@ import {
 } from '@/lib/catalog-overlay'
 import { ALL_ROTATIONS, CATEGORY_LABELS, DEFAULT_MAP, EMPTY_AUTO_TILE_IMAGES, LOADING_MAP, Tool, ViewMode } from '@/lib/constants'
 import { auth, db } from '@/lib/firebase'
+import { withOnline } from '@/lib/firebase-connection'
 import {
   getEffectiveSize,
   getOccupiedCells,
@@ -27,9 +28,10 @@ import {
   sanitizeMapData,
   validateMapData
 } from '@/lib/map-utils'
+import { useAutoSaveShare } from '@/lib/useAutoSaveShare'
 import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, goOffline, goOnline, ref, serverTimestamp, update } from 'firebase/database'
+import { child, get, ref, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
@@ -104,24 +106,23 @@ export default function MainPlannerClient() {
   const handleGoogleSignIn = useCallback(async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await goOnline(db);
-      if (auth.currentUser && auth.currentUser.isAnonymous) {
-        try {
-          await linkWithPopup(auth.currentUser, provider);
-        } catch (linkError: any) {
-          if (linkError.code === 'auth/credential-already-in-use') {
-            await signInWithPopup(auth, provider);
-          } else {
-            throw linkError;
+      await withOnline(async () => {
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
+          try {
+            await linkWithPopup(auth.currentUser, provider);
+          } catch (linkError: any) {
+            if (linkError.code === 'auth/credential-already-in-use') {
+              await signInWithPopup(auth, provider);
+            } else {
+              throw linkError;
+            }
           }
+        } else {
+          await signInWithPopup(auth, provider);
         }
-      } else {
-        await signInWithPopup(auth, provider);
-      }
-      await goOffline(db);
+      });
       trackEvent('login', { method: 'google' });
     } catch (error: any) {
-      await goOffline(db);
       if (error?.code !== 'auth/popup-closed-by-user') {
         console.error('Google Sign-In Error:', error);
         showAlert(t('authError'), t('error'), 'error');
@@ -131,13 +132,12 @@ export default function MainPlannerClient() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await goOnline(db);
-      await signOut(auth);
-      await signInAnonymously(auth);
-      await goOffline(db);
+      await withOnline(async () => {
+        await signOut(auth);
+        await signInAnonymously(auth);
+      });
       trackEvent('logout');
     } catch (error) {
-      await goOffline(db);
       console.error('Sign-out error:', error);
     }
   }, []);
@@ -195,6 +195,9 @@ export default function MainPlannerClient() {
   const fullMapState = useMemo(() => {
     return maps.find(m => m.id === activeMapId) || LOADING_MAP;
   }, [maps, activeMapId]);
+
+  // Подключение фонового сохранения карт в Firebase
+  useAutoSaveShare(fullMapState.id ? fullMapState : null, currentUser, 5000);
 
   const mapState = useMemo(() => {
     const base = activeBaseType === 'main' ? fullMapState?.mainBase : fullMapState?.settlementBase;
@@ -663,12 +666,10 @@ export default function MainPlannerClient() {
     void (async () => {
       try {
         let sharedMap: Partial<MapData> | null = null;
-        await goOnline(db);
-        const snapshot = await get(child(ref(db), `shares/${shareParam}`));
+        const snapshot = await withOnline(() => get(child(ref(db), `shares/${shareParam}`)));
         if (snapshot.exists()) {
           sharedMap = snapshot.val() as Partial<MapData>;
         }
-        await goOffline(db);
 
         if (sharedMap && validateMapData(sharedMap)) {
           const sanitized = sanitizeMapData(sharedMap, tRef.current('mapPrefix'));
@@ -725,7 +726,6 @@ export default function MainPlannerClient() {
           showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
         }
       } catch (err) {
-        await goOffline(db);
         console.error('Ошибка загрузки карты из ссылки:', err);
         showAlert(tRef.current('failedLoadShared'), tRef.current('importError'), 'error');
       } finally {
@@ -953,14 +953,11 @@ export default function MainPlannerClient() {
     const targetMap = maps.find(m => m.id === idToDelete);
     if (targetMap?.shareId && targetMap?.ownerId && currentUser && targetMap.ownerId === currentUser.uid) {
       try {
-        await goOnline(db);
-        await update(ref(db), {
+        await withOnline(() => update(ref(db), {
           [`shares/${targetMap.shareId}`]: null,
           [`shares_summary/${targetMap.shareId}`]: null
-        });
-        await goOffline(db);
+        }));
       } catch (e) {
-        await goOffline(db);
         console.error('Ошибка удаления карты из Firebase:', e);
       }
     }
@@ -1765,31 +1762,33 @@ export default function MainPlannerClient() {
       const ownerId = isOwner ? (fullMapState.ownerId || currentUser?.uid) : currentUser?.uid;
       const isNewShare = !isOwner || !fullMapState.shareId;
 
-      await goOnline(db);
-      const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
-      const updatedAt = serverTimestamp();
-      // Attached after sanitizeMapData, since createdAt/updatedAt here may be a
-      // serverTimestamp() placeholder object rather than a plain number.
-      const mapToSave: MapData = {
-        ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
-        createdAt: createdAt as unknown as number,
-        updatedAt: updatedAt as unknown as number
-      };
+      const mapToSave = await withOnline(async () => {
+        const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
+        const updatedAt = serverTimestamp();
+        // Attached after sanitizeMapData, since createdAt/updatedAt here may be a
+        // serverTimestamp() placeholder object rather than a plain number.
+        const toSave: MapData = {
+          ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
+          createdAt: createdAt as unknown as number,
+          updatedAt: updatedAt as unknown as number
+        };
 
-      const summaryData = {
-        id: mapToSave.id,
-        name: mapToSave.name,
-        ownerId: mapToSave.ownerId,
-        shareId: mapToSave.shareId,
-        createdAt: mapToSave.createdAt,
-        updatedAt: mapToSave.updatedAt
-      };
+        const summaryData = {
+          id: toSave.id,
+          name: toSave.name,
+          ownerId: toSave.ownerId,
+          shareId: toSave.shareId,
+          createdAt: toSave.createdAt,
+          updatedAt: toSave.updatedAt
+        };
 
-      await update(ref(db), {
-        [`shares/${shareId}`]: mapToSave,
-        [`shares_summary/${shareId}`]: summaryData
+        await update(ref(db), {
+          [`shares/${shareId}`]: toSave,
+          [`shares_summary/${shareId}`]: summaryData
+        });
+
+        return toSave;
       });
-      await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
         setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId, ownerId } : m));
@@ -1805,7 +1804,6 @@ export default function MainPlannerClient() {
       showAlert(t('exportSuccess'), t('success'), 'success');
       trackEvent('map_export', { map_id: fullMapState.id, map_name: fullMapState.name });
     } catch (err) {
-      await goOffline(db);
       console.error('Ошибка сохранения при экспорте:', err);
       const safeName = fullMapState.name.trim().replace(/\s+/g, '_') || 'map_config';
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullMapState, null, 2));
@@ -1857,29 +1855,29 @@ export default function MainPlannerClient() {
       const ownerId = isOwner ? (fullMapState.ownerId || currentUser?.uid) : currentUser?.uid;
       const isNewShare = !isOwner || !fullMapState.shareId;
 
-      await goOnline(db);
-      const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
-      const updatedAt = serverTimestamp();
-      const mapToSave: MapData = {
-        ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
-        createdAt: createdAt as unknown as number,
-        updatedAt: updatedAt as unknown as number
-      };
+      await withOnline(async () => {
+        const createdAt = await resolveShareCreatedAt(shareId, isNewShare, fullMapState.createdAt);
+        const updatedAt = serverTimestamp();
+        const mapToSave: MapData = {
+          ...sanitizeMapData({ ...fullMapState, shareId, ownerId }, t('mapPrefix')),
+          createdAt: createdAt as unknown as number,
+          updatedAt: updatedAt as unknown as number
+        };
 
-      const summaryData = {
-        id: mapToSave.id,
-        name: mapToSave.name,
-        ownerId: mapToSave.ownerId || null,
-        shareId: mapToSave.shareId,
-        createdAt: mapToSave.createdAt,
-        updatedAt: mapToSave.updatedAt
-      };
+        const summaryData = {
+          id: mapToSave.id,
+          name: mapToSave.name,
+          ownerId: mapToSave.ownerId || null,
+          shareId: mapToSave.shareId,
+          createdAt: mapToSave.createdAt,
+          updatedAt: mapToSave.updatedAt
+        };
 
-      await update(ref(db), {
-        [`shares/${shareId}`]: mapToSave,
-        [`shares_summary/${shareId}`]: summaryData
+        await update(ref(db), {
+          [`shares/${shareId}`]: mapToSave,
+          [`shares_summary/${shareId}`]: summaryData
+        });
       });
-      await goOffline(db);
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
         setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, shareId, ownerId } : m));
@@ -1888,12 +1886,25 @@ export default function MainPlannerClient() {
       const url = new URL(window.location.href);
       url.searchParams.set('share', shareId);
       url.searchParams.delete('map');
+      const shareUrl = url.toString();
 
-      await navigator.clipboard.writeText(url.toString());
-      showAlert(t('linkCopied'), t('success'), 'success');
       trackEvent('map_share', { map_id: fullMapState.id, share_id: shareId });
+
+      // Копирование в буфер обмена — отдельная от сохранения операция. К этому
+      // моменту запись в Firebase уже успешно создана; если сам
+      // clipboard.writeText упадёт (браузер мог "забыть" user activation после
+      // пары await, документ потерял фокус — например, открыт DevTools/Network,
+      // как в вашем случае), это не должно выглядеть как "не удалось
+      // поделиться" — ссылка-то уже готова, просто не скопировалась
+      // автоматически.
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showAlert(t('linkCopied'), t('success'), 'success');
+      } catch (clipboardErr) {
+        console.error('Не удалось скопировать ссылку в буфер обмена:', clipboardErr);
+        showAlert(`${t('linkCopied')}: ${shareUrl}`, t('attention'), 'warning');
+      }
     } catch (err) {
-      await goOffline(db);
       console.error('Ошибка создания ссылки:', err);
       showAlert(t('linkCopiedError'), t('importError'), 'error');
     }
@@ -1903,18 +1914,25 @@ export default function MainPlannerClient() {
     if (!shareId) return;
     if (!window.confirm(t('confirmDeleteMap'))) return;
     try {
-      await goOnline(db);
-      await update(ref(db), {
+      await withOnline(() => update(ref(db), {
         [`shares/${shareId}`]: null,
         [`shares_summary/${shareId}`]: null
-      });
-      await goOffline(db);
+      }));
+
+      // Запись в Firebase удалена. Если она соответствует какой-то из наших
+      // локальных карт, снимаем с неё shareId/ownerId — иначе useAutoSaveShare
+      // продолжит считать карту "уже существующей в облаке" по старому кэшу
+      // и на следующем автосохранении пошлёт частичный diff-update на
+      // удалённый узел, что Firebase отклонит как PERMISSION_DENIED (правило
+      // hasChildren([...]) не проходит на частичной записи в пустой узел).
+      setMaps(prev => prev.map(m => (
+        m.shareId === shareId ? { ...m, shareId: undefined, ownerId: undefined } : m
+      )));
 
       setSharedBasesList(prev => prev.filter(m => m.shareId !== shareId));
       showAlert(t('success'), t('success'), 'success');
       trackEvent('cloud_map_delete', { share_id: shareId });
     } catch (err) {
-      await goOffline(db);
       console.error('Ошибка удаления базы из облака:', err);
       showAlert(t('removeError'), t('error'), 'error');
     }
@@ -1923,9 +1941,7 @@ export default function MainPlannerClient() {
   const loadSharedBases = useCallback(async () => {
     setIsLoadingSharedBases(true);
     try {
-      await goOnline(db);
-
-      const summarySnapshot = await get(ref(db, 'shares_summary'));
+      const summarySnapshot = await withOnline(() => get(ref(db, 'shares_summary')));
       let list: Partial<MapData>[] = [];
 
       if (summarySnapshot.exists()) {
@@ -1939,12 +1955,10 @@ export default function MainPlannerClient() {
           updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : undefined
         }));
       }
-      await goOffline(db);
 
       list.reverse();
       setSharedBasesList(list);
     } catch (err) {
-      await goOffline(db);
       console.error('Ошибка загрузки общедоступных баз:', err);
       showAlert(tRef.current('sharedBasesFetchError'), tRef.current('importError'), 'error');
     } finally {
@@ -1980,9 +1994,7 @@ export default function MainPlannerClient() {
     try {
       let fullData: Partial<MapData> | null = mapSummary;
       if ((!mapSummary.mainBase || !mapSummary.settlementBase) && mapSummary.shareId) {
-        await goOnline(db);
-        const snapshot = await get(ref(db, `shares/${mapSummary.shareId}`));
-        await goOffline(db);
+        const snapshot = await withOnline(() => get(ref(db, `shares/${mapSummary.shareId}`)));
         if (snapshot.exists()) {
           fullData = snapshot.val() as Partial<MapData>;
         }
@@ -2052,7 +2064,6 @@ export default function MainPlannerClient() {
       showAlert(t('mapLoadedSuccess', { name: mapToLoad.name }), t('success'), 'success');
       trackEvent('map_load_shared', { share_id: mapToLoad.shareId });
     } catch (err) {
-      await goOffline(db);
       console.error('Ошибка загрузки базы:', err);
       showAlert(t('failedLoadShared'), t('importError'), 'error');
     } finally {
