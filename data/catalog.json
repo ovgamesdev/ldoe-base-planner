@@ -4007,6 +4007,37 @@
     }
   },
   {
+    "typeId": "keeper_of_the_bogs",
+    "category": "furniture_for_comfort",
+    "name": {
+      "ru": "Хозяин болот (TODO)",
+      "en": "Keeper of the Bogs (TODO)"
+    },
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/keeper_of_the_bogs.webp",
+    "tooltipImage": "/assets/preview/keeper_of_the_bogs.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "baseType": "main"
+    }
+  },
+  {
     "typeId": "spruce",
     "category": "furniture_for_the_garden",
     "name": {
