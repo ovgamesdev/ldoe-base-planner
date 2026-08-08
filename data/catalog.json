@@ -54,22 +54,10 @@
       "allowedRotations": [
         0
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 8,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -101,22 +89,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -148,22 +124,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -195,22 +159,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 8,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -242,22 +194,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -289,22 +229,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -336,22 +264,10 @@
         180,
         270
       ],
-      "connectsTo": [
-        "hedge",
-        "spirea"
-      ],
-      "autoTileImages": {
-        "single": "/assets/spirea.webp",
-        "end": "/assets/spirea-end.webp",
-        "straight": "/assets/spirea-straight.webp",
-        "corner": "/assets/spirea-corner.webp",
-        "tee": "/assets/spirea-tee.webp",
-        "cross": "/assets/spirea-cross.webp"
-      },
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 1,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "settlement",
       "settlementLayer": "objects",
@@ -1530,14 +1446,6 @@
         180,
         270
       ],
-      "autoTileImages": {
-        "single": "/assets/new_base_aluminium_wiring-straight.webp",
-        "end": "/assets/new_base_aluminium_wiring-end.webp",
-        "straight": "/assets/new_base_aluminium_wiring-straight.webp",
-        "corner": "/assets/new_base_aluminium_wiring-corner.webp",
-        "tee": "/assets/new_base_aluminium_wiring-tee.webp",
-        "cross": "/assets/new_base_aluminium_wiring-cross.webp"
-      },
       "placementType": "ground",
       "requiresFloor": false,
       "allowWallDecorAbove": false,
@@ -1571,14 +1479,6 @@
         180,
         270
       ],
-      "autoTileImages": {
-        "single": "/assets/new_base_aluminium_wiring-straight.webp",
-        "end": "/assets/new_base_aluminium_wiring-end.webp",
-        "straight": "/assets/new_base_aluminium_wiring-straight.webp",
-        "corner": "/assets/new_base_aluminium_wiring-corner.webp",
-        "tee": "/assets/new_base_aluminium_wiring-tee.webp",
-        "cross": "/assets/new_base_aluminium_wiring-cross.webp"
-      },
       "placementType": "ground",
       "requiresFloor": false,
       "allowWallDecorAbove": false,
@@ -1723,8 +1623,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 40,
       "sharedLimitGroup": "storage",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -1793,8 +1692,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 40,
       "sharedLimitGroup": "storage",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -1863,8 +1761,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 40,
       "sharedLimitGroup": "storage",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -1933,8 +1830,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 40,
       "sharedLimitGroup": "storage",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -1965,8 +1861,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -1994,8 +1889,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2026,8 +1920,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2056,8 +1949,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2086,8 +1978,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2118,8 +2009,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2150,8 +2040,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2182,8 +2071,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2212,8 +2100,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2244,8 +2131,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2276,8 +2162,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 5,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2309,8 +2194,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "sharedLimitGroup": "fuel_tank",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2342,8 +2226,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "sharedLimitGroup": "fuel_tank",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2372,8 +2255,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2405,8 +2287,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "sharedLimitGroup": "storage_for_explosives",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2438,8 +2319,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "sharedLimitGroup": "storage_for_explosives",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2468,8 +2348,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2498,8 +2377,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 20,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2528,8 +2406,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2559,8 +2436,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 20,
       "sharedLimitGroup": "weapon_rack",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2589,8 +2465,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2619,8 +2494,37 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
+    }
+  },
+  {
+    "typeId": "bar_rack",
+    "category": "workbenches_storage",
+    "name": {
+      "ru": "Стеллаж для Слитков (TODO)",
+      "en": "Bar Rack (TODO)"
+    },
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/bar_rack.webp",
+    "tooltipImage": "/assets/preview/bar_rack.webp",
+    "color": "transparent",
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 1,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "baseType": "main"
     }
   },
   {
@@ -2647,8 +2551,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2680,8 +2583,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "woodworking_bench",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2713,8 +2615,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "woodworking_bench",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2741,8 +2642,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2773,8 +2673,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "campfire",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2805,8 +2704,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "campfire",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2837,8 +2735,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "meat_dryer",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2869,8 +2766,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "meat_dryer",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2902,8 +2798,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "melting_furnace",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2935,8 +2830,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "melting_furnace",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2965,8 +2859,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "tanning_rack",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -2995,8 +2888,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "tanning_rack",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3028,8 +2920,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "stonecutter_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3061,8 +2952,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "stonecutter_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3091,8 +2981,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3124,8 +3013,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "workbench",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3157,8 +3045,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "workbench",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3190,8 +3077,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "sewing_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3223,8 +3109,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "sewing_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3256,8 +3141,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "medical_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3289,8 +3173,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
       "sharedLimitGroup": "medical_table",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3320,8 +3203,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "refined_melting_furnace",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3351,8 +3233,7 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "refined_melting_furnace",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3381,8 +3262,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3413,8 +3293,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3443,8 +3322,7 @@
       "requiresSpecificFloorLevel": 4,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3475,8 +3353,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3505,8 +3382,7 @@
       "requiresSpecificFloorLevel": 4,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3537,8 +3413,7 @@
       "requiresSpecificFloorLevel": 4,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3566,8 +3441,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3595,8 +3469,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3624,8 +3497,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3653,8 +3525,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3684,8 +3555,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3713,8 +3583,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3743,8 +3612,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3772,8 +3640,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3804,8 +3671,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3834,8 +3700,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3865,8 +3730,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3895,8 +3759,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3923,8 +3786,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3955,8 +3817,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -3987,8 +3848,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 4,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4019,8 +3879,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 15,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4051,8 +3910,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4083,8 +3941,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 4,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4115,8 +3972,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 10,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4147,8 +4003,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4179,8 +4034,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4211,8 +4065,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4243,8 +4096,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4275,8 +4127,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4307,8 +4158,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4336,8 +4186,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 4,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4367,8 +4216,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 80,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4399,8 +4247,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4430,8 +4277,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 20,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4462,8 +4308,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 4,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4492,8 +4337,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4523,8 +4367,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4554,8 +4397,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 4,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4585,8 +4427,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4616,8 +4457,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4647,8 +4487,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4678,8 +4517,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4709,8 +4547,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4739,8 +4576,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4771,8 +4607,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "sharedLimitGroup": "dog_crate",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4803,8 +4638,7 @@
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "sharedLimitGroup": "dog_crate",
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4835,8 +4669,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4865,8 +4698,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4894,8 +4726,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4926,8 +4757,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4956,8 +4786,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -4987,8 +4816,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5018,8 +4846,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5048,8 +4875,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5080,8 +4906,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5111,8 +4936,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5143,9 +4967,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects",
-      "isDesk": "storehouse"
+      "baseType": "main"
     }
   },
   {
@@ -5173,8 +4995,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5204,8 +5025,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5233,8 +5053,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5262,8 +5081,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5278,7 +5096,7 @@
       "h": 5
     },
     "image": "/assets/atv_garage.webp",
-    "tooltipImage": "/assets/atv_garage.webp",
+    "tooltipImage": "/assets/preview/atv_garage.webp",
     "color": "transparent",
     "colorVariants": [],
     "constraints": {
@@ -5291,11 +5109,9 @@
       ],
       "placementType": "ground",
       "requiresFloor": false,
-      "allowWallDecorAbove": false,
+      "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects",
-      "isDesk": "storehouse"
+      "baseType": "main"
     }
   },
   {
@@ -5511,8 +5327,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5543,8 +5358,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5575,8 +5389,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5607,8 +5420,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5639,8 +5451,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5669,8 +5480,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5701,8 +5511,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5733,8 +5542,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5765,8 +5573,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5797,8 +5604,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5827,8 +5633,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5857,8 +5662,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5889,8 +5693,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5921,8 +5724,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5950,8 +5752,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -5982,8 +5783,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6013,8 +5813,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6044,8 +5843,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6075,8 +5873,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6107,8 +5904,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6139,8 +5935,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6170,8 +5965,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6201,8 +5995,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6232,8 +6025,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6263,8 +6055,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6294,8 +6085,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6326,8 +6116,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6357,8 +6146,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6388,8 +6176,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6420,8 +6207,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6451,8 +6237,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6482,8 +6267,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6513,8 +6297,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6544,8 +6327,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6576,8 +6358,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6607,8 +6388,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6639,8 +6419,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6671,8 +6450,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6703,8 +6481,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6734,8 +6511,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6765,8 +6541,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6797,8 +6572,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6828,8 +6602,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6860,8 +6633,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 3,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6892,8 +6664,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6924,8 +6695,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6954,8 +6724,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -6984,8 +6753,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7013,8 +6781,7 @@
       "requiresSpecificFloorLevel": 2,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7043,8 +6810,7 @@
       "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7073,8 +6839,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7105,8 +6870,7 @@
       "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7136,8 +6900,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7167,8 +6930,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7198,8 +6960,7 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7229,8 +6990,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7260,8 +7020,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7291,8 +7050,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7322,8 +7080,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7353,8 +7110,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7384,8 +7140,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7415,8 +7170,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7446,8 +7200,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7477,8 +7230,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7508,8 +7260,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7539,8 +7290,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7570,8 +7320,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7601,8 +7350,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7632,8 +7380,7 @@
       "allowWindowWall": true,
       "allowWallDecorAbove": false,
       "maxPerBase": 6,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   },
   {
@@ -7663,8 +7410,7 @@
       "allowWindowWall": false,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
-      "baseType": "main",
-      "settlementLayer": "objects"
+      "baseType": "main"
     }
   }
 ]
