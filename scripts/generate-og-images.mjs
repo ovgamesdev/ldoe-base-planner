@@ -14,6 +14,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import satori from 'satori'
+import sharp from 'sharp'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
@@ -88,7 +89,7 @@ function buildMarkup(lang) {
             style: {
               position: 'absolute',
               top: 0,
-              left: (((1200/2)/2)/1.2),
+              left: (((1200 / 2) / 2) / 1.2),
               width: '100%',
               height: '100%',
               objectFit: 'cover',
@@ -198,7 +199,11 @@ async function generateOne(lang) {
   const resvg = new Resvg(svg, {
     fitTo: { mode: 'width', value: WIDTH },
   })
-  const png = resvg.render().asPng()
+  const uncompressedPng = resvg.render().asPng()
+
+  const png = await sharp(uncompressedPng)
+    .png({ quality: 80, compressionLevel: 9, palette: true })
+    .toBuffer()
 
   const outPath = path.join(OUT_DIR, `og-image-${lang}.png`)
   writeFileSync(outPath, png)
