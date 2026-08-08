@@ -70,6 +70,7 @@ export const CanvasGrid = memo(function CanvasGrid({
   activeSettlementLayer
 }: CanvasGridProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const localTransformRef = useRef({ x: pan.x, y: pan.y, z: zoom });
   const wheelTimeoutRef = useRef<NodeJS.Timeout>(null);
@@ -152,10 +153,10 @@ export const CanvasGrid = memo(function CanvasGrid({
 
   const isWallDecorTool = activeTool === 'object' && selectedTemplate?.constraints.placementType === 'wall';
 
-  const handleLocalWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+  const handleLocalWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     setSvgWillChange(true);
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
     const mouseX = e.clientX - (rect.left + rect.width / 2);
     const mouseY = e.clientY - (rect.top + rect.height / 2);
 
@@ -183,6 +184,15 @@ export const CanvasGrid = memo(function CanvasGrid({
     }, 100);
     window.dispatchEvent(new CustomEvent('internal-zoom', { detail: { newZoom: nextZ } }));
   }, [updateTransform, onZoomChange, onPanChange, setSvgWillChange]);
+
+  useEffect(() => {
+    const node = containerRef.current;
+    if (!node) return;
+    node.addEventListener('wheel', handleLocalWheel, { passive: false });
+    return () => {
+      node.removeEventListener('wheel', handleLocalWheel);
+    };
+  }, [handleLocalWheel]);
 
   useEffect(() => {
     const handleExternalZoom = (e: Event) => {
@@ -469,9 +479,9 @@ export const CanvasGrid = memo(function CanvasGrid({
 
   return (
     <div
+      ref={containerRef}
       className="flex-1 bg-neutral-950 overflow-hidden relative flex items-center justify-center z-0 touch-none select-none"
       style={{ cursor: isPanning || mouseStateRef.current.isDragging ? 'grabbing' : (activeTool === 'hand' ? 'grab' : 'default') }}
-      onWheel={handleLocalWheel}
       onMouseDown={handleLocalMouseDown}
       onMouseMove={handleLocalMouseMove}
       onMouseUp={handleLocalMouseUp}

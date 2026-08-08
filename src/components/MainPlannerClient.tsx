@@ -1631,20 +1631,35 @@ export default function MainPlannerClient() {
 
     const isSettlementOrBoth = newBuilding.baseType === 'settlement' || newBuilding.baseType === 'both';
     const isEnergyOrWater = isSettlementOrBoth && (newBuilding.settlementLayer === 'energy' || newBuilding.settlementLayer === 'water');
+    // Mirrors the visibility flags RightSidebar uses to show/hide sections of the
+    // form. A field that's hidden for the current baseType/placementType/autoTiling
+    // combo must not be saved from whatever value happens to be sitting in
+    // newBuilding — that value is leftover from a different item or a different
+    // combo, never something the person could see or intentionally set right now.
+    const isMainBaseOnly = newBuilding.baseType === 'main';
+    const isSettlementOnly = newBuilding.baseType === 'settlement';
+    const showDesksAndRooms = !isMainBaseOnly && !isEnergyOrWater;
 
     const allowedRotations = newBuilding.autoTiling
       ? [0]
       : (newBuilding.allowedRotations.length ? newBuilding.allowedRotations : [0]);
-    const connectsTo = newBuilding.connectsTo
-      .split(',')
-      .map(typeId => typeId.trim())
-      .filter(Boolean);
-    const autoTileImages = Object.fromEntries(
-      Object.entries(newBuilding.autoTileImages).filter(([, image]) => image.trim())
-    ) as Partial<Record<AutoTileVariant, string>>;
+    const connectsTo = newBuilding.autoTiling
+      ? newBuilding.connectsTo.split(',').map(typeId => typeId.trim()).filter(Boolean)
+      : [];
+    const autoTileImages = newBuilding.autoTiling
+      ? Object.fromEntries(Object.entries(newBuilding.autoTileImages).filter(([, image]) => image.trim())) as Partial<Record<AutoTileVariant, string>>
+      : {};
+
+    const trimmedTypeId = newBuilding.typeId.trim();
+    // colorVariants has no editing UI in RightSidebar — the only way it can end
+    // up non-empty is by having been carried over from a previously-edited item
+    // (see handleEditCatalogItem). For a genuinely new item (no existing catalog
+    // entry for this typeId) that carry-over is always stale, never intentional,
+    // so it's dropped here rather than silently saved.
+    const isNewItem = !catalogMap[trimmedTypeId];
 
     const item: CatalogItem = {
-      typeId: newBuilding.typeId.trim(),
+      typeId: trimmedTypeId,
       category: newBuilding.category,
       name: {
         ru: newBuilding.name.ru || newBuilding.name.en,
@@ -1654,7 +1669,7 @@ export default function MainPlannerClient() {
       image: newBuilding.image || '',
       tooltipImage: newBuilding.tooltipImage || '',
       color: newBuilding.color,
-      colorVariants: newBuilding.colorVariants.filter(v => v.color && v.image),
+      colorVariants: isNewItem ? [] : newBuilding.colorVariants.filter(v => v.color && v.image),
       constraints: {
         rotatable: !newBuilding.autoTiling && allowedRotations.length > 1,
         allowedRotations,
@@ -1665,25 +1680,25 @@ export default function MainPlannerClient() {
         requiresFloor: !isEnergyOrWater && newBuilding.placementType === 'floor',
         requiresSpecificFloorLevel: (!isEnergyOrWater && (newBuilding.placementType === 'floor' || newBuilding.placementType === 'any')) ? Number(newBuilding.minFloorLvl) : undefined,
         requiresWallLevel: (!isEnergyOrWater && newBuilding.placementType === 'wall') ? Number(newBuilding.minWallLvl) : undefined,
-        allowWindowWall: (!isEnergyOrWater && newBuilding.placementType === 'wall') ? newBuilding.allowWindowWall : undefined,
-        allowWallDecorAbove: !isEnergyOrWater && newBuilding.allowWallDecorAbove,
+        allowWindowWall: (!isEnergyOrWater && !isSettlementOnly && newBuilding.placementType === 'wall') ? newBuilding.allowWindowWall : undefined,
+        allowWallDecorAbove: !isEnergyOrWater && !isSettlementOnly && newBuilding.allowWallDecorAbove,
         maxPerBase: Number(newBuilding.maxCount),
         sharedLimitGroup: newBuilding.sharedLimitGroup.trim() || undefined,
         baseType: newBuilding.baseType,
-        settlementLayer: newBuilding.settlementLayer,
-        isDesk: !isEnergyOrWater ? (newBuilding.isDesk.trim() || undefined) : undefined,
-        requiredDesk: !isEnergyOrWater ? (newBuilding.requiredDesk.trim() || undefined) : undefined,
+        settlementLayer: isSettlementOrBoth ? newBuilding.settlementLayer : undefined,
+        isDesk: showDesksAndRooms ? (newBuilding.isDesk.trim() || undefined) : undefined,
+        requiredDesk: showDesksAndRooms ? (newBuilding.requiredDesk.trim() || undefined) : undefined,
         requiresPower: isSettlementOrBoth ? newBuilding.requiresPower : undefined,
         requiresWater: isSettlementOrBoth ? newBuilding.requiresWater : undefined
       }
     };
 
-    if (catalogMap[item.typeId]) {
-      setCatalog(prev => prev.map(c => c.typeId === item.typeId ? item : c));
-      showAlert(t('updatedSuccess', { name: getItemName(item.name, language) }), t('success'), 'success');
-    } else {
+    if (isNewItem) {
       setCatalog(prev => [...prev, item]);
       showAlert(t('addedSuccess', { name: getItemName(item.name, language) }), t('success'), 'success');
+    } else {
+      setCatalog(prev => prev.map(c => c.typeId === item.typeId ? item : c));
+      showAlert(t('updatedSuccess', { name: getItemName(item.name, language) }), t('success'), 'success');
     }
 
     setSelectedTypeId(item.typeId);
@@ -2550,6 +2565,7 @@ export default function MainPlannerClient() {
 
         <SelectedElementPanel
           selectedElementData={selectedElementData}
+          activeBaseType={activeBaseType}
           onClose={() => setSelectedInstanceId(null)}
           onPaintObject={handlePaintObject}
           onCopyObject={handleCopyObject}

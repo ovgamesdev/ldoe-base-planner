@@ -1,4 +1,5 @@
-import { CELL_SIZE, ISO_H, ISO_W, ViewMode } from './constants'
+import type { WallVariant } from './constants'
+import { CELL_SIZE, ISO_H, ISO_W, ViewMode, WALL_LEVEL_COLORS, WALL_TOOLTIP_IMAGES_MAIN, WALL_TOOLTIP_IMAGES_SETTLEMENT } from './constants'
 import type { BaseType, CatalogItem, FloorLayer, ObjectLayer, SettlementLayerType, WallLayer } from './initial-data'
 
 export const getOccupiedCells = (x: number, y: number, w: number, h: number, rotation: number) => {
@@ -192,49 +193,56 @@ export const getCornerHighlightPaths = (
   });
 };
 
+// id SVG-паттерна с текстурой пола для данного уровня/базы/поворота.
+// Сами <pattern> (по 2 варианта поворота на каждый уровень) объявляются один раз в <defs> внутри GridCells.
+export const getFloorPatternId = (activeBaseType: BaseType | undefined, level: number, rotation: 0 | 270 = 0) => {
+  const base = activeBaseType === 'settlement' ? 'settlement' : 'main';
+  return `floor-tex-${base}-${level}-r${rotation}`;
+};
+
+// Шахматный поворот текстуры пола: чётная сумма координат — 0°, нечётная — 270.
+export const getFloorTextureRotation = (x: number, y: number): 0 | 270 => ((x + y) % 2 === 0 ? 0 : 270);
+
 export const getFloorFill = (floors: FloorLayer[], x: number, y: number, activeBaseType?: BaseType, activeSettlementLayer?: SettlementLayerType) => {
   const isResourceLayer = activeBaseType === 'settlement' && (activeSettlementLayer === 'energy' || activeSettlementLayer === 'water');
   if (isResourceLayer) return '#5b4736';
 
   const floor = floors.find(f => f.x === x && f.y === y);
-  if (!floor) return '#166534'; 
+  if (!floor) return '#166534';
 
-  if (activeBaseType === 'settlement') {
-    if (floor.level === 1) return '#78350f'; 
-    if (floor.level === 2) return '#854d0e'; 
-    if (floor.level === 3) return '#78716c'; 
-    if (floor.level === 4) return '#334155'; 
-    if (floor.level === 5) return '#164e63'; 
-  }
-
-  if (floor.level === 1) return '#78350f'; 
-  if (floor.level === 2) return '#854d0e'; 
-  if (floor.level === 3) return '#78716c'; 
-  if (floor.level === 4) return '#334155'; 
-  if (floor.level === 5) return '#164e63'; 
-  return '#166534';
+  return `url(#${getFloorPatternId(activeBaseType, floor.level, getFloorTextureRotation(x, y))})`;
 };
 
-export const getWallColor = (walls: WallLayer[], x: number, y: number, orientation: 'horizontal' | 'vertical', activeBaseType?: BaseType) => {
+// Базовый (фоновый) цвет стены по уровню материала — общий для основной базы и поселения.
+export const getWallColor = (walls: WallLayer[], x: number, y: number, orientation: 'horizontal' | 'vertical') => {
   const wall = walls.find(w => w.x === x && w.y === y && w.orientation === orientation);
   if (!wall) return null;
+  return WALL_LEVEL_COLORS[wall.level] ?? '#06b6d4';
+};
 
-  if (activeBaseType === 'settlement') {
-    if (wall.isWindow) return '#3b82f6';
-    if (wall.isDoor) return '#10b981';
-    if (wall.level === 1) return '#d97706';
-    if (wall.level === 2) return '#f59e0b';
-    if (wall.level === 3) return '#a8a29e';
-    if (wall.level === 4) return '#64748b';
-  }
+// Превью-картинка стены/двери/окна для данного уровня и базы (main: 1-5, settlement: 1-2).
+export const getWallTooltipImage = (activeBaseType: BaseType | undefined, variant: WallVariant, level: number): string | undefined => {
+  const set = activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT : WALL_TOOLTIP_IMAGES_MAIN;
+  return set[variant]?.[level];
+};
 
-  if (wall.isWindow) return '#3b82f6';
-  if (wall.isDoor) return '#10b981';
-  if (wall.level === 1) return '#d97706';
-  if (wall.level === 2) return '#f59e0b';
-  if (wall.level === 3) return '#a8a29e';
-  if (wall.level === 4) return '#64748b';
-  return '#06b6d4';
+// Укороченный отрезок по центру линии t->r, длиной `ratio` от полной длины.
+// Используется для индикатора двери, который короче самой стены.
+export const getInsetSegment = (
+  t: { sx: number; sy: number },
+  r: { sx: number; sy: number },
+  ratio: number
+) => {
+  const dx = r.sx - t.sx;
+  const dy = r.sy - t.sy;
+  const startFrac = (1 - ratio) / 2;
+  const endFrac = 1 - startFrac;
+  return {
+    x1: t.sx + dx * startFrac,
+    y1: t.sy + dy * startFrac,
+    x2: t.sx + dx * endFrac,
+    y2: t.sy + dy * endFrac,
+  };
 };
 
 export function getAssetPath(path: string | undefined): string | undefined {

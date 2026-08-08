@@ -1,5 +1,6 @@
 import type { Tool, ViewMode } from '@/lib/constants'
-import { getTopVertex, getWallColor } from '@/lib/grid-utils'
+import { WALL_DOOR_COLOR, WALL_INDICATOR_SEGMENT_RATIO, WALL_WINDOW_COLOR } from '@/lib/constants'
+import { getInsetSegment, getTopVertex, getWallColor } from '@/lib/grid-utils'
 import type { BaseType, SettlementLayerType, WallLayer } from '@/lib/initial-data'
 import React, { memo } from 'react'
 
@@ -41,65 +42,59 @@ export const GridWalls = memo(function GridWalls({
         const wallKey = `w${orientation === 'horizontal' ? 'h' : 'v'}-${x}-${y}`;
         const isRoomOuterWall = highlightedWalls?.has(wallKey);
 
-        if (orientation === 'horizontal') {
-          const t = getTopVertex(x, y, viewMode, gridW);
-          const r = getTopVertex(x + 1, y, viewMode, gridW);
-          const color = getWallColor(walls, x, y, 'horizontal', activeBaseType);
-          const strokeColor = isRoomOuterWall ? '#f59e0b' : (color ?? 'transparent');
-          const strokeWidth = isRoomOuterWall ? 6 : (color ? 4 : 10);
-          const strokeOpacity = isRoomOuterWall ? 1 : (color ? 1 : (isWallDecorTool ? 0.3 : 0));
-          const isInteractive = activeTool === 'wall' || color || isWallDecorTool || activeTool === 'eraser';
+        const wall = walls.find(w => w.x === x && w.y === y && w.orientation === orientation);
+        // Фоновый цвет стены (по уровню материала), не зависит от двери/окна.
+        const levelColor = getWallColor(walls, x, y, orientation);
 
-          return (
+        // Обе ориентации строятся одинаково: t -> конец (сосед по X для horizontal, по Y для vertical).
+        const t = getTopVertex(x, y, viewMode, gridW);
+        const end = orientation === 'horizontal'
+          ? getTopVertex(x + 1, y, viewMode, gridW)
+          : getTopVertex(x, y + 1, viewMode, gridW);
+
+        const strokeColor = isRoomOuterWall ? '#f59e0b' : (levelColor ?? 'transparent');
+        const strokeWidth = isRoomOuterWall ? 6 : (levelColor ? 4 : 10);
+        const strokeOpacity = isRoomOuterWall ? 1 : (levelColor ? 1 : (isWallDecorTool ? 0.3 : 0));
+        const isInteractive = activeTool === 'wall' || levelColor || isWallDecorTool || activeTool === 'eraser';
+
+        const handleClick = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          if (activeTool === 'hand') {
+            if (levelColor) onSelectWall(`wall_${x}_${y}_${orientation}`);
+            else onClearSelection();
+          } else if (activeTool === 'wall' || isWallDecorTool || activeTool === 'eraser') {
+            onWallClick(x, y, orientation, e);
+          }
+        };
+
+        // Дверь и окно — оба короче стены и по центру, одинаковой ширины.
+        // Фон уровня остаётся виден по краям стены.
+        const indicatorColor = wall?.isDoor ? WALL_DOOR_COLOR : wall?.isWindow ? WALL_WINDOW_COLOR : null;
+        const indicatorSegment = indicatorColor && !isRoomOuterWall
+          ? getInsetSegment(t, end, WALL_INDICATOR_SEGMENT_RATIO)
+          : null;
+
+        return (
+          <g key={`${orientation === 'horizontal' ? 'wh' : 'wv'}-${x}-${y}`} style={{ opacity: opacityValue }}>
             <line
-              key={`wh-${x}-${y}`}
-              x1={t.sx} y1={t.sy} x2={r.sx} y2={r.sy}
+              x1={t.sx} y1={t.sy} x2={end.sx} y2={end.sy}
               stroke={strokeColor}
               strokeWidth={strokeWidth}
               strokeOpacity={strokeOpacity}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (activeTool === 'hand') {
-                  if (color) onSelectWall(`wall_${x}_${y}_horizontal`);
-                  else onClearSelection();
-                } else if (activeTool === 'wall' || isWallDecorTool || activeTool === 'eraser') {
-                  onWallClick(x, y, 'horizontal', e);
-                }
-              }}
+              onClick={handleClick}
               className={isInteractive ? 'cursor-pointer hover:stroke-amber-400' : ''}
-              style={{ pointerEvents: isInteractive ? 'stroke' : 'none', opacity: opacityValue }}
+              style={{ pointerEvents: isInteractive ? 'stroke' : 'none' }}
             />
-          );
-        } else {
-          const t = getTopVertex(x, y, viewMode, gridW);
-          const l = getTopVertex(x, y + 1, viewMode, gridW);
-          const color = getWallColor(walls, x, y, 'vertical', activeBaseType);
-          const strokeColor = isRoomOuterWall ? '#f59e0b' : (color ?? 'transparent');
-          const strokeWidth = isRoomOuterWall ? 6 : (color ? 4 : 10);
-          const strokeOpacity = isRoomOuterWall ? 1 : (color ? 1 : (isWallDecorTool ? 0.3 : 0));
-          const isInteractive = activeTool === 'wall' || color || isWallDecorTool || activeTool === 'eraser';
-
-          return (
-            <line
-              key={`wv-${x}-${y}`}
-              x1={t.sx} y1={t.sy} x2={l.sx} y2={l.sy}
-              stroke={strokeColor}
-              strokeWidth={strokeWidth}
-              strokeOpacity={strokeOpacity}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (activeTool === 'hand') {
-                  if (color) onSelectWall(`wall_${x}_${y}_vertical`);
-                  else onClearSelection();
-                } else if (activeTool === 'wall' || isWallDecorTool || activeTool === 'eraser') {
-                  onWallClick(x, y, 'vertical', e);
-                }
-              }}
-              className={isInteractive ? 'cursor-pointer hover:stroke-amber-400' : ''}
-              style={{ pointerEvents: isInteractive ? 'stroke' : 'none', opacity: opacityValue }}
-            />
-          );
-        }
+            {indicatorSegment && indicatorColor && (
+              <line
+                x1={indicatorSegment.x1} y1={indicatorSegment.y1} x2={indicatorSegment.x2} y2={indicatorSegment.y2}
+                stroke={indicatorColor}
+                strokeWidth={strokeWidth}
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
+          </g>
+        );
       })}
     </>
   );

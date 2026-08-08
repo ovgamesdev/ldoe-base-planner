@@ -88,7 +88,7 @@ export const applyCatalogOverlay = (defaults: CatalogItem[], overlay: CatalogOve
 
   Object.values(overlay).forEach((entry) => {
     if (seen.has(entry.typeId) || entry._deleted) return;
-    result.push(stripOverlayMeta(entry) as CatalogItem);
+    result.push({ typeId: entry.typeId, ...stripOverlayMeta(entry) } as CatalogItem);
   });
 
   return result;
@@ -132,7 +132,19 @@ export const readCatalogOverlay = (): CatalogOverlay => {
     const raw = localStorage.getItem(CATALOG_OVERLAY_STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed as CatalogOverlay : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    // Defensive cleanup for data written by a since-fixed bug where locally-added
+    // items lost their typeId (both as the object key and inside the entry) on
+    // the way through applyCatalogOverlay. Such entries are unrecoverable (the
+    // typeId is gone for good) — drop them rather than let them keep producing
+    // catalog items with typeId undefined.
+    const cleaned: CatalogOverlay = {};
+    Object.entries(parsed as Record<string, CatalogOverlayEntry>).forEach(([key, entry]) => {
+      if (key === 'undefined' || !entry || !entry.typeId) return;
+      cleaned[key] = entry;
+    });
+    return cleaned;
   } catch {
     return {};
   }

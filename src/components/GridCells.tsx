@@ -1,5 +1,6 @@
 import type { Tool, ViewMode } from '@/lib/constants'
-import { diamondPoints, getFloorFill } from '@/lib/grid-utils'
+import { FLOOR_TEXTURES_MAIN, FLOOR_TEXTURES_SETTLEMENT } from '@/lib/constants'
+import { diamondPoints, getAssetPath, getFloorFill, getFloorPatternId } from '@/lib/grid-utils'
 import type { BaseType, MapData, SettlementLayerType } from '@/lib/initial-data'
 import { memo } from 'react'
 
@@ -40,6 +41,42 @@ export const GridCells = memo(function GridCells({
 
   return (
     <>
+      <defs>
+        {Object.entries(FLOOR_TEXTURES_MAIN).flatMap(([lvl, src]) => ([0, 270] as const).map(rot => (
+          <pattern
+            key={`floor-tex-main-${lvl}-r${rot}`}
+            id={getFloorPatternId('main', Number(lvl), rot)}
+            patternUnits="objectBoundingBox"
+            patternContentUnits="objectBoundingBox"
+            width={1}
+            height={1}
+          >
+            <image
+              href={getAssetPath(src)}
+              x={0} y={0} width={1} height={1}
+              preserveAspectRatio="xMidYMid slice"
+              transform={rot ? `rotate(${rot} 0.5 0.5)` : undefined}
+            />
+          </pattern>
+        )))}
+        {Object.entries(FLOOR_TEXTURES_SETTLEMENT).flatMap(([lvl, src]) => ([0, 270] as const).map(rot => (
+          <pattern
+            key={`floor-tex-settlement-${lvl}-r${rot}`}
+            id={getFloorPatternId('settlement', Number(lvl), rot)}
+            patternUnits="objectBoundingBox"
+            patternContentUnits="objectBoundingBox"
+            width={1}
+            height={1}
+          >
+            <image
+              href={getAssetPath(src)}
+              x={0} y={0} width={1} height={1}
+              preserveAspectRatio="xMidYMid slice"
+              transform={rot ? `rotate(${rot} 0.5 0.5)` : undefined}
+            />
+          </pattern>
+        )))}
+      </defs>
       {allCells.map(({ x, y }) => {
         const isOutOfBounds = x < 0 || y < 0 || x >= gridW || y >= gridH;
         const isNoBuild = !isOutOfBounds && mapState.mapConfig.noBuildZones.some(nb => nb.x === x && nb.y === y && (activeBaseType === 'main' || nb.layer === activeSettlementLayer));

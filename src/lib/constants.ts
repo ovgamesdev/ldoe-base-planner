@@ -32,6 +32,95 @@ export const ISO_W = 56;
 export const ISO_H = 28;
 export const CELL_SIZE = 48;
 
+// Пол: текстуры по уровню материала. 1-5 для основной базы, 1-3 для поселения.
+// Пути ниже — ожидаемая раскладка ассетов; положите файлы в /public по этим путям
+// (проходят через getAssetPath, так что NEXT_PUBLIC_BASE_PATH учитывается автоматически).
+export const FLOOR_TEXTURES_MAIN: Record<number, string> = {
+  1: '/assets/main-floor-1.webp',
+  2: '/assets/main-floor-2.webp',
+  3: '/assets/main-floor-3.webp',
+  4: '/assets/main-floor-4.webp',
+  5: '/assets/main-floor-5.webp',
+};
+
+export const FLOOR_TEXTURES_SETTLEMENT: Record<number, string> = {
+  1: '/assets/settlement-floor-1.webp',
+  2: '/assets/settlement-floor-2.webp',
+  3: '/assets/settlement-floor-3.webp',
+};
+
+// Стены: фон (цвет уровня материала), плюс отдельные цвета для двери и окна,
+// которые рисуются поверх фона.
+export const WALL_LEVEL_COLORS: Record<number, string> = {
+  1: '#732C00',
+  2: '#E78200',
+  3: '#A5A6A5',
+  4: '#314152',
+  5: '#6B3025', // #8B4A24
+};
+
+export const WALL_DOOR_COLOR = '#00FF00';
+export const WALL_WINDOW_COLOR = '#00CFC6';
+
+// Доля длины стены, которую занимает индикатор двери/окна (центрирован на стене).
+// Окно теперь той же ширины, что и дверь.
+export const WALL_INDICATOR_SEGMENT_RATIO = 0.3;
+
+export type WallVariant = 'floor' | 'wall' | 'door' | 'window';
+
+// Превью-картинки для tooltip (LeftSidebar) и SelectedElementPanel — отдельные наборы
+// на стену/дверь/окно, и отдельно на основную базу (1-5) и поселение (1-2).
+export const WALL_TOOLTIP_IMAGES_MAIN: Record<WallVariant, Record<number, string>> = {
+  floor: {
+    1: '/assets/preview/main-floor-1.webp',
+    2: '/assets/preview/main-floor-2.webp',
+    3: '/assets/preview/main-floor-3.webp',
+    4: '/assets/preview/main-floor-4.webp',
+    5: '/assets/preview/main-floor-5.webp',
+  },
+  wall: {
+    1: '/assets/preview/main-wall-1.webp',
+    2: '/assets/preview/main-wall-2.webp',
+    3: '/assets/preview/main-wall-3.webp',
+    4: '/assets/preview/main-wall-4.webp',
+    5: '/assets/preview/main-wall-5.webp',
+  },
+  door: {
+    1: '/assets/preview/main-door-1.webp',
+    2: '/assets/preview/main-door-2.webp',
+    3: '/assets/preview/main-door-3.webp',
+    4: '/assets/preview/main-door-4.webp',
+    5: '/assets/preview/main-door-5.webp',
+  },
+  window: {
+    1: '/assets/preview/main-window-1.webp',
+    2: '/assets/preview/main-window-2.webp',
+    3: '/assets/preview/main-window-3.webp',
+    4: '/assets/preview/main-window-4.webp',
+    5: '/assets/preview/main-window-5.webp',
+  },
+};
+
+export const WALL_TOOLTIP_IMAGES_SETTLEMENT: Record<WallVariant, Record<number, string>> = {
+  floor: {
+    1: '/assets/preview/settlement-floor-1.webp',
+    2: '/assets/preview/settlement-floor-2.webp',
+    3: '/assets/preview/settlement-floor-3.webp',
+  },
+  wall: {
+    1: '/assets/preview/settlement-wall-1.webp',
+    2: '/assets/preview/settlement-wall-2.webp',
+  },
+  door: {
+    1: '/assets/preview/settlement-door-1.webp',
+    2: '/assets/preview/settlement-door-2.webp',
+  },
+  window: {
+    1: '/assets/preview/settlement-window-1.webp',
+    2: '/assets/preview/settlement-window-2.webp',
+  },
+};
+
 export const LOADING_MAP: MapData = {
   id: 'loading-map',
   name: 'Loading map…',

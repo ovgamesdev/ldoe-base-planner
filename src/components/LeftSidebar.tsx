@@ -1,8 +1,8 @@
 import { TranslationKey, useLanguage } from '@/context/LanguageContext'
 import type { Tool, ViewMode } from '@/lib/constants'
-import { ALL_ROTATIONS } from '@/lib/constants'
+import { ALL_ROTATIONS, WALL_TOOLTIP_IMAGES_MAIN, WALL_TOOLTIP_IMAGES_SETTLEMENT } from '@/lib/constants'
 import { clearConsent } from '@/lib/cookie-consent'
-import { getAssetPath } from '@/lib/grid-utils'
+import { getAssetPath, getWallTooltipImage } from '@/lib/grid-utils'
 import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '@/lib/initial-data'
 import { getItemName, searchMatchesName } from '@/lib/initial-data'
 import { isDefaultMapName } from '@/lib/map-utils'
@@ -418,27 +418,89 @@ export const LeftSidebar = memo(function LeftSidebar({
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">{t('materialLevel')}</label>
             <div className="flex gap-1.5">
-              {[1, 2, 3, 4, 5].map(lvl => (
-                <button key={lvl} onClick={() => onSetBuildLevel(lvl)} disabled={activeTool === 'floor' ? lvl > maxFloorLevel : lvl > maxWallLevel} className={`flex-1 py-2 rounded text-xs font-bold min-h-[40px] ${buildLevel === lvl ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-800 text-neutral-400'} disabled:opacity-30 cursor-pointer`}>
-                Lvl {lvl}
-              </button>
-            ))}
-          </div>
+              {[1, 2, 3, 4, 5].map(lvl => {
+                const isDisabled = activeTool === 'floor' ? lvl > maxFloorLevel : lvl > maxWallLevel;
+                const wallVariant = isDoorPlacement ? 'door' : isWindowPlacement ? 'window' : 'wall';
+                const previewSrc = activeTool === 'floor'
+                  ? (activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT.floor[lvl] : WALL_TOOLTIP_IMAGES_MAIN.floor[lvl])
+                  : getWallTooltipImage(activeBaseType, wallVariant, lvl);
+
+                return (
+                  <div key={lvl} className="relative flex-1 group">
+                    <button
+                      onClick={() => onSetBuildLevel(lvl)}
+                      disabled={isDisabled}
+                      className={`w-full py-2 rounded text-xs font-bold min-h-[40px] ${buildLevel === lvl ? 'bg-amber-500 text-neutral-950' : 'bg-neutral-800 text-neutral-400'} disabled:opacity-30 cursor-pointer`}
+                    >
+                      Lvl {lvl}
+                    </button>
+                    {previewSrc && !isDisabled && (
+                      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20">
+                        <div className="w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden bg-neutral-950 border border-neutral-700 rounded shadow-xl p-0.5">
+                          <img
+                            src={getAssetPath(previewSrc)}
+                            alt={`${t(activeTool as TranslationKey)} Lvl ${lvl}`}
+                            className="max-w-full max-h-full w-auto h-auto object-contain"
+                          />
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-neutral-950 border-r border-b border-neutral-700 rotate-45 -mt-[3px]" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           {activeTool === 'wall' && (
             <div className="flex gap-3 text-xs select-none text-neutral-300 pt-1">
-              <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
-                <input type="radio" checked={!isDoorPlacement && !isWindowPlacement} onChange={() => { onSetDoorPlacement(false); onSetWindowPlacement(false); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
-                {t('wall')}
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
-                <input type="radio" checked={isDoorPlacement} onChange={() => { onSetDoorPlacement(true); onSetWindowPlacement(false); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
-                {t('door')}
-              </label>
-              <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
-                <input type="radio" checked={isWindowPlacement} onChange={() => { onSetDoorPlacement(false); onSetWindowPlacement(true); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
-                {t('window')}
-              </label>
+              <div  className="relative group">
+                <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
+                  <input type="radio" checked={!isDoorPlacement && !isWindowPlacement} onChange={() => { onSetDoorPlacement(false); onSetWindowPlacement(false); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
+                  {t('wall')}
+                </label>
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20">
+                  <div className="w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden bg-neutral-950 border border-neutral-700 rounded shadow-xl p-0.5">
+                    <img
+                      src={getAssetPath(`${(activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT.wall[buildLevel] : WALL_TOOLTIP_IMAGES_MAIN.wall[buildLevel])}`)}
+                      alt={t('wall')}
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                    />
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-neutral-950 border-r border-b border-neutral-700 rotate-45 -mt-[3px]" />
+                </div>
+              </div>
+              <div  className="relative group">
+                <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
+                  <input type="radio" checked={isDoorPlacement} onChange={() => { onSetDoorPlacement(true); onSetWindowPlacement(false); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
+                  {t('door')}
+                </label>
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20">
+                  <div className="w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden bg-neutral-950 border border-neutral-700 rounded shadow-xl p-0.5">
+                    <img
+                      src={getAssetPath(`${(activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT.door[buildLevel] : WALL_TOOLTIP_IMAGES_MAIN.door[buildLevel])}`)}
+                      alt={t('door')}
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                    />
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-neutral-950 border-r border-b border-neutral-700 rotate-45 -mt-[3px]" />
+                </div>
+              </div>
+              <div  className="relative group">
+                <label className="flex items-center gap-1.5 cursor-pointer py-1 hover:text-white">
+                  <input type="radio" checked={isWindowPlacement} onChange={() => { onSetDoorPlacement(false); onSetWindowPlacement(true); }} className="accent-amber-500 w-4 h-4 cursor-pointer" />
+                  {t('window')}
+                </label>
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:flex flex-col items-center z-20">
+                  <div className="w-16 h-16 shrink-0 flex items-center justify-center overflow-hidden bg-neutral-950 border border-neutral-700 rounded shadow-xl p-0.5">
+                    <img
+                      src={getAssetPath(`${(activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT.window[buildLevel] : WALL_TOOLTIP_IMAGES_MAIN.window[buildLevel])}`)}
+                      alt={t('window')}
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                    />
+                  </div>
+                  <div className="w-1.5 h-1.5 bg-neutral-950 border-r border-b border-neutral-700 rotate-45 -mt-[3px]" />
+                </div>
+              </div>
             </div>
           )}
         </div>

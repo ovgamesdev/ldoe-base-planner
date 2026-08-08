@@ -1,10 +1,12 @@
 import { TranslationKey, useLanguage } from '@/context/LanguageContext'
-import { getAssetPath } from '@/lib/grid-utils'
-import { getItemName, type SelectedElementData } from '@/lib/initial-data'
+import { WALL_TOOLTIP_IMAGES_MAIN, WALL_TOOLTIP_IMAGES_SETTLEMENT } from '@/lib/constants'
+import { getAssetPath, getWallTooltipImage } from '@/lib/grid-utils'
+import { getItemName, type BaseType, type SelectedElementData } from '@/lib/initial-data'
 import { memo, useEffect, useRef, useState } from 'react'
 
 interface SelectedElementPanelProps {
   selectedElementData: SelectedElementData | null;
+  activeBaseType: BaseType;
   onClose: () => void;
   onPaintObject: (instanceId: string, color: string | undefined) => void;
   onCopyObject: (typeId: string, rotation: number) => void;
@@ -17,6 +19,7 @@ interface SelectedElementPanelProps {
 
 export const SelectedElementPanel = memo(function SelectedElementPanel({
   selectedElementData,
+  activeBaseType,
   onClose,
   onPaintObject,
   onCopyObject,
@@ -269,9 +272,18 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
 
         {selectedElementData.type === 'floor' && (
           <div className="space-y-2 text-neutral-300">
-            <p><span className="text-neutral-500">{t('coordinatesLabel')}</span> {selectedElementData.data.x}, {selectedElementData.data.y}</p>
-            <p><span className="text-neutral-500">{t('materialLevelLabel')}</span> {selectedElementData.data.level}</p>
-            
+            <div className="flex gap-3 mb-1 items-center">
+              <img
+                src={getAssetPath(activeBaseType === 'settlement' ? WALL_TOOLTIP_IMAGES_SETTLEMENT.floor[selectedElementData.data.level] : WALL_TOOLTIP_IMAGES_MAIN.floor[selectedElementData.data.level])}
+                alt={t('materialLevelLabel')}
+                className="w-16 h-16 object-contain bg-neutral-950 rounded border border-neutral-800 p-1"
+              />
+              <div className="space-y-1 text-neutral-300 flex-1">
+                <p><span className="text-neutral-500">{t('coordinatesLabel')}</span> {selectedElementData.data.x}, {selectedElementData.data.y}</p>
+                <p><span className="text-neutral-500">{t('materialLevelLabel')}</span> {selectedElementData.data.level}</p>
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-3 mt-2 border-t border-neutral-800">
               <button
                 onClick={() => onDeleteFloor(selectedElementData.data.x, selectedElementData.data.y)}
@@ -285,9 +297,22 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
 
         {selectedElementData.type === 'wall' && (
           <div className="space-y-2 text-neutral-300">
-            <p><span className="text-neutral-500">{t('coordinatesLabel')}</span> {selectedElementData.data.x}, {selectedElementData.data.y}</p>
-            <p><span className="text-neutral-500">{t('orientationLabel')}</span> {selectedElementData.data.orientation === 'horizontal' ? t('horizontal') : selectedElementData.data.orientation === 'vertical' ? t('vertical') : selectedElementData.data.orientation}</p>
-            <p><span className="text-neutral-500">{t('materialLevelLabel')}</span> {selectedElementData.data.level}</p>
+            <div className="flex gap-3 mb-1 items-center">
+              <img
+                src={getAssetPath(getWallTooltipImage(
+                  activeBaseType,
+                  selectedElementData.data.isDoor ? 'door' : selectedElementData.data.isWindow ? 'window' : 'wall',
+                  selectedElementData.data.level
+                ))}
+                alt={t('materialLevelLabel')}
+                className="w-16 h-16 object-contain bg-neutral-950 rounded border border-neutral-800 p-1"
+              />
+              <div className="space-y-1 text-neutral-300 flex-1">
+                <p><span className="text-neutral-500">{t('coordinatesLabel')}</span> {selectedElementData.data.x}, {selectedElementData.data.y}</p>
+                <p><span className="text-neutral-500">{t('orientationLabel')}</span> {selectedElementData.data.orientation === 'horizontal' ? t('horizontal') : selectedElementData.data.orientation === 'vertical' ? t('vertical') : selectedElementData.data.orientation}</p>
+                <p><span className="text-neutral-500">{t('materialLevelLabel')}</span> {selectedElementData.data.level}</p>
+              </div>
+            </div>
             
             {selectedElementData.decors && selectedElementData.decors.length > 0 && (
               <div className="pt-2 mt-2 border-t border-neutral-800">
