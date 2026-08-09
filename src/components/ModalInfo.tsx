@@ -7,10 +7,26 @@ interface ModalInfoProps {
   onClose: () => void;
 }
 
+// Ключ в localStorage под конкретный dontShowAgainKey из ModalInfoData.
+const dontShowAgainStorageKey = (key: string) => `ldoe_dsa_${key}`;
+
+// Проверяет, отмечал ли пользователь ранее "Больше не показывать" для этого key.
+// Экспортируется, чтобы вызывающий код (например showAlert) мог пропустить показ
+// модалки целиком, а не просто скрыть чекбокс.
+export const isDontShowAgainDismissed = (key: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(dontShowAgainStorageKey(key)) === '1';
+  } catch {
+    return false;
+  }
+};
+
 export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalInfoProps) {
   const { t } = useLanguage();
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [dontShowAgainChecked, setDontShowAgainChecked] = useState(false);
 
   const modalInfoRef = useRef(modalInfo);
   if (modalInfo) {
@@ -20,6 +36,7 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
   useEffect(() => {
     if (modalInfo) {
       setIsRendered(true);
+      setDontShowAgainChecked(false);
       const timer = setTimeout(() => setIsVisible(true), 10);
       return () => clearTimeout(timer);
     } else {
@@ -29,12 +46,24 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
     }
   }, [modalInfo]);
 
+  const persistDontShowAgain = () => {
+    const key = modalInfoRef.current?.dontShowAgainKey;
+    if (!key || !dontShowAgainChecked) return;
+    try {
+      window.localStorage.setItem(dontShowAgainStorageKey(key), '1');
+    } catch {
+      // Игнорируем — например, localStorage недоступен в приватном режиме.
+    }
+  };
+
   const handleConfirm = () => {
+    persistDontShowAgain();
     modalInfoRef.current?.onConfirm?.();
     onClose();
   };
 
   const handleCancel = () => {
+    persistDontShowAgain();
     modalInfoRef.current?.onCancel?.();
     onClose();
   };
@@ -113,6 +142,18 @@ export const ModalInfo = memo(function ModalInfo({ modalInfo, onClose }: ModalIn
         <div className="text-xs text-neutral-300 leading-relaxed mb-5 whitespace-pre-wrap">
           {modalInfoRef.current?.message}
         </div>
+
+        {modalInfoRef.current?.dontShowAgainKey && (
+          <label className="flex items-center gap-2 mb-4 text-xs text-neutral-400 hover:text-neutral-300 transition cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={dontShowAgainChecked}
+              onChange={e => setDontShowAgainChecked(e.target.checked)}
+              className="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
+            />
+            {t('dontShowAgain')}
+          </label>
+        )}
 
         <div className="flex justify-end gap-2">
           {cancelText && (

@@ -245,8 +245,8 @@ export const LeftSidebar = memo(function LeftSidebar({
       </div>
 
       <div className="flex bg-neutral-950 p-1 rounded border border-neutral-800">
-        <button onClick={() => { onSetActiveBaseType('main'); if (buildLevel > 5) onSetBuildLevel(5); }} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${activeBaseType === 'main' ? 'bg-amber-500 text-neutral-950' : 'text-neutral-400 hover:text-white'} cursor-pointer`}>{t('mainBaseTab')}</button>
-        <button onClick={() => { onSetActiveBaseType('settlement'); if (buildLevel > 3) onSetBuildLevel(3); }} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${activeBaseType === 'settlement' ? 'bg-amber-500 text-neutral-950' : 'text-neutral-400 hover:text-white'} cursor-pointer`}>{t('settlementTab')}</button>
+        <button onClick={() => { if (activeBaseType !== 'main') { onSetActiveBaseType('main'); onSetBuildLevel(1); } }} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${activeBaseType === 'main' ? 'bg-amber-500 text-neutral-950' : 'text-neutral-400 hover:text-white'} cursor-pointer`}>{t('mainBaseTab')}</button>
+        <button onClick={() => { if (activeBaseType !== 'settlement') { onSetActiveBaseType('settlement'); onSetBuildLevel(1); } }} className={`flex-1 py-1.5 text-xs font-bold rounded transition ${activeBaseType === 'settlement' ? 'bg-amber-500 text-neutral-950' : 'text-neutral-400 hover:text-white'} cursor-pointer`}>{t('settlementTab')}</button>
       </div>
 
       {activeBaseType === 'settlement' && (

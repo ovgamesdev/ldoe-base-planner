@@ -36,7 +36,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
 import { LeftSidebar } from './LeftSidebar'
-import { ModalInfo } from './ModalInfo'
+import { isDontShowAgainDismissed, ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
 import { SelectedElementPanel } from './SelectedElementPanel'
 import { SharedBasesModal } from './SharedBasesModal'
@@ -81,8 +81,9 @@ export default function MainPlannerClient() {
   const [sharedBasesFilterMode, setSharedBasesFilterMode] = useState<'all' | 'my'>('all');
   const SHARED_BASES_PER_PAGE = 50;
 
-  const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info') => {
-    setModalInfo({ message, title, type });
+  const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info', dontShowAgainKey?: string) => {
+    if (dontShowAgainKey && isDontShowAgainDismissed(dontShowAgainKey)) return;
+    setModalInfo({ message, title, type, dontShowAgainKey });
   }, []);
 
   // Warns an owner that opening their own shared/imported map will overwrite
@@ -195,16 +196,6 @@ export default function MainPlannerClient() {
   const [activeSettlementLayer, setActiveSettlementLayer] = useState<SettlementLayerType>('objects');
 
   const [layerSelections, setLayerSelections] = useState<Record<string, string>>({});
-
-  const handleBaseTypeChange = useCallback((newType: BaseType) => {
-    setActiveBaseType(newType);
-    trackEvent('change_base_type', { base_type: newType });
-  }, []);
-
-  const handleSettlementLayerChange = useCallback((newLayer: SettlementLayerType) => {
-    setActiveSettlementLayer(newLayer);
-    trackEvent('change_settlement_layer', { layer: newLayer });
-  }, []);
 
   const currentLayerKey = useMemo(() => {
     return activeBaseType === 'main' ? 'main' : `settlement_${activeSettlementLayer}`;
@@ -433,11 +424,70 @@ export default function MainPlannerClient() {
   const [isDoorPlacement, setIsDoorPlacement] = useState<boolean>(false);
   const [isWindowPlacement, setIsWindowPlacement] = useState<boolean>(false);
   const [isCatalogBuilderVisible, setIsCatalogBuilderVisible] = useState(false);
+  // Instance being relocated via the "Move" action on the selection panel. While
+  // set, the 'object' tool's placement flow (cell/wall click) relocates this
+  // existing instance to the clicked spot instead of creating a new one.
+  const [movingInstanceId, setMovingInstanceId] = useState<string | null>(null);
+
+  // Когда true, ближайшее срабатывание эффекта синхронизации selectedTypeId/currentRotation
+  // (ниже) не должно сбрасывать currentRotation на дефолт — используется при "Переместить"
+  // и "Копировать", которые явно выставляют поворот исходного объекта.
+  const preserveRotationOnSyncRef = useRef(false);
+
+  // Snapshot of what the object-tool's catalog selection/rotation (and which
+  // object was selected) looked like right before "Move" hijacked them, so that
+  // finishing or cancelling the move can put things back the way they were.
+  const preMoveStateRef = useRef<{ instanceId: string; layerKey: string; selectedTypeId: string; currentRotation: number } | null>(null);
+
+  // Color to stamp onto the next newly-placed instance(s) of `typeId`, set by the
+  // "Copy" action on the selection panel so a copy also carries over the source
+  // object's paint color (rotation is already carried via currentRotation).
+  // Cleared whenever the object-tool selection changes for any other reason, so
+  // it never leaks onto an unrelated placement.
+  const pendingCopyColorRef = useRef<{ typeId: string; color: string | undefined } | null>(null);
+
+  // Restores the object-tool's catalog selection/rotation that were active before
+  // a "Move" started, for the layer they were active on.
+  const restorePreMoveToolSelection = useCallback((pre: { layerKey: string; selectedTypeId: string; currentRotation: number }) => {
+    setLayerSelections(prev => ({ ...prev, [pre.layerKey]: pre.selectedTypeId }));
+    preserveRotationOnSyncRef.current = true;
+    setSelectedTypeId(pre.selectedTypeId);
+    setCurrentRotation(pre.currentRotation);
+  }, []);
+
+  // Cancels an in-progress "Move" without relocating the object: restores the
+  // catalog selection/rotation active before the move started and re-selects the
+  // object being moved, so it looks like the move never happened. No-op if no
+  // move is in progress.
+  const cancelMoveObject = useCallback(() => {
+    const pre = preMoveStateRef.current;
+    if (!pre) return;
+    preMoveStateRef.current = null;
+    setMovingInstanceId(null);
+    restorePreMoveToolSelection(pre);
+    setSelectedInstanceId(pre.instanceId);
+  }, [restorePreMoveToolSelection]);
 
   const handleToolChange = useCallback((tool: Tool) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = null;
     setActiveTool(tool);
     trackEvent('select_tool', { tool });
-  }, []);
+  }, [cancelMoveObject]);
+
+  const handleBaseTypeChange = useCallback((newType: BaseType) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = null;
+    setActiveBaseType(newType);
+    trackEvent('change_base_type', { base_type: newType });
+  }, [cancelMoveObject]);
+
+  const handleSettlementLayerChange = useCallback((newLayer: SettlementLayerType) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = null;
+    setActiveSettlementLayer(newLayer);
+    trackEvent('change_settlement_layer', { layer: newLayer });
+  }, [cancelMoveObject]);
 
   const handleViewModeChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -445,12 +495,12 @@ export default function MainPlannerClient() {
   }, []);
 
   const interactionRef = useRef({
-    activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer
+    activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer, movingInstanceId
   });
 
   useEffect(() => {
-    interactionRef.current = { activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer };
-  }, [activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer]);
+    interactionRef.current = { activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer, movingInstanceId };
+  }, [activeTool, selectedTypeId, currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, activeBaseType, activeSettlementLayer, movingInstanceId]);
 
   const handleSetHoveredCell = useCallback((cell: { x: number; y: number } | null) => {
     if (interactionRef.current.activeBaseType !== 'settlement' || interactionRef.current.activeTool !== 'object' || !((catalogMap[interactionRef.current.selectedTypeId]?.constraints?.requiredDesk) || (catalogMap[interactionRef.current.selectedTypeId]?.constraints?.isDesk))) {
@@ -497,19 +547,28 @@ export default function MainPlannerClient() {
     if (savedTypeId && filteredCatalogForCurrentLayer.some(item => item.typeId === savedTypeId)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedTypeId(savedTypeId);
-      const t = catalogMap[savedTypeId];
-      if (t) {
-        const allowed = t.constraints.autoTiling ? [0] : (t.constraints.allowedRotations?.length ? t.constraints.allowedRotations : [0]);
-        setCurrentRotation(allowed[0] || 0);
+      if (preserveRotationOnSyncRef.current) {
+        preserveRotationOnSyncRef.current = false;
+      } else {
+        const t = catalogMap[savedTypeId];
+        if (t) {
+          const allowed = t.constraints.autoTiling ? [0] : (t.constraints.allowedRotations?.length ? t.constraints.allowedRotations : [0]);
+          setCurrentRotation(allowed[0] || 0);
+        }
       }
     } else if (selectedTypeId && filteredCatalogForCurrentLayer.some(item => item.typeId === selectedTypeId)) {
       setLayerSelections(prev => ({ ...prev, [currentLayerKey]: selectedTypeId }));
-      const t = catalogMap[selectedTypeId];
-      if (t) {
-        const allowed = t.constraints.autoTiling ? [0] : (t.constraints.allowedRotations?.length ? t.constraints.allowedRotations : [0]);
-        setCurrentRotation(allowed[0] || 0);
+      if (preserveRotationOnSyncRef.current) {
+        preserveRotationOnSyncRef.current = false;
+      } else {
+        const t = catalogMap[selectedTypeId];
+        if (t) {
+          const allowed = t.constraints.autoTiling ? [0] : (t.constraints.allowedRotations?.length ? t.constraints.allowedRotations : [0]);
+          setCurrentRotation(allowed[0] || 0);
+        }
       }
     } else {
+      preserveRotationOnSyncRef.current = false;
       const defaultTypeId = filteredCatalogForCurrentLayer[0].typeId;
       setSelectedTypeId(defaultTypeId);
       setLayerSelections(prev => ({ ...prev, [currentLayerKey]: defaultTypeId }));
@@ -958,6 +1017,8 @@ export default function MainPlannerClient() {
   // the URL themselves). Selecting the shared preview tab restores its `share`/
   // `map` param; selecting anything else strips those params from the URL.
   const handleSetActiveMapId = useCallback((mapId: string) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = null;
     setActiveMapId(mapId);
 
     const url = new URL(window.location.href);
@@ -975,7 +1036,7 @@ export default function MainPlannerClient() {
       url.searchParams.delete('base');
     }
     window.history.replaceState(null, '', url);
-  }, [sharedPreviewMapId, sharedPreviewUrlParam]);
+  }, [sharedPreviewMapId, sharedPreviewUrlParam, cancelMoveObject]);
 
   const handleRenameMap = useCallback((newName: string) => {
     setMaps(prev => prev.map(m => m.id === fullMapState.id ? { ...m, name: newName } : m));
@@ -1344,31 +1405,51 @@ export default function MainPlannerClient() {
       trackEvent('nobuild_toggle', { x, y });
     } else if (activeTool === 'object') {
       const template = catalogMap[selectedTypeId];
+      const { movingInstanceId } = interactionRef.current;
 
       if (template?.constraints.placementType === 'wall') {
         return;
       }
 
       const rotationToUse = template?.constraints.autoTiling ? 0 : currentRotation;
-      const placementResult = validatePlacement(selectedTypeId, x, y, rotationToUse);
+      const placementResult = validatePlacement(selectedTypeId, x, y, rotationToUse, movingInstanceId || undefined);
 
       if (placementResult.valid) {
-        const newObjId = generateUUID();
-        const objTargetLayer = template?.constraints.settlementLayer || 'objects';
-        setMapState(prev => ({
-          ...prev,
-          layers: {
-            ...prev.layers,
-            objects: [
-              ...prev.layers.objects,
-              { instanceId: newObjId, typeId: selectedTypeId, x, y, rotation: rotationToUse, layer: activeBaseType === 'settlement' ? objTargetLayer : undefined }
-            ]
+        if (movingInstanceId) {
+          setMapState(prev => ({
+            ...prev,
+            layers: {
+              ...prev.layers,
+              objects: prev.layers.objects.map(o => o.instanceId === movingInstanceId ? { ...o, x, y, rotation: rotationToUse } : o)
+            }
+          }));
+          setSelectedInstanceId(movingInstanceId);
+          setMovingInstanceId(null);
+          setActiveTool('hand');
+          if (preMoveStateRef.current) {
+            restorePreMoveToolSelection(preMoveStateRef.current);
+            preMoveStateRef.current = null;
           }
-        }));
-        setSelectedInstanceId(newObjId);
-        trackEvent('object_place', { type_id: selectedTypeId, base_type: activeBaseType, x, y });
+          trackEvent('object_move', { type_id: selectedTypeId, base_type: activeBaseType, x, y });
+        } else {
+          const newObjId = generateUUID();
+          const objTargetLayer = template?.constraints.settlementLayer || 'objects';
+          const copyColor = pendingCopyColorRef.current?.typeId === selectedTypeId ? pendingCopyColorRef.current.color : undefined;
+          setMapState(prev => ({
+            ...prev,
+            layers: {
+              ...prev.layers,
+              objects: [
+                ...prev.layers.objects,
+                { instanceId: newObjId, typeId: selectedTypeId, x, y, rotation: rotationToUse, paintColor: copyColor, layer: activeBaseType === 'settlement' ? objTargetLayer : undefined }
+              ]
+            }
+          }));
+          setSelectedInstanceId(newObjId);
+          trackEvent('object_place', { type_id: selectedTypeId, base_type: activeBaseType, x, y });
+        }
       } else {
-        showAlert(placementResult.reason || t('placementErrorMessage'), t('placementError'), 'error');
+        showAlert(placementResult.reason || (movingInstanceId ? t('cannotMoveObject') : t('placementErrorMessage')), movingInstanceId ? t('moveError') : t('placementError'), 'error');
       }
     } else if (activeTool === 'eraser') {
       setMapState(prev => {
@@ -1429,7 +1510,7 @@ export default function MainPlannerClient() {
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [GRID_W, GRID_H, mapState.layers.floors, mapState.layers.objects, mapState.mapConfig.noBuildZones, catalogMap, selectedInstanceId, setMapState, validatePlacement, activeBaseType, activeSettlementLayer, showAlert, t]);
+  }, [GRID_W, GRID_H, mapState.layers.floors, mapState.layers.objects, mapState.mapConfig.noBuildZones, catalogMap, selectedInstanceId, setMapState, validatePlacement, activeBaseType, activeSettlementLayer, showAlert, t, restorePreMoveToolSelection]);
 
   const handleWallClick = useCallback((x: number, y: number, orientation: 'horizontal' | 'vertical', e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1499,6 +1580,8 @@ export default function MainPlannerClient() {
       const template = catalogMap[selectedTypeId];
       if (!template || template.constraints.placementType !== 'wall') return;
 
+      const { movingInstanceId } = interactionRef.current;
+
       const targetX = orientation === 'vertical' ? x - 1 : x;
       const targetY = y;
       const autoRotation = orientation === 'horizontal' ? 0 : 90;
@@ -1529,24 +1612,43 @@ export default function MainPlannerClient() {
         return;
       }
 
-      const placementResult = validatePlacement(selectedTypeId, targetX, targetY, autoRotation);
+      const placementResult = validatePlacement(selectedTypeId, targetX, targetY, autoRotation, movingInstanceId || undefined);
       if (placementResult.valid) {
-        const newObjId = generateUUID();
-        const objTargetLayer = template.constraints.settlementLayer || 'objects';
-        setMapState(prev => ({
-          ...prev,
-          layers: {
-            ...prev.layers,
-            objects: [
-              ...prev.layers.objects,
-              { instanceId: newObjId, typeId: selectedTypeId, x: targetX, y: targetY, rotation: autoRotation, layer: activeBaseType === 'settlement' ? objTargetLayer : undefined }
-            ]
+        if (movingInstanceId) {
+          setMapState(prev => ({
+            ...prev,
+            layers: {
+              ...prev.layers,
+              objects: prev.layers.objects.map(o => o.instanceId === movingInstanceId ? { ...o, x: targetX, y: targetY, rotation: autoRotation } : o)
+            }
+          }));
+          setSelectedInstanceId(movingInstanceId);
+          setMovingInstanceId(null);
+          setActiveTool('hand');
+          if (preMoveStateRef.current) {
+            restorePreMoveToolSelection(preMoveStateRef.current);
+            preMoveStateRef.current = null;
           }
-        }));
-        setSelectedInstanceId(newObjId);
-        trackEvent('wall_decor_place', { type_id: selectedTypeId, x: targetX, y: targetY });
+          trackEvent('wall_decor_move', { type_id: selectedTypeId, x: targetX, y: targetY });
+        } else {
+          const newObjId = generateUUID();
+          const objTargetLayer = template.constraints.settlementLayer || 'objects';
+          const copyColor = pendingCopyColorRef.current?.typeId === selectedTypeId ? pendingCopyColorRef.current.color : undefined;
+          setMapState(prev => ({
+            ...prev,
+            layers: {
+              ...prev.layers,
+              objects: [
+                ...prev.layers.objects,
+                { instanceId: newObjId, typeId: selectedTypeId, x: targetX, y: targetY, rotation: autoRotation, paintColor: copyColor, layer: activeBaseType === 'settlement' ? objTargetLayer : undefined }
+              ]
+            }
+          }));
+          setSelectedInstanceId(newObjId);
+          trackEvent('wall_decor_place', { type_id: selectedTypeId, x: targetX, y: targetY });
+        }
       } else {
-        showAlert(placementResult.reason || t('cannotPlaceGarland'), t('placementError'), 'error');
+        showAlert(placementResult.reason || (movingInstanceId ? t('cannotMoveObject') : t('cannotPlaceGarland')), movingInstanceId ? t('moveError') : t('placementError'), 'error');
       }
       return;
     }
@@ -1600,16 +1702,23 @@ export default function MainPlannerClient() {
       setSelectedInstanceId(null);
       trackEvent('wall_remove', { x, y, orientation });
     }
-  }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, mapState.layers.objects, validatePlacement, showAlert, t]);
+  }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, mapState.layers.objects, validatePlacement, showAlert, t, restorePreMoveToolSelection]);
 
   const handleSelectBuildingType = useCallback((typeId: string) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = null;
     setSelectedTypeId(typeId);
     setLayerSelections(prev => ({ ...prev, [currentLayerKey]: typeId }));
     const tObj = catalogMap[typeId];
     const allowed = tObj?.constraints.autoTiling ? [0] : (tObj?.constraints.allowedRotations?.length ? tObj.constraints.allowedRotations : [0]);
     setCurrentRotation(prevRot => (allowed.includes(prevRot) ? prevRot : allowed[0]));
     trackEvent('select_building_type', { type_id: typeId });
-  }, [catalogMap, currentLayerKey]);
+  }, [catalogMap, currentLayerKey, cancelMoveObject]);
+
+  const handleCurrentRotationChange = useCallback((rotation: number) => {
+    cancelMoveObject();
+    setCurrentRotation(rotation);
+  }, [cancelMoveObject]);
 
   const toggleNewBuildingRotation = useCallback((deg: number) => {
     setNewBuilding(prev => {
@@ -2383,13 +2492,43 @@ export default function MainPlannerClient() {
     }
   }, [activeMapId, activeBaseType, isLoaded, resetCamera]);
 
-  const handleCopyObject = useCallback((typeId: string, rotation: number) => {
+  const handleCopyObject = useCallback((typeId: string, rotation: number, paintColor: string | undefined) => {
+    cancelMoveObject();
+    pendingCopyColorRef.current = { typeId, color: paintColor };
+    preserveRotationOnSyncRef.current = true;
     setActiveTool('object');
     setSelectedTypeId(typeId);
     setLayerSelections(prev => ({ ...prev, [currentLayerKey]: typeId }));
     setCurrentRotation(rotation);
     setSelectedInstanceId(null);
-  }, [currentLayerKey]);
+  }, [currentLayerKey, cancelMoveObject]);
+
+  const handleMoveObject = useCallback((obj: { instanceId: string; typeId: string; x: number; y: number; rotation: number }) => {
+    const targetObj = mapState.layers.objects.find(o => o.instanceId === obj.instanceId);
+    if (targetObj?.isDefault) {
+      showAlert(t('defaultBuildingCannotMove'), t('protectedObject'), 'info');
+      return;
+    }
+
+    // Remember what the object tool's catalog selection/rotation (and selection)
+    // were before "Move" takes them over, so a cancel or a completed move can
+    // restore them (see cancelMoveObject / restorePreMoveToolSelection).
+    preMoveStateRef.current = { instanceId: obj.instanceId, layerKey: currentLayerKey, selectedTypeId, currentRotation };
+    // Moving relocates the same instance in place (its paintColor travels with
+    // it automatically) — any pending "Copy" color is unrelated and shouldn't
+    // apply to it.
+    pendingCopyColorRef.current = null;
+
+    preserveRotationOnSyncRef.current = true;
+    setActiveTool('object');
+    setSelectedTypeId(obj.typeId);
+    setLayerSelections(prev => ({ ...prev, [currentLayerKey]: obj.typeId }));
+    setCurrentRotation(obj.rotation);
+    setSelectedInstanceId(null);
+    setMovingInstanceId(obj.instanceId);
+    showAlert(t('moveModeHint'), t('moveModeTitle'), 'info', 'moveModeHint');
+    trackEvent('object_move_start', { type_id: obj.typeId, instance_id: obj.instanceId });
+  }, [mapState.layers.objects, currentLayerKey, selectedTypeId, currentRotation, showAlert, t]);
 
   const handleRotateSelectedObject = useCallback((obj: { instanceId: string; typeId: string; x: number; y: number; rotation: number }) => {
     const template = catalogMap[obj.typeId];
@@ -2570,7 +2709,7 @@ export default function MainPlannerClient() {
           onSetSearchQuery={setSearchQuery}
           onClearSearch={() => setSearchQuery('')}
           onSelectBuildingType={handleSelectBuildingType}
-          onCurrentRotationChange={setCurrentRotation}
+          onCurrentRotationChange={handleCurrentRotationChange}
           onLoadForEditing={loadForEditing}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
@@ -2638,6 +2777,7 @@ export default function MainPlannerClient() {
           onClose={() => setSelectedInstanceId(null)}
           onPaintObject={handlePaintObject}
           onCopyObject={handleCopyObject}
+          onMoveObject={handleMoveObject}
           onRotateObject={handleRotateSelectedObject}
           onDeleteObject={handleDeleteSelectedObject}
           onDeleteFloor={handleDeleteSelectedFloor}

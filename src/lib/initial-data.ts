@@ -129,6 +129,10 @@ export interface ModalInfoData {
   cancelText?: string;
   onConfirm?: () => void;
   onCancel?: () => void;
+  // When set, the modal shows a "don't show again" checkbox. If the user checks
+  // it before dismissing, the key is stored in localStorage and future calls
+  // with the same key are skipped entirely (see ModalInfo/showAlert).
+  dontShowAgainKey?: string;
 }
 
 /**

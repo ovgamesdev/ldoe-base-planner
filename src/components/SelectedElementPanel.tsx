@@ -9,7 +9,8 @@ interface SelectedElementPanelProps {
   activeBaseType: BaseType;
   onClose: () => void;
   onPaintObject: (instanceId: string, color: string | undefined) => void;
-  onCopyObject: (typeId: string, rotation: number) => void;
+  onCopyObject: (typeId: string, rotation: number, paintColor: string | undefined) => void;
+  onMoveObject: (obj: { instanceId: string; typeId: string; x: number; y: number; rotation: number }) => void;
   onRotateObject: (obj: { instanceId: string; typeId: string; x: number; y: number; rotation: number }) => void;
   onDeleteObject: (instanceId: string) => void;
   onDeleteFloor: (x: number, y: number) => void;
@@ -23,6 +24,7 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
   onClose,
   onPaintObject,
   onCopyObject,
+  onMoveObject,
   onRotateObject,
   onDeleteObject,
   onDeleteFloor,
@@ -243,26 +245,37 @@ export const SelectedElementPanel = memo(function SelectedElementPanel({
                     </div>
                   )}
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onCopyObject(obj.typeId, obj.rotation)}
-                      className="flex-1 bg-blue-900/40 hover:bg-blue-800 text-blue-300 py-2.5 rounded font-bold text-xs transition min-h-[42px] cursor-pointer"
-                    >
-                      {t('copyBtn')}
-                    </button>
-                    <button
-                      disabled={template.constraints.autoTiling}
-                      onClick={() => onRotateObject(obj)}
-                      className={`flex-1 bg-neutral-800 hover:bg-neutral-700 text-amber-400 py-2.5 rounded font-bold text-xs transition disabled:opacity-50 min-h-[42px] ${template.constraints.autoTiling ? "cursor-not-allowed" : "cursor-pointer"}`}
-                    >
-                      {t('rotateBtn')}
-                    </button>
-                    <button
-                      onClick={() => onDeleteObject(obj.instanceId)}
-                      className="flex-1 bg-red-900/50 hover:bg-red-800 text-red-200 py-2.5 rounded font-bold text-xs transition min-h-[42px] cursor-pointer"
-                    >
-                      {t('deleteBtn')}
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <button
+                        disabled={obj.isDefault}
+                        onClick={() => onMoveObject(obj)}
+                        className={`flex-1 bg-emerald-900/40 hover:bg-emerald-800 text-emerald-300 py-2.5 rounded font-bold text-xs transition disabled:opacity-50 min-h-[42px] ${obj.isDefault ? "cursor-not-allowed" : "cursor-pointer"}`}
+                      >
+                        {t('moveBtn')}
+                      </button>
+                      <button
+                        onClick={() => onCopyObject(obj.typeId, obj.rotation, obj.paintColor)}
+                        className="flex-1 bg-blue-900/40 hover:bg-blue-800 text-blue-300 py-2.5 rounded font-bold text-xs transition min-h-[42px] cursor-pointer"
+                      >
+                        {t('copyBtn')}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        disabled={template.constraints.autoTiling}
+                        onClick={() => onRotateObject(obj)}
+                        className={`flex-1 bg-neutral-800 hover:bg-neutral-700 text-amber-400 py-2.5 rounded font-bold text-xs transition disabled:opacity-50 min-h-[42px] ${template.constraints.autoTiling ? "cursor-not-allowed" : "cursor-pointer"}`}
+                      >
+                        {t('rotateBtn')}
+                      </button>
+                      <button
+                        onClick={() => onDeleteObject(obj.instanceId)}
+                        className="flex-1 bg-red-900/50 hover:bg-red-800 text-red-200 py-2.5 rounded font-bold text-xs transition min-h-[42px] cursor-pointer"
+                      >
+                        {t('deleteBtn')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
