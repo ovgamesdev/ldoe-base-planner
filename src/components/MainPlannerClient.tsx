@@ -103,6 +103,24 @@ export default function MainPlannerClient() {
     });
   }, [t]);
 
+  // Asks which base (main|settlement) the recipient of a share link should land
+  // on when they open it. Reuses the confirm/cancel modal as a two-way choice,
+  // same as confirmOwnerOverwrite above — confirmText/cancelText double as the
+  // two base options rather than a literal yes/no.
+  const chooseShareBaseType = useCallback(() => {
+    return new Promise<BaseType>((resolve) => {
+      setModalInfo({
+        message: t('shareBaseTypePrompt'),
+        title: t('shareBaseTypeTitle'),
+        type: 'info',
+        confirmText: t('mainBaseTab'),
+        cancelText: t('settlementTab'),
+        onConfirm: () => resolve('main'),
+        onCancel: () => resolve('settlement')
+      });
+    });
+  }, [t]);
+
   const handleGoogleSignIn = useCallback(async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -167,7 +185,7 @@ export default function MainPlannerClient() {
   // can restore it verbatim when the user switches back to that tab, and know what
   // to strip when they switch away. Cleared whenever the preview is edited, deleted,
   // or replaced by a different shared preview.
-  const [sharedPreviewUrlParam, setSharedPreviewUrlParam] = useState<{ key: 'share' | 'map'; value: string } | null>(null);
+  const [sharedPreviewUrlParam, setSharedPreviewUrlParam] = useState<{ key: 'share' | 'map'; value: string; base?: BaseType } | null>(null);
   const sharedPreviewMapIdRef = useRef<string | null>(null);
   useEffect(() => {
     sharedPreviewMapIdRef.current = sharedPreviewMapId;
@@ -663,6 +681,8 @@ export default function MainPlannerClient() {
     const params = new URLSearchParams(window.location.search);
     const paramName = params.has('share') ? 'share' : (params.has('map') ? 'map' : null);
     const shareParam = paramName ? params.get(paramName) : null;
+    const baseParam = params.get('base');
+    const shareBaseType: BaseType | null = baseParam === 'main' || baseParam === 'settlement' ? baseParam : null;
     if (!shareParam) {
       shareParamHandledRef.current = true;
       return;
@@ -724,11 +744,15 @@ export default function MainPlannerClient() {
             return [...filtered, finalMapObj];
           });
           setActiveMapId(resolvedId);
+          // Land on whichever base the sharer picked when the link was created
+          // (`?base=main|settlement`); default to `main` when the link predates
+          // this param or carries an unrecognized value.
+          setActiveBaseType(shareBaseType || 'main');
           // Read-only preview until the person clicks "Edit": not persisted to
           // localStorage yet, and the `share`/`map` URL param stays put so a reload
           // (or sharing the current tab's URL) still lands on the same preview.
           setSharedPreviewMapId(resolvedId);
-          setSharedPreviewUrlParam(paramName ? { key: paramName as 'share' | 'map', value: shareParam } : null);
+          setSharedPreviewUrlParam(paramName ? { key: paramName as 'share' | 'map', value: shareParam, base: shareBaseType || undefined } : null);
           trackEvent('map_open_via_share', { share_id: shareParam, is_owner: isOwner, source: paramName || 'share' });
         } else {
           showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
@@ -915,6 +939,7 @@ export default function MainPlannerClient() {
     const url = new URL(window.location.href);
     url.searchParams.delete('share');
     url.searchParams.delete('map');
+    url.searchParams.delete('base');
     window.history.replaceState(null, '', url);
 
     setSharedPreviewMapId(null);
@@ -934,9 +959,15 @@ export default function MainPlannerClient() {
     if (mapId === sharedPreviewMapId && sharedPreviewUrlParam) {
       url.searchParams.set(sharedPreviewUrlParam.key, sharedPreviewUrlParam.value);
       url.searchParams.delete(sharedPreviewUrlParam.key === 'share' ? 'map' : 'share');
+      if (sharedPreviewUrlParam.base) {
+        url.searchParams.set('base', sharedPreviewUrlParam.base);
+      } else {
+        url.searchParams.delete('base');
+      }
     } else {
       url.searchParams.delete('share');
       url.searchParams.delete('map');
+      url.searchParams.delete('base');
     }
     window.history.replaceState(null, '', url);
   }, [sharedPreviewMapId, sharedPreviewUrlParam]);
@@ -979,6 +1010,7 @@ export default function MainPlannerClient() {
       const url = new URL(window.location.href);
       url.searchParams.delete('share');
       url.searchParams.delete('map');
+      url.searchParams.delete('base');
       window.history.replaceState(null, '', url);
     }
     trackEvent('map_delete', { map_id: idToDelete });
@@ -1888,6 +1920,8 @@ export default function MainPlannerClient() {
         return;
       }
 
+      const shareBaseType = await chooseShareBaseType();
+
       const uid = currentUser?.uid || auth.currentUser?.uid;
       if (!uid) {
         showAlert(t('authError'), t('error'), 'error');
@@ -1929,10 +1963,11 @@ export default function MainPlannerClient() {
 
       const url = new URL(window.location.href);
       url.searchParams.set('share', shareId);
+      url.searchParams.set('base', shareBaseType);
       url.searchParams.delete('map');
       const shareUrl = url.toString();
 
-      trackEvent('map_share', { map_id: fullMapState.id, share_id: shareId });
+      trackEvent('map_share', { map_id: fullMapState.id, share_id: shareId, base_type: shareBaseType });
 
       // Копирование в буфер обмена — отдельная от сохранения операция. К этому
       // моменту запись в Firebase уже успешно создана; если сам
@@ -1952,7 +1987,7 @@ export default function MainPlannerClient() {
       console.error('Ошибка создания ссылки:', err);
       showAlert(t('linkCopiedError'), t('importError'), 'error');
     }
-  }, [fullMapState, showAlert, t, currentUser]);
+  }, [fullMapState, showAlert, t, currentUser, chooseShareBaseType]);
 
   const handleDeleteCloudMap = useCallback(async (shareId: string) => {
     if (!shareId) return;
