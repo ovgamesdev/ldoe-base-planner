@@ -754,6 +754,11 @@ export default function MainPlannerClient() {
           setSharedPreviewMapId(resolvedId);
           setSharedPreviewUrlParam(paramName ? { key: paramName as 'share' | 'map', value: shareParam, base: shareBaseType || undefined } : null);
           trackEvent('map_open_via_share', { share_id: shareParam, is_owner: isOwner, source: paramName || 'share' });
+        } else if (!sharedMap && paramName === 'share') {
+          // The `?share=` id doesn't exist in the database (deleted, mistyped,
+          // or never existed) — distinct from `jsonStructureError`, which is
+          // for a record that exists but fails validation.
+          showAlert(tRef.current('shareNotFound'), tRef.current('importError'), 'error');
         } else {
           showAlert(tRef.current('jsonStructureError'), tRef.current('importError'), 'error');
         }

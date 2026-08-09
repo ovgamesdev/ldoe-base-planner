@@ -96,6 +96,7 @@ export const translations = {
     emptyBase: 'База не может быть пустой. Элементы должны присутствовать и на главной базе, и в поселении.',
 
     failedLoadShared: 'Не удалось загрузить карту из ссылки.',
+    shareNotFound: 'База не найдена. Возможно, ссылка устарела или неверна.',
     linkCopied: 'Ссылка на карту скопирована в буфер обмена! Карта сохранена и стала общедоступной.',
     linkCopiedError: 'Не удалось создать ссылку для карты.',
     shareBaseTypeTitle: 'Какую базу открывать по ссылке?',
@@ -455,6 +456,7 @@ export const translations = {
     emptyBase: 'Base cannot be empty. Both the main base and settlement must contain elements.',
 
     failedLoadShared: 'Failed to load map from link.',
+    shareNotFound: 'Base not found. The link may be outdated or incorrect.',
     linkCopied: 'Map link copied to clipboard! The map is now publicly available.',
     linkCopiedError: 'Failed to create link.',
     shareBaseTypeTitle: 'Which base should the link open?',
