@@ -80,6 +80,44 @@ export default function MainPlannerClient() {
   const [sharedBasesSearchQuery, setSharedBasesSearchQuery] = useState('');
   const [sharedBasesFilterMode, setSharedBasesFilterMode] = useState<'all' | 'my'>('all');
   const SHARED_BASES_PER_PAGE = 50;
+  // Кэш последнего снимка shares_summary из Firebase, чтобы повторные открытия
+  // модалки "Публичные базы" в течение TTL не скачивали весь узел заново —
+  // именно эти скачивания и составляют основной объём Downloads в Firebase Usage.
+  // Дублируется в sessionStorage, чтобы обновление страницы (F5) тоже не
+  // сбрасывало кэш раньше TTL — иначе каждый reload снова тянет весь узел.
+  const SHARED_BASES_CACHE_STORAGE_KEY = 'sharedBasesCache_v1';
+  const SHARED_BASES_CACHE_TTL = 15 * 60 * 1000; // 15 минут
+
+  const readSharedBasesCacheFromStorage = (): { data: Partial<MapData>[]; fetchedAt: number } | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.sessionStorage.getItem(SHARED_BASES_CACHE_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.data) && typeof parsed.fetchedAt === 'number') {
+        return parsed;
+      }
+    } catch {
+      // Повреждённые или недоступные (приватный режим) данные — просто игнорируем,
+      // кэш в этом случае поведёт себя так, как будто его никогда не было.
+    }
+    return null;
+  };
+
+  const sharedBasesCacheRef = useRef<{ data: Partial<MapData>[]; fetchedAt: number } | null>(
+    readSharedBasesCacheFromStorage()
+  );
+
+  const writeSharedBasesCache = (entry: { data: Partial<MapData>[]; fetchedAt: number }) => {
+    sharedBasesCacheRef.current = entry;
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem(SHARED_BASES_CACHE_STORAGE_KEY, JSON.stringify(entry));
+    } catch {
+      // Например, переполнен лимит sessionStorage — не критично, in-memory кэш
+      // в sharedBasesCacheRef.current всё равно продолжит работать на эту сессию.
+    }
+  };
 
   const showAlert = useCallback((message: string, title?: string, type: 'error' | 'info' | 'success' | 'warning' = 'info', dontShowAgainKey?: string) => {
     if (dontShowAgainKey && isDontShowAgainDismissed(dontShowAgainKey)) return;
@@ -2123,6 +2161,12 @@ export default function MainPlannerClient() {
       )));
 
       setSharedBasesList(prev => prev.filter(m => m.shareId !== shareId));
+      if (sharedBasesCacheRef.current) {
+        writeSharedBasesCache({
+          ...sharedBasesCacheRef.current,
+          data: sharedBasesCacheRef.current.data.filter(m => m.shareId !== shareId)
+        });
+      }
       showAlert(t('success'), t('success'), 'success');
       trackEvent('cloud_map_delete', { share_id: shareId });
     } catch (err) {
@@ -2131,7 +2175,15 @@ export default function MainPlannerClient() {
     }
   }, [showAlert, t]);
 
-  const loadSharedBases = useCallback(async () => {
+  const loadSharedBases = useCallback(async (force: boolean = false) => {
+    // Свежий кэш есть и обновление не запрошено принудительно — используем его
+    // вместо повторного скачивания всего узла shares_summary из Firebase.
+    const cached = sharedBasesCacheRef.current;
+    if (!force && cached && Date.now() - cached.fetchedAt < SHARED_BASES_CACHE_TTL) {
+      setSharedBasesList(cached.data);
+      return;
+    }
+
     setIsLoadingSharedBases(true);
     try {
       const summarySnapshot = await withOnline(() => get(ref(db, 'shares_summary')));
@@ -2150,6 +2202,7 @@ export default function MainPlannerClient() {
       }
 
       list.reverse();
+      writeSharedBasesCache({ data: list, fetchedAt: Date.now() });
       setSharedBasesList(list);
     } catch (err) {
       console.error('Ошибка загрузки общедоступных баз:', err);
@@ -2157,7 +2210,7 @@ export default function MainPlannerClient() {
     } finally {
       setIsLoadingSharedBases(false);
     }
-  }, [showAlert]);
+  }, [SHARED_BASES_CACHE_TTL, showAlert]);
 
   const handleOpenSharedBasesPanel = useCallback(async () => {
     setIsSharedBasesModalOpen(true);
@@ -2165,7 +2218,13 @@ export default function MainPlannerClient() {
     setSharedBasesSearchQuery('');
     setSharedBasesFilterMode('all');
     trackEvent('open_shared_bases_panel');
+    // Без force: если открывали недавно, список возьмётся из кэша без запроса к Firebase.
     await loadSharedBases();
+  }, [loadSharedBases]);
+
+  const handleRefreshSharedBases = useCallback(async () => {
+    trackEvent('refresh_shared_bases_panel');
+    await loadSharedBases(true);
   }, [loadSharedBases]);
 
   const handleSharedBasesPageChange = useCallback((newPage: number) => {
@@ -2831,6 +2890,7 @@ export default function MainPlannerClient() {
         onClose={() => setIsSharedBasesModalOpen(false)}
         onSelectBase={handleSelectSharedMap}
         onDeleteBase={handleDeleteCloudMap}
+        onRefresh={handleRefreshSharedBases}
       />
 
       <ModalInfo

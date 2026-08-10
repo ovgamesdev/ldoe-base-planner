@@ -2,7 +2,7 @@
 
 import { useLanguage } from '@/context/LanguageContext'
 import type { MapData } from '@/lib/initial-data'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 interface SharedBasesModalProps {
   isOpen: boolean;
@@ -19,6 +19,7 @@ interface SharedBasesModalProps {
   onClose: () => void;
   onSelectBase: (mapData: MapData) => void;
   onDeleteBase: (shareId: string) => void;
+  onRefresh: () => void;
 }
 
 // Timestamps are stored as UTC milliseconds (Firebase ServerValue.TIMESTAMP), so
@@ -39,6 +40,14 @@ const formatShareDate = (timestamp?: number): string | null => {
   }
 };
 
+// Кнопка "Обновить" вызывает onRefresh в обход TTL-кэша списка публичных баз
+// (см. sharedBasesCacheRef в MainPlannerClient), то есть каждый клик — это
+// гарантированное скачивание всего shares_summary заново. Без ограничения
+// пользователь может кликать сколько угодно раз подряд и генерировать
+// произвольный объём Downloads. Кулдаун ниже не даёт кликать чаще раза в
+// REFRESH_COOLDOWN_MS.
+const REFRESH_COOLDOWN_MS = 15_000;
+
 export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   isOpen,
   isLoading,
@@ -53,11 +62,39 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   onFilterModeChange,
   onClose,
   onSelectBase,
-  onDeleteBase
+  onDeleteBase,
+  onRefresh
 }) => {
   const { t } = useLanguage();
   const [isRendered, setIsRendered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  // Время последнего реального вызова onRefresh. Держим в ref (не в state),
+  // чтобы не переопределять функцию/эффекты на каждый клик — только
+  // cooldownLeft ниже отвечает за UI и таймер.
+  const lastRefreshAtRef = useRef<number>(0);
+  const [cooldownLeft, setCooldownLeft] = useState(0); // секунды до разблокировки кнопки
+
+  useEffect(() => {
+    if (cooldownLeft <= 0) return;
+    const id = setInterval(() => {
+      const remainingMs = REFRESH_COOLDOWN_MS - (Date.now() - lastRefreshAtRef.current);
+      setCooldownLeft(remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0);
+    }, 250);
+    return () => clearInterval(id);
+  }, [cooldownLeft]);
+
+  const handleRefreshClick = () => {
+    const now = Date.now();
+    if (now - lastRefreshAtRef.current < REFRESH_COOLDOWN_MS) {
+      // Клик во время кулдауна — просто игнорируем, кнопка и так disabled,
+      // но подстраховываемся на случай гонки с последним тиком таймера.
+      return;
+    }
+    lastRefreshAtRef.current = now;
+    setCooldownLeft(Math.ceil(REFRESH_COOLDOWN_MS / 1000));
+    onRefresh();
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -102,13 +139,26 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
           <h3 className="text-lg font-bold text-amber-500 flex items-center gap-2">
             <span>🌐</span> {t('publicBasesTitle')}
           </h3>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-white text-xl font-bold p-1 leading-none transition-colors cursor-pointer"
-            title={t('closeBtn')}
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleRefreshClick}
+              disabled={isLoading || cooldownLeft > 0}
+              className="flex items-center gap-1 text-neutral-400 hover:text-amber-400 text-base font-bold p-1.5 leading-none transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title={cooldownLeft > 0 ? t('refreshCooldown', { cooldown: cooldownLeft }) : t('refreshBtn')}
+            >
+              <span className={isLoading ? 'inline-block animate-spin' : 'inline-block'}>🔄</span>
+              {cooldownLeft > 0 && (
+                <span className="text-[10px] text-neutral-500 tabular-nums leading-none">{cooldownLeft}</span>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-white text-xl font-bold p-1 leading-none transition-colors cursor-pointer"
+              title={t('closeBtn')}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Описание */}

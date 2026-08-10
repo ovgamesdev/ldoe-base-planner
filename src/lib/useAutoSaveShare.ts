@@ -94,31 +94,38 @@ export function useAutoSaveShare(
 
     const checkPromise = (async () => {
       try {
-        const snapshot = await withOnline(() => get(ref(db, `shares/${shareId}`)));
+        // Раньше здесь скачивался весь узел `shares/${shareId}`, включая
+        // mainBase/settlementBase (собственно данные карты) — это и был
+        // основной источник Downloads в Firebase Usage, так как запрос уходит
+        // при каждом монтировании хука для владельца (открытие карты, F5 и т.д.).
+        // `shares_summary/${shareId}` содержит только 6 лёгких полей и даёт
+        // всё необходимое для проверки существования и сохранения createdAt.
+        //
+        // Плата за это: раз мы больше не знаем прошлое содержимое shares/{shareId},
+        // самое первое сохранение в сессии для уже существующей карты уйдёт как
+        // полная перезапись (без diff) — см. `lastShare` = {} в performSave.
+        // Это увеличивает Upload на один раз за сессию, но не Download.
+        const snapshot = await withOnline(() => get(ref(db, `shares_summary/${shareId}`)));
         if (!isMountedRef.current) return;
 
         if (snapshot.exists()) {
           existsInFirebaseRef.current = true;
-          const remoteVal = cleanUndefined(snapshot.val());
-          const summaryVal = {
-            id: remoteVal.id,
-            name: remoteVal.name,
-            ownerId: remoteVal.ownerId,
-            shareId: remoteVal.shareId,
-            createdAt: remoteVal.createdAt,
-            updatedAt: remoteVal.updatedAt
-          };
+          const summaryVal = cleanUndefined(snapshot.val());
 
           lastSavedSnapshotRef.current = {
-            share: remoteVal,
+            share: {},
             summary: summaryVal
           };
-          lastSavedHashRef.current = computeSnapshotHash(lastSavedSnapshotRef.current);
+          // Хэш от {} + summary не совпадёт с реальным текущим состоянием карты,
+          // так что на первом performSave после монтирования дедупликация по
+          // хэшу не сработает (и не должна — нам нужно установить полноценный
+          // локальный снапшот shares/{shareId} хотя бы раз за сессию).
+          lastSavedHashRef.current = null;
 
           setSaveState(prev => ({
             ...prev,
             existsInFirebase: true,
-            lastSyncedAt: typeof remoteVal.updatedAt === 'number' ? remoteVal.updatedAt : Date.now()
+            lastSyncedAt: typeof summaryVal.updatedAt === 'number' ? summaryVal.updatedAt : Date.now()
           }));
         } else {
           existsInFirebaseRef.current = false;
@@ -200,9 +207,16 @@ export function useAutoSaveShare(
           const lastShare = lastSavedSnapshotRef.current?.share || null;
           const lastSummary = lastSavedSnapshotRef.current?.summary || null;
 
-          if (lastShare?.createdAt) {
-            shareRecord.createdAt = lastShare.createdAt;
-            summaryRecord.createdAt = lastShare.createdAt;
+          // createdAt берём из summary (он там есть всегда — и когда есть полный
+          // share-снапшот из этой же сессии, и когда мы знаем только summary после
+          // облегчённой проверки существования выше). Если брать его из lastShare,
+          // то в случае, когда lastShare === {} (полный узел неизвестен), поле
+          // createdAt осталось бы равно свежему локальному значению и улетело бы
+          // в diff как "изменённое" — а правило `newData.val() === data.val()`
+          // такую запись отклонит, потому что удалённый createdAt другой.
+          if (lastSummary?.createdAt) {
+            shareRecord.createdAt = lastSummary.createdAt;
+            summaryRecord.createdAt = lastSummary.createdAt;
           }
 
           const shareDiff = buildFirebaseDiff(lastShare, shareRecord, `shares/${shareId}`);
