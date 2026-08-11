@@ -1,7 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/context/LanguageContext'
-import type { MapData } from '@/lib/initial-data'
+import type { BaseVote, MapData } from '@/lib/initial-data'
 import React, { useEffect, useRef, useState } from 'react'
 
 interface SharedBasesModalProps {
@@ -20,6 +20,10 @@ interface SharedBasesModalProps {
   onSelectBase: (mapData: MapData) => void;
   onDeleteBase: (shareId: string) => void;
   onRefresh: () => void;
+  // shareId -> голос текущего пользователя ('like' | 'dislike'), уже отфильтрован
+  // на уровне MainPlannerClient — здесь только собственные голоса пользователя.
+  userVotes: Record<string, BaseVote>;
+  onVote: (shareId: string, voteType: BaseVote) => void;
 }
 
 // Timestamps are stored as UTC milliseconds (Firebase ServerValue.TIMESTAMP), so
@@ -63,7 +67,9 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   onClose,
   onSelectBase,
   onDeleteBase,
-  onRefresh
+  onRefresh,
+  userVotes,
+  onVote
 }) => {
   const { t } = useLanguage();
   const [isRendered, setIsRendered] = useState(false);
@@ -218,11 +224,15 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
               const createdLabel = formatShareDate(base.createdAt);
               const updatedLabel = formatShareDate(base.updatedAt);
               const showUpdated = Boolean(updatedLabel && updatedLabel !== createdLabel);
+              const myVote = base.shareId ? userVotes[base.shareId] : undefined;
+              const likesCount = base.likes ?? 0;
+              const dislikesCount = base.dislikes ?? 0;
+              const canVote = Boolean(currentUserId && base.shareId);
 
               return (
                 <div
                   key={`${base.id}_${base.shareId}`}
-                  className="flex items-center justify-between p-3 bg-neutral-950/60 hover:bg-neutral-800/60 border border-neutral-800/80 rounded-lg transition-all group"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-neutral-950/60 hover:bg-neutral-800/60 border border-neutral-800/80 rounded-lg transition-all group"
                 >
                   <div className="flex flex-col gap-0.5">
                     <span className="text-xs font-semibold text-neutral-200 group-hover:text-amber-400 transition-colors">
@@ -238,7 +248,37 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!isOwner && (
+                      <div className="flex items-center gap-1 mr-1">
+                        <button
+                          onClick={() => canVote && onVote(base.shareId!, 'like')}
+                          disabled={!canVote}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs border transition-colors ${
+                            myVote === 'like'
+                              ? 'bg-emerald-700/50 border-emerald-500 text-emerald-300'
+                              : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-emerald-400 hover:border-emerald-700/60'
+                          } ${canVote ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                          title={canVote ? t('likeBtn') : t('voteLoginRequired')}
+                        >
+                          <span>👍</span>
+                          <span className="tabular-nums">{likesCount}</span>
+                        </button>
+                        <button
+                          onClick={() => canVote && onVote(base.shareId!, 'dislike')}
+                          disabled={!canVote}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs border transition-colors ${
+                            myVote === 'dislike'
+                              ? 'bg-red-700/50 border-red-500 text-red-300'
+                              : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-red-400 hover:border-red-700/60'
+                          } ${canVote ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+                          title={canVote ? t('dislikeBtn') : t('voteLoginRequired')}
+                        >
+                          <span>👎</span>
+                          <span className="tabular-nums">{dislikesCount}</span>
+                        </button>
+                      </div>
+                    )}
                     {isOwner && base.shareId && (
                       <button
                         onClick={() => onDeleteBase(base.shareId!)}

@@ -20,7 +20,7 @@ import {
   isWallCrossingObjectFootprint,
   isWallDecorValid
 } from '@/lib/grid-utils'
-import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type CatalogItem, type CatalogOverlay, type MapData, type ModalInfoData, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '@/lib/initial-data'
+import { getItemName, searchMatchesName, type AutoTileVariant, type BaseData, type BaseType, type BaseVote, type CatalogItem, type CatalogOverlay, type MapData, type ModalInfoData, type NewBuildingState, type NoBuildZone, type ObjectLayer, type SettlementLayerType } from '@/lib/initial-data'
 import {
   buildBlankMap,
   resolveImportedMapOwnership,
@@ -31,7 +31,7 @@ import {
 import { useAutoSaveShare } from '@/lib/useAutoSaveShare'
 import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, ref, serverTimestamp, update } from 'firebase/database'
+import { child, get, ref, runTransaction, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
@@ -79,6 +79,49 @@ export default function MainPlannerClient() {
   const [sharedBasesPage, setSharedBasesPage] = useState<number>(1);
   const [sharedBasesSearchQuery, setSharedBasesSearchQuery] = useState('');
   const [sharedBasesFilterMode, setSharedBasesFilterMode] = useState<'all' | 'my'>('all');
+  // shareId -> голос текущего пользователя ('like' | 'dislike'), из user_votes/{uid}
+  // в Firebase. Как и shares_summary ниже, кэшируется в рамках сессии и в
+  // sessionStorage: голоса и так обновляются локально сразу после каждого
+  // клика по лайку/дизлайку (см. handleVoteBase), поэтому скачивать весь узел
+  // заново при каждом открытии панели незачем — только один раз на uid за
+  // сессию, плюс явный force при нажатии "Обновить".
+  const [sharedBasesUserVotes, setSharedBasesUserVotes] = useState<Record<string, BaseVote>>({});
+  const sharedBasesUserVotesRef = useRef<Record<string, BaseVote>>({});
+  const loadedUserVotesUidRef = useRef<string | null>(null);
+  const SHARED_BASES_VOTES_CACHE_STORAGE_KEY = 'sharedBasesUserVotesCache_v1';
+
+  const readUserVotesCacheFromStorage = (uid: string): Record<string, BaseVote> | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.sessionStorage.getItem(SHARED_BASES_VOTES_CACHE_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.uid === uid && parsed.data && typeof parsed.data === 'object') {
+        return parsed.data as Record<string, BaseVote>;
+      }
+    } catch {
+      // Повреждённые/недоступные данные — просто игнорируем.
+    }
+    return null;
+  };
+
+  const writeUserVotesCacheToStorage = (uid: string, data: Record<string, BaseVote>) => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem(SHARED_BASES_VOTES_CACHE_STORAGE_KEY, JSON.stringify({ uid, data }));
+    } catch {
+      // Переполнен sessionStorage — не критично, останется in-memory кэш на сессию.
+    }
+  };
+
+  useEffect(() => {
+    sharedBasesUserVotesRef.current = sharedBasesUserVotes;
+    // Держим sessionStorage синхронизированным с любым изменением голосов —
+    // и после серверной загрузки, и после локального клика по лайку/дизлайку —
+    // чтобы кэш, прочитанный после F5, не отставал на шаг.
+    const uid = loadedUserVotesUidRef.current;
+    if (uid) writeUserVotesCacheToStorage(uid, sharedBasesUserVotes);
+  }, [sharedBasesUserVotes]);
   const SHARED_BASES_PER_PAGE = 50;
   // Кэш последнего снимка shares_summary из Firebase, чтобы повторные открытия
   // модалки "Публичные базы" в течение TTL не скачивали весь узел заново —
@@ -2001,19 +2044,27 @@ export default function MainPlannerClient() {
           updatedAt: updatedAt as unknown as number
         };
 
-        const summaryData = {
-          id: toSave.id,
-          name: toSave.name,
-          ownerId: toSave.ownerId,
-          shareId: toSave.shareId,
-          createdAt: toSave.createdAt,
-          updatedAt: toSave.updatedAt
-        };
-
-        await update(ref(db), {
+        // Пишем поля shares_summary по отдельным путям (а не одним объектом на
+        // весь узел), иначе повторное сохранение/шаринг своей же базы стирало бы
+        // накопленные likes/dislikes — update() с одним объектом на весь узел
+        // полностью его заменяет, а точечные пути внутри multi-location update
+        // трогают только перечисленные поля, остальные (в т.ч. likes/dislikes)
+        // остаются как есть.
+        const summaryUpdates: Record<string, unknown> = {
           [`shares/${shareId}`]: toSave,
-          [`shares_summary/${shareId}`]: summaryData
-        });
+          [`shares_summary/${shareId}/id`]: toSave.id,
+          [`shares_summary/${shareId}/name`]: toSave.name,
+          [`shares_summary/${shareId}/ownerId`]: toSave.ownerId,
+          [`shares_summary/${shareId}/shareId`]: toSave.shareId,
+          [`shares_summary/${shareId}/createdAt`]: toSave.createdAt,
+          [`shares_summary/${shareId}/updatedAt`]: toSave.updatedAt
+        };
+        if (isNewShare) {
+          summaryUpdates[`shares_summary/${shareId}/likes`] = 0;
+          summaryUpdates[`shares_summary/${shareId}/dislikes`] = 0;
+        }
+
+        await update(ref(db), summaryUpdates);
 
         return toSave;
       });
@@ -2094,19 +2145,23 @@ export default function MainPlannerClient() {
           updatedAt: updatedAt as unknown as number
         };
 
-        const summaryData = {
-          id: mapToSave.id,
-          name: mapToSave.name,
-          ownerId: mapToSave.ownerId || null,
-          shareId: mapToSave.shareId,
-          createdAt: mapToSave.createdAt,
-          updatedAt: mapToSave.updatedAt
-        };
-
-        await update(ref(db), {
+        // См. комментарий в handleExportMap — точечные пути вместо замены всего
+        // узла shares_summary, чтобы не сбрасывать likes/dislikes при повторном шаринге.
+        const summaryUpdates: Record<string, unknown> = {
           [`shares/${shareId}`]: mapToSave,
-          [`shares_summary/${shareId}`]: summaryData
-        });
+          [`shares_summary/${shareId}/id`]: mapToSave.id,
+          [`shares_summary/${shareId}/name`]: mapToSave.name,
+          [`shares_summary/${shareId}/ownerId`]: mapToSave.ownerId || null,
+          [`shares_summary/${shareId}/shareId`]: mapToSave.shareId,
+          [`shares_summary/${shareId}/createdAt`]: mapToSave.createdAt,
+          [`shares_summary/${shareId}/updatedAt`]: mapToSave.updatedAt
+        };
+        if (isNewShare) {
+          summaryUpdates[`shares_summary/${shareId}/likes`] = 0;
+          summaryUpdates[`shares_summary/${shareId}/dislikes`] = 0;
+        }
+
+        await update(ref(db), summaryUpdates);
       });
 
       if (fullMapState.shareId !== shareId || fullMapState.ownerId !== ownerId) {
@@ -2197,7 +2252,9 @@ export default function MainPlannerClient() {
           ownerId: data.ownerId,
           shareId: data.shareId || key,
           createdAt: typeof data.createdAt === 'number' ? data.createdAt : undefined,
-          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : undefined
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : undefined,
+          likes: typeof data.likes === 'number' ? data.likes : 0,
+          dislikes: typeof data.dislikes === 'number' ? data.dislikes : 0
         }));
       }
 
@@ -2212,20 +2269,156 @@ export default function MainPlannerClient() {
     }
   }, [SHARED_BASES_CACHE_TTL, showAlert]);
 
+  // Голоса текущего пользователя хранятся отдельно от shares_summary — в
+  // user_votes/{uid}/{shareId} — и читаются/пишутся только владельцем uid
+  // (см. правила Firebase). Загружаем их узел целиком одним чтением при
+  // каждом открытии панели: он маленький (только свои голоса), в отличие от
+  // shares_summary, который кэшируется отдельно по TTL.
+  const loadUserVotes = useCallback(async (uid: string, force: boolean = false) => {
+    if (!force) {
+      if (loadedUserVotesUidRef.current === uid) return; // уже грузили в этой сессии
+      const cached = readUserVotesCacheFromStorage(uid);
+      if (cached) {
+        loadedUserVotesUidRef.current = uid;
+        setSharedBasesUserVotes(cached);
+        return;
+      }
+    }
+    try {
+      const votesSnapshot = await withOnline(() => get(ref(db, `user_votes/${uid}`)));
+      const votes = votesSnapshot.exists() ? (votesSnapshot.val() as Record<string, BaseVote>) : {};
+      loadedUserVotesUidRef.current = uid;
+      setSharedBasesUserVotes(votes);
+    } catch (err) {
+      console.error('Ошибка загрузки голосов пользователя:', err);
+      // Не критично для отображения списка баз — оставляем как есть (пустой/старый).
+    }
+  }, []);
+
+  // Локально пересчитывает likes/dislikes в уже загруженном списке (и в его
+  // кэше), чтобы счётчик в UI обновился сразу после голоса, без повторного
+  // скачивания всего shares_summary.
+  const applyVoteDeltaToLists = useCallback((
+    shareId: string,
+    voteType: BaseVote,
+    delta: 1 | -1,
+    prevVote?: BaseVote
+  ) => {
+    const updater = (list: Partial<MapData>[]) => list.map(base => {
+      if (base.shareId !== shareId) return base;
+      const likes = base.likes ?? 0;
+      const dislikes = base.dislikes ?? 0;
+
+      if (delta === -1) {
+        return voteType === 'like'
+          ? { ...base, likes: Math.max(0, likes - 1) }
+          : { ...base, dislikes: Math.max(0, dislikes - 1) };
+      }
+
+      let nextLikes = likes;
+      let nextDislikes = dislikes;
+      if (voteType === 'like') {
+        nextLikes = likes + 1;
+        if (prevVote === 'dislike') nextDislikes = Math.max(0, dislikes - 1);
+      } else {
+        nextDislikes = dislikes + 1;
+        if (prevVote === 'like') nextLikes = Math.max(0, likes - 1);
+      }
+      return { ...base, likes: nextLikes, dislikes: nextDislikes };
+    });
+
+    setSharedBasesList(prev => updater(prev));
+    if (sharedBasesCacheRef.current) {
+      writeSharedBasesCache({
+        ...sharedBasesCacheRef.current,
+        data: updater(sharedBasesCacheRef.current.data)
+      });
+    }
+  }, []);
+
+  // Лайк/дизлайк базы. Один пользователь — один голос на базу: повторный клик
+  // по уже выбранному варианту снимает голос, клик по противоположному —
+  // переключает его. Кто именно голосовал, хранится в user_votes/{uid}/{shareId}
+  // (перезаписывается, так что дублирующихся голосов от одного uid быть не может),
+  // счётчики likes/dislikes в shares_summary обновляются транзакциями, чтобы
+  // одновременные голоса разных пользователей не перезатирали друг друга.
+  const handleVoteBase = useCallback(async (shareId: string, voteType: BaseVote) => {
+    if (!shareId) return;
+    const uid = currentUser?.uid || auth.currentUser?.uid;
+    if (!uid) {
+      showAlert(t('authError'), t('error'), 'error');
+      return;
+    }
+
+    const prevVote = sharedBasesUserVotesRef.current[shareId];
+    const isRemovingVote = prevVote === voteType;
+
+    try {
+      await withOnline(async () => {
+        if (isRemovingVote) {
+          await update(ref(db), { [`user_votes/${uid}/${shareId}`]: null });
+        } else {
+          await update(ref(db), { [`user_votes/${uid}/${shareId}`]: voteType });
+        }
+
+        if (isRemovingVote) {
+          await runTransaction(ref(db, `shares_summary/${shareId}/${voteType}s`), (current) =>
+            Math.max(0, (typeof current === 'number' ? current : 0) - 1)
+          );
+        } else {
+          await runTransaction(ref(db, `shares_summary/${shareId}/${voteType}s`), (current) =>
+            (typeof current === 'number' ? current : 0) + 1
+          );
+          if (prevVote) {
+            const oppositeField = prevVote === 'like' ? 'dislikes' : 'likes';
+            await runTransaction(ref(db, `shares_summary/${shareId}/${oppositeField}`), (current) =>
+              Math.max(0, (typeof current === 'number' ? current : 0) - 1)
+            );
+          }
+        }
+      });
+
+      setSharedBasesUserVotes(prev => {
+        const next = { ...prev };
+        if (isRemovingVote) {
+          delete next[shareId];
+        } else {
+          next[shareId] = voteType;
+        }
+        return next;
+      });
+
+      applyVoteDeltaToLists(shareId, voteType, isRemovingVote ? -1 : 1, isRemovingVote ? undefined : prevVote);
+    } catch (err) {
+      console.error('Ошибка голосования за базу:', err);
+      showAlert(t('voteError'), t('error'), 'error');
+    }
+  }, [currentUser, showAlert, t, applyVoteDeltaToLists]);
+
   const handleOpenSharedBasesPanel = useCallback(async () => {
     setIsSharedBasesModalOpen(true);
     setSharedBasesPage(1);
     setSharedBasesSearchQuery('');
     setSharedBasesFilterMode('all');
     trackEvent('open_shared_bases_panel');
-    // Без force: если открывали недавно, список возьмётся из кэша без запроса к Firebase.
-    await loadSharedBases();
-  }, [loadSharedBases]);
+    const uid = currentUser?.uid || auth.currentUser?.uid;
+    // Без force: и список баз, и голоса пользователя берутся из кэша, если уже
+    // загружались в этой сессии — Firebase дёргается один раз на uid, а не при
+    // каждом открытии панели.
+    await Promise.all([
+      loadSharedBases(),
+      uid ? loadUserVotes(uid) : Promise.resolve()
+    ]);
+  }, [loadSharedBases, loadUserVotes, currentUser]);
 
   const handleRefreshSharedBases = useCallback(async () => {
     trackEvent('refresh_shared_bases_panel');
-    await loadSharedBases(true);
-  }, [loadSharedBases]);
+    const uid = currentUser?.uid || auth.currentUser?.uid;
+    await Promise.all([
+      loadSharedBases(true),
+      uid ? loadUserVotes(uid, true) : Promise.resolve()
+    ]);
+  }, [loadSharedBases, loadUserVotes, currentUser]);
 
   const handleSharedBasesPageChange = useCallback((newPage: number) => {
     setSharedBasesPage(newPage);
@@ -2891,6 +3084,8 @@ export default function MainPlannerClient() {
         onSelectBase={handleSelectSharedMap}
         onDeleteBase={handleDeleteCloudMap}
         onRefresh={handleRefreshSharedBases}
+        userVotes={sharedBasesUserVotes}
+        onVote={handleVoteBase}
       />
 
       <ModalInfo

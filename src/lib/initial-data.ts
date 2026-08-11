@@ -115,7 +115,16 @@ export interface MapData {
   settlementBase: BaseData;
   createdAt?: number;
   updatedAt?: number;
+  // Aggregate vote counters, stored only under shares_summary/{shareId} (see
+  // firebase.rules) and kept in sync via atomic increment() writes, so they're
+  // safe against concurrent votes from different users. Absent/undefined means 0.
+  likes?: number;
+  dislikes?: number;
 }
+
+/** The current user's own vote on a shared base, if any. Mirrors the value
+ * stored at user_votes/{uid}/{shareId} in Firebase. */
+export type BaseVote = 'like' | 'dislike';
 
 export interface ModalInfoData {
   title?: string;

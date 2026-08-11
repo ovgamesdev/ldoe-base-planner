@@ -158,6 +158,11 @@ export const translations = {
     myBases: 'Мои базы',
     createdLabel: 'Создано',
     updatedLabel: 'Изменено',
+    likeBtn: 'Нравится',
+    dislikeBtn: 'Не нравится',
+    voteError: 'Не удалось сохранить голос. Попробуйте ещё раз.',
+    voteLoginRequired: 'Войдите, чтобы голосовать',
+    voteAuthError: 'Не удалось проголосовать. Попробуйте войти заново.',
 
     cookieSettings: 'Настройки cookies',
     cookieBannerTitle: 'Уведомление о cookies',
@@ -527,6 +532,11 @@ export const translations = {
     myBases: 'My Bases',
     createdLabel: 'Created',
     updatedLabel: 'Updated',
+    likeBtn: 'Like',
+    dislikeBtn: 'Dislike',
+    voteError: 'Failed to save your vote. Please try again.',
+    voteLoginRequired: 'Sign in to vote',
+    voteAuthError: 'Could not register your vote. Try signing in again.',
 
     cookieSettings: 'Cookie settings',
     cookieBannerTitle: 'Cookie Notice',
