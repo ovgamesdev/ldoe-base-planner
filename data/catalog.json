@@ -2521,11 +2521,12 @@
       ],
       "placementType": "floor",
       "requiresFloor": true,
-      "requiresSpecificFloorLevel": 1,
+      "requiresSpecificFloorLevel": 3,
       "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "baseType": "main"
-    }
+    },
+    "colorVariants": []
   },
   {
     "typeId": "garden_bed",
@@ -4982,7 +4983,7 @@
       "h": 2
     },
     "image": "/assets/robodog_docking_station.webp",
-    "tooltipImage": "/assets/robodog_docking_station.webp",
+    "tooltipImage": "/assets/preview/robodog_docking_station.webp",
     "color": "transparent",
     "colorVariants": [],
     "constraints": {
@@ -5117,8 +5118,8 @@
     "typeId": "atv_garage",
     "category": "special_transport",
     "name": {
-      "ru": "Гараж для Вездехода (TODO)",
-      "en": "ATV Garage (TODO)"
+      "ru": "Гараж для Вездехода",
+      "en": "ATV Garage"
     },
     "size": {
       "w": 4,
@@ -5138,7 +5139,7 @@
       ],
       "placementType": "ground",
       "requiresFloor": false,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "main",
       "visualOverflow": {
@@ -6931,7 +6932,7 @@
       "placementType": "ground",
       "requiresFloor": false,
       "allowWallDecorAbove": true,
-      "maxPerBase": 1,
+      "maxPerBase": 2,
       "baseType": "main"
     }
   },
