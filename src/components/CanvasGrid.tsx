@@ -21,6 +21,7 @@ interface CanvasGridProps {
   allCells: { x: number; y: number }[];
   highlightedCells?: Set<string>;
   highlightedWalls?: Set<string>;
+  highlightedInstanceIds?: Set<string>;
   setHoveredCell?: (cell: { x: number; y: number } | null) => void;
   wallLines: { x: number; y: number; orientation: 'horizontal' | 'vertical' }[];
   sortedRootObjects: { obj: ObjectLayer; template: CatalogItem }[];
@@ -54,6 +55,7 @@ export const CanvasGrid = memo(function CanvasGrid({
   allCells,
   highlightedCells,
   highlightedWalls,
+  highlightedInstanceIds,
   setHoveredCell,
   wallLines,
   sortedRootObjects,
@@ -536,6 +538,7 @@ export const CanvasGrid = memo(function CanvasGrid({
           activeTool={activeTool}
           activeBaseType={activeBaseType}
           activeSettlementLayer={activeSettlementLayer}
+          highlightedInstanceIds={highlightedInstanceIds}
           onSelectObject={onSelectInstance}
         />
 
@@ -584,6 +587,7 @@ export const CanvasGrid = memo(function CanvasGrid({
     prevProps.allCells === nextProps.allCells &&
     prevProps.highlightedCells === nextProps.highlightedCells &&
     prevProps.highlightedWalls === nextProps.highlightedWalls &&
+    prevProps.highlightedInstanceIds === nextProps.highlightedInstanceIds &&
     prevProps.wallLines === nextProps.wallLines &&
     prevProps.sortedRootObjects === nextProps.sortedRootObjects &&
     prevProps.activeBaseType === nextProps.activeBaseType &&

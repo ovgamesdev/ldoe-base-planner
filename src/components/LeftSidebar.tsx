@@ -3,7 +3,7 @@ import type { Tool, ViewMode } from '@/lib/constants'
 import { ALL_ROTATIONS, WALL_TOOLTIP_IMAGES_MAIN, WALL_TOOLTIP_IMAGES_SETTLEMENT } from '@/lib/constants'
 import { clearConsent } from '@/lib/cookie-consent'
 import { getAssetPath, getWallTooltipImage } from '@/lib/grid-utils'
-import type { BaseType, CatalogItem, MapData, SettlementLayerType } from '@/lib/initial-data'
+import type { BaseType, CatalogItem, MapData, ObjectLayer, SettlementLayerType } from '@/lib/initial-data'
 import { getItemName, searchMatchesName } from '@/lib/initial-data'
 import { isDefaultMapName } from '@/lib/map-utils'
 import Link from 'next/link'
@@ -21,6 +21,8 @@ interface LeftSidebarProps {
   uniqueCategories: string[];
   searchCategory: string;
   searchQuery: string;
+  builtSearchQuery: string;
+  builtSearchMatches: { obj: ObjectLayer; template: CatalogItem }[];
   activeTool: Tool;
   viewMode: ViewMode;
   zoom: number;
@@ -59,6 +61,8 @@ interface LeftSidebarProps {
   onSetSearchCategory: (cat: string) => void;
   onSetSearchQuery: (query: string) => void;
   onClearSearch: () => void;
+  onSetBuiltSearchQuery: (query: string) => void;
+  onSelectBuiltMatch: (instanceId: string) => void;
   onSelectBuildingType: (typeId: string) => void;
   onCurrentRotationChange: (rot: number) => void;
   onLoadForEditing: (typeId: string) => void;
@@ -83,6 +87,8 @@ export const LeftSidebar = memo(function LeftSidebar({
   uniqueCategories,
   searchCategory,
   searchQuery,
+  builtSearchQuery,
+  builtSearchMatches,
   activeTool,
   viewMode,
   zoom,
@@ -120,6 +126,8 @@ export const LeftSidebar = memo(function LeftSidebar({
   onSetSearchCategory,
   onSetSearchQuery,
   onClearSearch,
+  onSetBuiltSearchQuery,
+  onSelectBuiltMatch,
   onSelectBuildingType,
   onCurrentRotationChange,
   onLoadForEditing,
@@ -256,6 +264,53 @@ export const LeftSidebar = memo(function LeftSidebar({
           <button onClick={() => onSetActiveSettlementLayer('water')} className={`flex-1 py-1 text-xs font-bold rounded transition ${activeSettlementLayer === 'water' ? 'bg-cyan-500 text-neutral-950' : 'text-neutral-400 hover:text-white'} cursor-pointer`}>{t('waterTab')}</button>
         </div>
       )}
+
+      <div className="bg-neutral-950 p-2.5 rounded border border-neutral-800 space-y-2">
+        <label className="text-xs font-bold uppercase tracking-wider text-neutral-500 block">
+          {t('findBuiltHeading')}
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder={t('findBuiltPlaceholder')}
+            value={builtSearchQuery}
+            onChange={e => onSetBuiltSearchQuery(e.target.value)}
+            className="w-full bg-neutral-900 border border-neutral-800 rounded p-2.5 md:p-2 pr-9 md:pr-7 text-xs text-white focus:outline-none focus:border-amber-500"
+          />
+          {builtSearchQuery && (
+            <button
+              type="button"
+              onClick={() => onSetBuiltSearchQuery('')}
+              className="absolute right-2 md:right-1.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white text-base md:text-sm p-1 cursor-pointer"
+              title={t('clearSearch')}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {builtSearchQuery && (
+          builtSearchMatches.length > 0 ? (
+            <div className="space-y-1">
+              <div className="text-[11px] text-neutral-500">{t('findBuiltCount', { count: builtSearchMatches.length })}</div>
+              <div className="max-h-40 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                {builtSearchMatches.map(({ obj, template }) => (
+                  <button
+                    key={obj.instanceId}
+                    type="button"
+                    onClick={() => onSelectBuiltMatch(obj.instanceId)}
+                    className="w-full text-left flex items-center justify-between gap-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 rounded px-2 py-1.5 text-xs text-neutral-200 transition cursor-pointer"
+                  >
+                    <span className="truncate">{getItemName(template.name, language)}</span>
+                    <span className="text-neutral-500 shrink-0">x{obj.x}, y{obj.y}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-[11px] text-neutral-500">{t('findBuiltNothing')}</div>
+          )
+        )}
+      </div>
 
       <div className="space-y-3 bg-neutral-950 p-3 rounded border border-neutral-800">
         <div className="flex items-center justify-between">

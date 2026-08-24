@@ -112,9 +112,20 @@ export function useAutoSaveShare(
           existsInFirebaseRef.current = true;
           const summaryVal = cleanUndefined(snapshot.val());
 
+          // `likes`/`dislikes` живут в shares_summary, но этот хук их никогда
+          // не создаёт и не редактирует — ими управляет отдельный код
+          // голосования через user_votes. Если оставить их в снапшоте для
+          // диффа, buildFirebaseDiff увидит, что в новом summaryRecord (из
+          // prepareShareRecords, который про них не знает) этих полей нет, и
+          // решит, что они были удалены, сгенерировав `.../likes: null`.
+          // Такая запись не проходит .validate (newData.isNumber()) и роняет
+          // весь multi-location update — после чего следующий сейв уходит по
+          // ветке "первичное сохранение" и стирает likes/dislikes насовсем.
+          const { likes: _likes, dislikes: _dislikes, ...summaryForDiff } = summaryVal;
+
           lastSavedSnapshotRef.current = {
             share: {},
-            summary: summaryVal
+            summary: summaryForDiff
           };
           // Хэш от {} + summary не совпадёт с реальным текущим состоянием карты,
           // так что на первом performSave после монтирования дедупликация по
@@ -194,11 +205,19 @@ export function useAutoSaveShare(
 
       await withOnline(async () => {
         if (!existsInFirebaseRef.current) {
-          // Первичное сохранение: создаём полные структуры в shares и shares_summary
-          const updates: Record<string, any> = {
-            [`shares/${shareId}`]: shareRecord,
-            [`shares_summary/${shareId}`]: summaryRecord
-          };
+          // Первичное сохранение: создаём структуры в shares и shares_summary.
+          // Пишем каждое поле по отдельному пути (а не `set` всего узла целиком),
+          // чтобы случайно не затереть `likes`/`dislikes` в shares_summary —
+          // этот хук о них не знает, и full-node set стёр бы их, если они уже
+          // были записаны (например, кто-то проголосовал ещё до первого
+          // автосохранения в этой сессии).
+          const updates: Record<string, any> = {};
+          for (const [key, value] of Object.entries(shareRecord)) {
+            updates[`shares/${shareId}/${key}`] = value;
+          }
+          for (const [key, value] of Object.entries(summaryRecord)) {
+            updates[`shares_summary/${shareId}/${key}`] = value;
+          }
 
           await update(ref(db), updates);
           existsInFirebaseRef.current = true;

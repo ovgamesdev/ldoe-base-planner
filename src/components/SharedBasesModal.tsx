@@ -4,6 +4,9 @@ import { useLanguage } from '@/context/LanguageContext'
 import type { BaseVote, MapData } from '@/lib/initial-data'
 import React, { useEffect, useRef, useState } from 'react'
 
+export type SharedBasesSortField = 'name' | 'likes' | 'dislikes' | 'created' | 'updated';
+export type SharedBasesSortDir = 'asc' | 'desc';
+
 interface SharedBasesModalProps {
   isOpen: boolean;
   isLoading: boolean;
@@ -16,6 +19,10 @@ interface SharedBasesModalProps {
   onSearchQueryChange: (query: string) => void;
   filterMode: 'all' | 'my';
   onFilterModeChange: (mode: 'all' | 'my') => void;
+  sortField: SharedBasesSortField;
+  onSortFieldChange: (field: SharedBasesSortField) => void;
+  sortDir: SharedBasesSortDir;
+  onSortDirToggle: () => void;
   onClose: () => void;
   onSelectBase: (mapData: MapData) => void;
   onDeleteBase: (shareId: string) => void;
@@ -64,6 +71,10 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
   onSearchQueryChange,
   filterMode,
   onFilterModeChange,
+  sortField,
+  onSortFieldChange,
+  sortDir,
+  onSortDirToggle,
   onClose,
   onSelectBase,
   onDeleteBase,
@@ -175,36 +186,63 @@ export const SharedBasesModal: React.FC<SharedBasesModalProps> = ({
           </p>
         </div>
 
-        {/* Фильтры и Поиск */}
-        <div className="mb-4 flex flex-col sm:flex-row gap-2">
+        {/* Поиск — своя строка. Фильтр и сортировка — вторая строка, делят
+            ширину поровну (актуально для мобильных, на десктопе всё так же
+            в две строки, чтобы не тянуть поиск в узкий столбец). */}
+        <div className="mb-4 flex flex-col gap-2">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder={t('searchBasePlaceholder')}
-            className="flex-1 bg-neutral-950 border border-neutral-800 focus:border-amber-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors placeholder-neutral-500"
+            className="w-full bg-neutral-950 border border-neutral-800 focus:border-amber-500 rounded-lg px-3 py-2 text-xs text-white outline-none transition-colors placeholder-neutral-500"
           />
-          <div className="flex bg-neutral-950 border border-neutral-800 rounded-lg p-0.5 shrink-0">
-            <button
-              onClick={() => onFilterModeChange('all')}
-              className={`flex-1 text-center w-24 px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
-                filterMode === 'all'
-                  ? 'bg-amber-600 text-white font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              {t('allBases')}
-            </button>
-            <button
-              onClick={() => onFilterModeChange('my')}
-              className={`flex-1 text-center w-24 px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
-                filterMode === 'my'
-                  ? 'bg-amber-600 text-white font-semibold'
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-            >
-              {t('myBases')}
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 bg-neutral-950 border border-neutral-800 rounded-lg p-0.5">
+              <button
+                onClick={() => onFilterModeChange('all')}
+                className={`flex-1 text-center px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
+                  filterMode === 'all'
+                    ? 'bg-amber-600 text-white font-semibold'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                {t('allBases')}
+              </button>
+              <button
+                onClick={() => onFilterModeChange('my')}
+                className={`flex-1 text-center px-3 py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
+                  filterMode === 'my'
+                    ? 'bg-amber-600 text-white font-semibold'
+                    : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                {t('myBases')}
+              </button>
+            </div>
+
+            {/* Сортировка: обычный select + кнопка направления, теперь в
+                выделенном flex-1 слоте рядом с фильтром — места достаточно */}
+            <div className="flex flex-1 items-center gap-1.5">
+              <select
+                value={sortField}
+                onChange={(e) => onSortFieldChange(e.target.value as SharedBasesSortField)}
+                className="flex-1 min-w-0 bg-neutral-950 border border-neutral-800 focus:border-amber-500 rounded-lg px-2 py-1.5 text-xs text-neutral-200 outline-none transition-colors cursor-pointer"
+              >
+                <option value="name">{t('sortByName')}</option>
+                <option value="likes">{t('sortByLikes')}</option>
+                <option value="dislikes">{t('sortByDislikes')}</option>
+                <option value="created">{t('sortByCreated')}</option>
+                <option value="updated">{t('sortByUpdated')}</option>
+              </select>
+              <button
+                onClick={onSortDirToggle}
+                className="shrink-0 bg-neutral-950 border border-neutral-800 hover:border-amber-600/60 text-neutral-300 hover:text-amber-400 rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer"
+                title={sortDir === 'asc' ? t('sortAscTitle') : t('sortDescTitle')}
+              >
+                {sortDir === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
           </div>
         </div>
 

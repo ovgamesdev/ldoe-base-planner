@@ -22,6 +22,7 @@ interface GridObjectsProps {
   activeTool: Tool;
   activeBaseType: BaseType;
   activeSettlementLayer: SettlementLayerType;
+  highlightedInstanceIds?: Set<string>;
   onSelectObject: (instanceId: string) => void;
 }
 
@@ -33,6 +34,7 @@ export const GridObjects = memo(function GridObjects({
   activeTool,
   activeBaseType,
   activeSettlementLayer,
+  highlightedInstanceIds,
   onSelectObject
 }: GridObjectsProps) {
   const { language } = useLanguage();
@@ -102,6 +104,8 @@ export const GridObjects = memo(function GridObjects({
         const isFaded = !isCurrentLayer;
         let isSelect = !isFaded
 
+        const isSearchHighlighted = highlightedInstanceIds?.has(obj.instanceId) ?? false;
+
         let opacity = 1;
         let color = template.color || '#eab308'
         if (isFaded) {
@@ -122,6 +126,15 @@ export const GridObjects = memo(function GridObjects({
           }
         }
 
+        // Найденный поиском объект показываем поверх любого затемнения слоя —
+        // подсветка должна быть видна и заметна, даже если объект сейчас на
+        // неактивном слое поселения.
+        if (isSearchHighlighted) {
+          opacity = 1;
+          isSelect = true;
+          color = '#eab308';
+        }
+
         const objectKey = obj.instanceId || `obj-${obj.typeId}-${obj.x}-${obj.y}-${index}`;
         const displayName = getItemName(template.name, language);
 
@@ -140,9 +153,10 @@ export const GridObjects = memo(function GridObjects({
             <polygon
               points={pts}
               fill={color}
-              fillOpacity={0.25}
+              fillOpacity={isSearchHighlighted ? 0.4 : 0.25}
               stroke={color}
-              strokeWidth={1.5}
+              strokeWidth={isSearchHighlighted ? 3 : 1.5}
+              className={isSearchHighlighted ? 'animate-pulse' : undefined}
             />
             {currentImage ? (
               <image

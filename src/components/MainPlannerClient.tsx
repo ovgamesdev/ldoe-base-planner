@@ -31,7 +31,7 @@ import {
 import { useAutoSaveShare } from '@/lib/useAutoSaveShare'
 import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
-import { child, get, ref, runTransaction, serverTimestamp, update } from 'firebase/database'
+import { child, get, ref, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
 import CookieConsentBanner from './CookieConsentBanner'
@@ -39,7 +39,7 @@ import { LeftSidebar } from './LeftSidebar'
 import { isDontShowAgainDismissed, ModalInfo } from './ModalInfo'
 import { RightSidebar } from './RightSidebar'
 import { SelectedElementPanel } from './SelectedElementPanel'
-import { SharedBasesModal } from './SharedBasesModal'
+import { SharedBasesModal, type SharedBasesSortDir, type SharedBasesSortField } from './SharedBasesModal'
 
 export default function MainPlannerClient() {
   const { t, language } = useLanguage();
@@ -79,6 +79,8 @@ export default function MainPlannerClient() {
   const [sharedBasesPage, setSharedBasesPage] = useState<number>(1);
   const [sharedBasesSearchQuery, setSharedBasesSearchQuery] = useState('');
   const [sharedBasesFilterMode, setSharedBasesFilterMode] = useState<'all' | 'my'>('all');
+  const [sharedBasesSortField, setSharedBasesSortField] = useState<SharedBasesSortField>('created');
+  const [sharedBasesSortDir, setSharedBasesSortDir] = useState<SharedBasesSortDir>('desc');
   // shareId -> голос текущего пользователя ('like' | 'dislike'), из user_votes/{uid}
   // в Firebase. Как и shares_summary ниже, кэшируется в рамках сессии и в
   // sessionStorage: голоса и так обновляются локально сразу после каждого
@@ -598,6 +600,34 @@ export default function MainPlannerClient() {
 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchCategory, setSearchCategory] = useState<string>('all');
+
+  // Отдельный поиск по уже построенным объектам текущей базы (не по каталогу
+  // построек) — ищет среди mapState.layers.objects и подсвечивает совпадения
+  // на канвасе (см. highlightedInstanceIds ниже).
+  const [builtSearchQuery, setBuiltSearchQuery] = useState<string>('');
+
+  const builtSearchMatches = useMemo(() => {
+    const query = builtSearchQuery.trim();
+    if (!query) return [];
+
+    const results: { obj: ObjectLayer; template: CatalogItem }[] = [];
+    for (const obj of mapState.layers.objects) {
+      const template = catalogMap[obj.typeId];
+      if (!template) continue;
+      if (searchMatchesName(template.name, query)) results.push({ obj, template });
+    }
+    return results;
+  }, [builtSearchQuery, mapState.layers.objects, catalogMap]);
+
+  const highlightedInstanceIds = useMemo(() => {
+    if (builtSearchMatches.length === 0) return undefined;
+    return new Set(builtSearchMatches.map(m => m.obj.instanceId));
+  }, [builtSearchMatches]);
+
+  const handleSelectBuiltMatch = useCallback((instanceId: string) => {
+    handleToolChange('hand');
+    setSelectedInstanceId(instanceId);
+  }, [handleToolChange]);
 
   const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
   const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
@@ -2339,9 +2369,28 @@ export default function MainPlannerClient() {
   // Лайк/дизлайк базы. Один пользователь — один голос на базу: повторный клик
   // по уже выбранному варианту снимает голос, клик по противоположному —
   // переключает его. Кто именно голосовал, хранится в user_votes/{uid}/{shareId}
-  // (перезаписывается, так что дублирующихся голосов от одного uid быть не может),
-  // счётчики likes/dislikes в shares_summary обновляются транзакциями, чтобы
-  // одновременные голоса разных пользователей не перезатирали друг друга.
+  // (перезаписывается, так что дублирующихся голосов от одного uid быть не может).
+  //
+  // Раньше запись голоса (`user_votes`) и изменение счётчика (`runTransaction`
+  // на `shares_summary/.../likes`) были ДВУМЯ раздельными запросами. С точки
+  // зрения Firebase Security Rules это два независимых события — правила не
+  // могли проверить, что счётчик меняется именно вслед за реальным изменением
+  // голоса ИМЕННО этого uid, а не произвольным вызовом извне (сама структура
+  // ".validate: newData === data + 1" разрешала любому авторизованному
+  // пользователю дёргать лайк сколько угодно раз, минуя user_votes).
+  //
+  // Теперь оба поля пишутся ОДНИМ атомарным update(): правила Firebase рулят
+  // по нему, сверяя новое значение user_votes/{auth.uid}/{shareId} (через
+  // `root`, отражающий результат всей записи) со старым (через `data`,
+  // отражающий состояние до записи) и разрешая только ±1 при реальном
+  // переходе между "нет голоса"/"like"/"dislike" для этого конкретного uid.
+  //
+  // Поскольку счётчик — общий (его одновременно могут менять другие
+  // пользователи), единый update() не даёт автоматического CAS-повтора,
+  // который раньше давал runTransaction. Эмулируем это сами: читаем текущее
+  // значение, пробуем записать, и если чужой голос успел прийти между
+  // чтением и записью (write отклоняется как permission_denied, потому что
+  // прочитанное значение уже устарело) — перечитываем и повторяем.
   const handleVoteBase = useCallback(async (shareId: string, voteType: BaseVote) => {
     if (!shareId) return;
     const uid = currentUser?.uid || auth.currentUser?.uid;
@@ -2352,28 +2401,49 @@ export default function MainPlannerClient() {
 
     const prevVote = sharedBasesUserVotesRef.current[shareId];
     const isRemovingVote = prevVote === voteType;
+    const MAX_VOTE_ATTEMPTS = 5;
 
     try {
       await withOnline(async () => {
-        if (isRemovingVote) {
-          await update(ref(db), { [`user_votes/${uid}/${shareId}`]: null });
-        } else {
-          await update(ref(db), { [`user_votes/${uid}/${shareId}`]: voteType });
-        }
+        for (let attempt = 1; ; attempt++) {
+          const summarySnap = await get(ref(db, `shares_summary/${shareId}`));
+          const summaryVal = summarySnap.val() || {};
+          const currentLikes = typeof summaryVal.likes === 'number' ? summaryVal.likes : 0;
+          const currentDislikes = typeof summaryVal.dislikes === 'number' ? summaryVal.dislikes : 0;
 
-        if (isRemovingVote) {
-          await runTransaction(ref(db, `shares_summary/${shareId}/${voteType}s`), (current) =>
-            Math.max(0, (typeof current === 'number' ? current : 0) - 1)
-          );
-        } else {
-          await runTransaction(ref(db, `shares_summary/${shareId}/${voteType}s`), (current) =>
-            (typeof current === 'number' ? current : 0) + 1
-          );
-          if (prevVote) {
-            const oppositeField = prevVote === 'like' ? 'dislikes' : 'likes';
-            await runTransaction(ref(db, `shares_summary/${shareId}/${oppositeField}`), (current) =>
-              Math.max(0, (typeof current === 'number' ? current : 0) - 1)
-            );
+          let nextLikes = currentLikes;
+          let nextDislikes = currentDislikes;
+
+          if (isRemovingVote) {
+            if (voteType === 'like') nextLikes = Math.max(0, currentLikes - 1);
+            else nextDislikes = Math.max(0, currentDislikes - 1);
+          } else {
+            if (voteType === 'like') {
+              nextLikes = currentLikes + 1;
+              if (prevVote === 'dislike') nextDislikes = Math.max(0, currentDislikes - 1);
+            } else {
+              nextDislikes = currentDislikes + 1;
+              if (prevVote === 'like') nextLikes = Math.max(0, currentLikes - 1);
+            }
+          }
+
+          const updates: Record<string, any> = {
+            [`user_votes/${uid}/${shareId}`]: isRemovingVote ? null : voteType
+          };
+          if (nextLikes !== currentLikes) updates[`shares_summary/${shareId}/likes`] = nextLikes;
+          if (nextDislikes !== currentDislikes) updates[`shares_summary/${shareId}/dislikes`] = nextDislikes;
+
+          try {
+            await update(ref(db), updates);
+            break;
+          } catch (err: any) {
+            const message = err instanceof Error ? err.message : String(err);
+            const isConflict = /permission_denied/i.test(message);
+            if (!isConflict || attempt >= MAX_VOTE_ATTEMPTS) {
+              throw err;
+            }
+            // Кто-то другой изменил счётчик между нашим чтением и записью —
+            // перечитываем актуальное значение и пробуем ещё раз.
           }
         }
       });
@@ -2400,6 +2470,8 @@ export default function MainPlannerClient() {
     setSharedBasesPage(1);
     setSharedBasesSearchQuery('');
     setSharedBasesFilterMode('all');
+    setSharedBasesSortField('created');
+    setSharedBasesSortDir('desc');
     trackEvent('open_shared_bases_panel');
     const uid = currentUser?.uid || auth.currentUser?.uid;
     // Без force: и список баз, и голоса пользователя берутся из кэша, если уже
@@ -2431,6 +2503,16 @@ export default function MainPlannerClient() {
 
   const handleSharedBasesFilterModeChange = useCallback((newMode: 'all' | 'my') => {
     setSharedBasesFilterMode(newMode);
+    setSharedBasesPage(1);
+  }, []);
+
+  const handleSharedBasesSortFieldChange = useCallback((newField: SharedBasesSortField) => {
+    setSharedBasesSortField(newField);
+    setSharedBasesPage(1);
+  }, []);
+
+  const handleSharedBasesSortDirToggle = useCallback(() => {
+    setSharedBasesSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     setSharedBasesPage(1);
   }, []);
 
@@ -2528,15 +2610,34 @@ export default function MainPlannerClient() {
     });
   }, [sharedBasesList, sharedBasesSearchQuery, sharedBasesFilterMode, currentUser]);
 
+  const sortedSharedBases = useMemo(() => {
+    const dirMultiplier = sharedBasesSortDir === 'asc' ? 1 : -1;
+    return [...filteredSharedBases].sort((a, b) => {
+      switch (sharedBasesSortField) {
+        case 'name':
+          return dirMultiplier * (a.name || '').localeCompare(b.name || '');
+        case 'likes':
+          return dirMultiplier * ((a.likes ?? 0) - (b.likes ?? 0));
+        case 'dislikes':
+          return dirMultiplier * ((a.dislikes ?? 0) - (b.dislikes ?? 0));
+        case 'updated':
+          return dirMultiplier * ((a.updatedAt ?? 0) - (b.updatedAt ?? 0));
+        case 'created':
+        default:
+          return dirMultiplier * ((a.createdAt ?? 0) - (b.createdAt ?? 0));
+      }
+    });
+  }, [filteredSharedBases, sharedBasesSortField, sharedBasesSortDir]);
+
   const totalSharedBasesPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredSharedBases.length / SHARED_BASES_PER_PAGE));
-  }, [filteredSharedBases.length]);
+    return Math.max(1, Math.ceil(sortedSharedBases.length / SHARED_BASES_PER_PAGE));
+  }, [sortedSharedBases.length]);
 
   const paginatedSharedBases = useMemo(() => {
     const safePage = Math.min(sharedBasesPage, totalSharedBasesPages);
     const startIndex = (safePage - 1) * SHARED_BASES_PER_PAGE;
-    return filteredSharedBases.slice(startIndex, startIndex + SHARED_BASES_PER_PAGE);
-  }, [filteredSharedBases, sharedBasesPage, totalSharedBasesPages]);
+    return sortedSharedBases.slice(startIndex, startIndex + SHARED_BASES_PER_PAGE);
+  }, [sortedSharedBases, sharedBasesPage, totalSharedBasesPages]);
 
   const handleImportMap = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -2926,6 +3027,8 @@ export default function MainPlannerClient() {
           uniqueCategories={uniqueCategories}
           searchCategory={searchCategory}
           searchQuery={searchQuery}
+          builtSearchQuery={builtSearchQuery}
+          builtSearchMatches={builtSearchMatches}
           activeTool={activeTool}
           viewMode={viewMode}
           zoom={zoom}
@@ -2960,6 +3063,8 @@ export default function MainPlannerClient() {
           onSetSearchCategory={setSearchCategory}
           onSetSearchQuery={setSearchQuery}
           onClearSearch={() => setSearchQuery('')}
+          onSetBuiltSearchQuery={setBuiltSearchQuery}
+          onSelectBuiltMatch={handleSelectBuiltMatch}
           onSelectBuildingType={handleSelectBuildingType}
           onCurrentRotationChange={handleCurrentRotationChange}
           onLoadForEditing={loadForEditing}
@@ -3007,6 +3112,7 @@ export default function MainPlannerClient() {
           selectedElementData={selectedElementData}
           allCells={allCells}
           highlightedWalls={highlightedWalls}
+          highlightedInstanceIds={highlightedInstanceIds}
           setHoveredCell={handleSetHoveredCell}
           wallLines={wallLines}
           sortedRootObjects={sortedRootObjects}
@@ -3080,6 +3186,10 @@ export default function MainPlannerClient() {
         onSearchQueryChange={handleSharedBasesSearchChange}
         filterMode={sharedBasesFilterMode}
         onFilterModeChange={handleSharedBasesFilterModeChange}
+        sortField={sharedBasesSortField}
+        onSortFieldChange={handleSharedBasesSortFieldChange}
+        sortDir={sharedBasesSortDir}
+        onSortDirToggle={handleSharedBasesSortDirToggle}
         onClose={() => setIsSharedBasesModalOpen(false)}
         onSelectBase={handleSelectSharedMap}
         onDeleteBase={handleDeleteCloudMap}
