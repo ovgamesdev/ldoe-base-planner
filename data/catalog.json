@@ -2126,9 +2126,9 @@
         180,
         270
       ],
-      "placementType": "floor",
-      "requiresFloor": true,
-      "requiresSpecificFloorLevel": 3,
+      "placementType": "any",
+      "requiresFloor": false,
+      "requiresSpecificFloorLevel": 1,
       "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "main"
@@ -3321,7 +3321,7 @@
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 4,
-      "allowWallDecorAbove": false,
+      "allowWallDecorAbove": true,
       "maxPerBase": 1,
       "baseType": "main"
     }
