@@ -8,6 +8,7 @@ import { getItemName, searchMatchesName } from '@/lib/initial-data'
 import { isDefaultMapName } from '@/lib/map-utils'
 import Link from 'next/link'
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { ShareImageModal } from './ShareImageModal'
 
 interface LeftSidebarProps {
   gridW: number;
@@ -145,6 +146,7 @@ export const LeftSidebar = memo(function LeftSidebar({
 
   const [localZoom, setLocalZoom] = useState(zoom);
   const [isEditingMapName, setIsEditingMapName] = useState(false);
+  const [isShareImageOpen, setIsShareImageOpen] = useState(false);
 
   useEffect(() => {
     setLocalZoom(zoom);
@@ -395,6 +397,22 @@ export const LeftSidebar = memo(function LeftSidebar({
             <span>🔗</span> {t('shareBtn')}
           </button>
         )}
+        <button
+          onClick={() => setIsShareImageOpen(true)}
+          className="w-full bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 py-2 px-2 rounded text-xs transition min-h-[40px] cursor-pointer flex items-center justify-center gap-1.5 font-bold"
+        >
+          <span>🖼️</span> {t('shareImageBtn')}
+        </button>
+        <ShareImageModal
+          isOpen={isShareImageOpen}
+          onClose={() => setIsShareImageOpen(false)}
+          mapName={fullMapState.name}
+          mainBase={fullMapState.mainBase}
+          settlementBase={fullMapState.settlementBase}
+          catalogMap={catalogMap}
+          initialBaseType={activeBaseType}
+          initialSettlementLayer={activeSettlementLayer}
+        />
 
         {(onGoogleSignIn || onSignOut) && (
           <div className="flex gap-2 pt-2 border-t border-neutral-800">

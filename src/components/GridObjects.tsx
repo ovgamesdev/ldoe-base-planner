@@ -24,6 +24,14 @@ interface GridObjectsProps {
   activeSettlementLayer: SettlementLayerType;
   highlightedInstanceIds?: Set<string>;
   onSelectObject: (instanceId: string) => void;
+  /**
+   * Префикс для id внутреннего <clipPath> каждого объекта (по умолчанию 'clip-obj').
+   * Нужен только когда на странице одновременно смонтировано несколько GridObjects
+   * с одними и теми же instanceId (например, скрытый рендер для экспорта картинки
+   * рядом с основным canvas) — иначе совпадающие id='clip-obj-...' в одном документе
+   * могут перепутать, чей clipPath к чему применяется.
+   */
+  clipIdPrefix?: string;
 }
 
 export const GridObjects = memo(function GridObjects({
@@ -35,7 +43,8 @@ export const GridObjects = memo(function GridObjects({
   activeBaseType,
   activeSettlementLayer,
   highlightedInstanceIds,
-  onSelectObject
+  onSelectObject,
+  clipIdPrefix = 'clip-obj'
 }: GridObjectsProps) {
   const { language } = useLanguage();
 
@@ -93,7 +102,7 @@ export const GridObjects = memo(function GridObjects({
 
         const chipW = Math.max(fw, fh) * (viewMode === 'isometric' ? ISO_W * 0.62 : CELL_SIZE * 0.85);
         const chipH = 30;
-        const clipId = `clip-obj-${obj.instanceId || index}`;
+        const clipId = `${clipIdPrefix}-${obj.instanceId || index}`;
 
         const variantImage = template.colorVariants?.find(v => v.color === obj.paintColor)?.image;
         const autoTileImage = autoTileAppearance ? template.constraints.autoTileImages?.[autoTileAppearance.variant] : undefined;
