@@ -2501,8 +2501,8 @@
     "typeId": "bar_rack",
     "category": "workbenches_storage",
     "name": {
-      "ru": "Стеллаж для Слитков (TODO)",
-      "en": "Bar Rack (TODO)"
+      "ru": "Стеллаж для Слитков",
+      "en": "Bar Rack"
     },
     "size": {
       "w": 1,
@@ -2511,6 +2511,7 @@
     "image": "/assets/bar_rack.webp",
     "tooltipImage": "/assets/preview/bar_rack.webp",
     "color": "transparent",
+    "colorVariants": [],
     "constraints": {
       "rotatable": true,
       "allowedRotations": [
@@ -2522,11 +2523,10 @@
       "placementType": "floor",
       "requiresFloor": true,
       "requiresSpecificFloorLevel": 3,
-      "allowWallDecorAbove": true,
+      "allowWallDecorAbove": false,
       "maxPerBase": 1,
       "baseType": "main"
-    },
-    "colorVariants": []
+    }
   },
   {
     "typeId": "garden_bed",
@@ -4011,8 +4011,8 @@
     "typeId": "keeper_of_the_bogs",
     "category": "furniture_for_comfort",
     "name": {
-      "ru": "Хозяин болот (TODO)",
-      "en": "Keeper of the Bogs (TODO)"
+      "ru": "Хозяин болот",
+      "en": "Keeper of the Bogs"
     },
     "size": {
       "w": 1,
