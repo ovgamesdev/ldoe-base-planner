@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { child, get, ref, serverTimestamp } from 'firebase/database'
 import { translations } from '../context/LanguageContext'
-import { DEFAULT_MAP } from './constants'
+import { DEFAULT_MAP, LEGACY_MAIN_BASE_WIDTH, MAIN_BASE_HEIGHT, MAIN_BASE_WIDTH, mainBaseExpansionZones } from './constants'
 import { db } from './firebase'
 import type { BaseData, MapData } from './initial-data'
 import { generateUUID } from './utils'
@@ -52,14 +52,26 @@ export const validateMapData = (mapData: any): mapData is MapData => {
 };
 
 export const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
-  const sanitizeBase = (base: any, defaultBase: BaseData): BaseData => {
+  const sanitizeBase = (base: any, defaultBase: BaseData, isMain = false): BaseData => {
     if (!base || typeof base !== 'object') return defaultBase;
+    let width = base.mapConfig?.width ?? defaultBase.mapConfig.width;
+    let height = base.mapConfig?.height ?? defaultBase.mapConfig.height;
+    let noBuildZones: any[] = Array.isArray(base.mapConfig?.noBuildZones) ? base.mapConfig.noBuildZones : [];
+    if (isMain) {
+      // Карта основной базы всегда 24×18, в том числе у баз из браузера и у старых сохранений (было 20×18).
+      // Клетки, которых в старой карте не было, по умолчанию запретны. У карт, уже имеющих нужный размер,
+      // зоны не трогаем, чтобы не вернуть запрет на клетки, которые игрок разрешил сам.
+      const oldW = base.mapConfig?.width ?? LEGACY_MAIN_BASE_WIDTH;
+      const oldH = base.mapConfig?.height ?? MAIN_BASE_HEIGHT;
+      if (oldW !== MAIN_BASE_WIDTH || oldH !== MAIN_BASE_HEIGHT) {
+        const have = new Set(noBuildZones.map(z => `${z?.x},${z?.y}`));
+        noBuildZones = [...noBuildZones, ...mainBaseExpansionZones(oldW, oldH).filter(z => !have.has(`${z.x},${z.y}`))];
+      }
+      width = MAIN_BASE_WIDTH;
+      height = MAIN_BASE_HEIGHT;
+    }
     return {
-      mapConfig: {
-        width: base.mapConfig?.width ?? defaultBase.mapConfig.width,
-        height: base.mapConfig?.height ?? defaultBase.mapConfig.height,
-        noBuildZones: Array.isArray(base.mapConfig?.noBuildZones) ? base.mapConfig.noBuildZones : []
-      },
+      mapConfig: { width, height, noBuildZones },
       layers: {
         floors: Array.isArray(base.layers?.floors) ? base.layers.floors : [],
         walls: Array.isArray(base.layers?.walls) ? base.layers.walls : [],
@@ -71,7 +83,7 @@ export const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
   const res: MapData = {
     id: mapData?.id || generateUUID(),
     name: mapData?.name || defaultName,
-    mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase),
+    mainBase: sanitizeBase(mapData?.mainBase, DEFAULT_MAP.mainBase, true),
     settlementBase: sanitizeBase(mapData?.settlementBase, DEFAULT_MAP.settlementBase)
   };
 
