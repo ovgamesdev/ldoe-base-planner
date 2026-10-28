@@ -2552,6 +2552,35 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
+      "sharedLimitGroup": "garden_bed",
+      "baseType": "main"
+    }
+  },
+  {
+    "typeId": "garden_bed_lvl_2",
+    "category": "workbenches_basic",
+    "name": {
+      "ru": "Теплица",
+      "en": "Greenhouse"
+    },
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/garden_bed_lvl_2.webp",
+    "tooltipImage": "/assets/preview/garden_bed.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "garden_bed",
       "baseType": "main"
     }
   },
