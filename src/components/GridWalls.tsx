@@ -2,7 +2,7 @@ import type { Tool, ViewMode } from '@/lib/constants'
 import { WALL_DOOR_COLOR, WALL_INDICATOR_SEGMENT_RATIO, WALL_WINDOW_COLOR } from '@/lib/constants'
 import { getInsetSegment, getTopVertex, getWallColor } from '@/lib/grid-utils'
 import type { BaseType, SettlementLayerType, WallLayer } from '@/lib/initial-data'
-import React, { memo } from 'react'
+import React, { memo, useMemo } from 'react'
 
 interface GridWallsProps {
   wallLines: { x: number; y: number; orientation: 'horizontal' | 'vertical' }[];
@@ -11,7 +11,6 @@ interface GridWallsProps {
   gridW: number;
   activeTool: Tool;
   isWallDecorTool: boolean;
-  buildActive?: boolean;
   activeBaseType: BaseType;
   activeSettlementLayer: SettlementLayerType;
   highlightedWalls?: Set<string>;
@@ -27,7 +26,6 @@ export const GridWalls = memo(function GridWalls({
   gridW,
   activeTool,
   isWallDecorTool,
-  buildActive = false,
   activeBaseType,
   activeSettlementLayer,
   highlightedWalls,
@@ -38,15 +36,24 @@ export const GridWalls = memo(function GridWalls({
   const isResourceLayer = activeBaseType === 'settlement' && (activeSettlementLayer === 'energy' || activeSettlementLayer === 'water');
   const opacityValue = isResourceLayer ? 0.35 : 1;
 
+  // Поиск стены по линии делаем один раз на изменение слоя (Map), а не двумя .find на каждую из ~870 линий при каждой отрисовке.
+  const lines = useMemo(() => {
+    const byKey = new Map<string, WallLayer>();
+    for (const w of walls) {
+      const k = `${w.x},${w.y},${w.orientation}`;
+      if (!byKey.has(k)) byKey.set(k, w);
+    }
+    return wallLines.map(({ x, y, orientation }) => {
+      const wall = byKey.get(`${x},${y},${orientation}`);
+      return { x, y, orientation, wall, levelColor: getWallColor(wall ? [wall] : [], x, y, orientation) };
+    });
+  }, [wallLines, walls]);
+
   return (
     <>
-      {wallLines.map(({ x, y, orientation }) => {
+      {lines.map(({ x, y, orientation, wall, levelColor }) => {
         const wallKey = `w${orientation === 'horizontal' ? 'h' : 'v'}-${x}-${y}`;
         const isRoomOuterWall = highlightedWalls?.has(wallKey);
-
-        const wall = walls.find(w => w.x === x && w.y === y && w.orientation === orientation);
-        // Фоновый цвет стены (по уровню материала), не зависит от двери/окна.
-        const levelColor = getWallColor(walls, x, y, orientation);
 
         // Обе ориентации строятся одинаково: t -> конец (сосед по X для horizontal, по Y для vertical).
         const t = getTopVertex(x, y, viewMode, gridW);
@@ -57,8 +64,9 @@ export const GridWalls = memo(function GridWalls({
         const strokeColor = isRoomOuterWall ? '#f59e0b' : (levelColor ?? 'transparent');
         const strokeWidth = isRoomOuterWall ? 6 : (levelColor ? 4 : 10);
         const strokeOpacity = isRoomOuterWall ? 1 : (levelColor ? 1 : (isWallDecorTool ? 0.3 : 0));
-        // В массовых режимах стены не перехватывают мышь: события получают клетки / вершины сетки.
-        const isInteractive = !buildActive && (activeTool === 'wall' || levelColor || isWallDecorTool || activeTool === 'eraser');
+        // В массовых режимах стены не перехватывают мышь (события получают клетки / вершины сетки): это делает CSS
+        // по атрибуту data-build-active на <svg> (см. globals.css). Так переключение режима не перерисовывает все стены.
+        const isInteractive = activeTool === 'wall' || levelColor || isWallDecorTool || activeTool === 'eraser';
 
         const handleClick = (e: React.MouseEvent) => {
           e.stopPropagation();
@@ -85,7 +93,7 @@ export const GridWalls = memo(function GridWalls({
               strokeWidth={strokeWidth}
               strokeOpacity={strokeOpacity}
               onClick={handleClick}
-              className={isInteractive ? 'cursor-pointer hover:stroke-amber-400' : ''}
+              className={isInteractive ? 'wall-hit cursor-pointer hover:stroke-amber-400' : ''}
               style={{ pointerEvents: isInteractive ? 'stroke' : 'none' }}
             />
             {indicatorSegment && indicatorColor && (

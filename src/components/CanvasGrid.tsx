@@ -205,6 +205,14 @@ export const CanvasGrid = memo(function CanvasGrid({
   const selectedTemplate = catalogMap[selectedTypeId];
   const wasDraggingRef = useRef(false);
 
+  // Режим строительства для клеток отдаём через ref, а колбэки делаем стабильными: тогда смена режима
+  // («по одному» ↔ «кисть») не перерисовывает GridCells и GridWalls (это ~70 мс в профиле).
+  const buildRef = useRef({ active: buildActive, kind: buildKind });
+  useEffect(() => { buildRef.current = { active: buildActive, kind: buildKind }; }, [buildActive, buildKind]);
+  const handleSelectFloor = useCallback((x: number, y: number) => onSelectInstance(`floor_${x}_${y}`), [onSelectInstance]);
+  const handleClearSelection = useCallback(() => onSelectInstance(null), [onSelectInstance]);
+  const handleHoverCell = useCallback((x: number, y: number) => { if (setHoveredCell) setHoveredCell({ x, y }); }, [setHoveredCell]);
+
   const isWallDecorTool = activeTool === 'object' && selectedTemplate?.constraints.placementType === 'wall';
 
   const handleLocalWheel = useCallback((e: WheelEvent) => {
@@ -807,6 +815,7 @@ export const CanvasGrid = memo(function CanvasGrid({
     >
       <svg
         ref={svgRef}
+        data-build-active={buildActive ? 'true' : undefined}
         width={svgWidth}
         height={svgHeight}
         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
@@ -842,11 +851,10 @@ export const CanvasGrid = memo(function CanvasGrid({
           activeSettlementLayer={activeSettlementLayer}
           highlightedCells={highlightedCells}
           onCellClick={onCellClick}
-          onSelectFloor={(x, y) => onSelectInstance(`floor_${x}_${y}`)}
-          onClearSelection={() => onSelectInstance(null)}
-          onHoverCell={(x, y) => setHoveredCell && setHoveredCell({ x, y })}
-          buildActive={buildActive}
-          buildKind={buildKind}
+          onSelectFloor={handleSelectFloor}
+          onClearSelection={handleClearSelection}
+          onHoverCell={handleHoverCell}
+          buildRef={buildRef}
           onBuildPress={onBuildPress}
           onBuildHover={onBuildHover}
         />
@@ -870,13 +878,12 @@ export const CanvasGrid = memo(function CanvasGrid({
           gridW={GRID_W}
           activeTool={activeTool}
           isWallDecorTool={isWallDecorTool}
-          buildActive={buildActive}
           activeBaseType={activeBaseType}
           activeSettlementLayer={activeSettlementLayer}
           highlightedWalls={highlightedWalls}
           onWallClick={onWallClick}
           onSelectWall={onSelectInstance}
-          onClearSelection={() => onSelectInstance(null)}
+          onClearSelection={handleClearSelection}
         />
 
         {buildActive && buildKind === 'vertex' && onBuildPress && onBuildHover && (

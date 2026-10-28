@@ -48,3 +48,8 @@ html, body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* В массовых режимах строительства стены не перехватывают мышь: события получают клетки / вершины сетки. */
+svg[data-build-active="true"] .wall-hit {
+  pointer-events: none !important;
+}
