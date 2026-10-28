@@ -11,6 +11,7 @@ interface GridWallsProps {
   gridW: number;
   activeTool: Tool;
   isWallDecorTool: boolean;
+  buildActive?: boolean;
   activeBaseType: BaseType;
   activeSettlementLayer: SettlementLayerType;
   highlightedWalls?: Set<string>;
@@ -26,6 +27,7 @@ export const GridWalls = memo(function GridWalls({
   gridW,
   activeTool,
   isWallDecorTool,
+  buildActive = false,
   activeBaseType,
   activeSettlementLayer,
   highlightedWalls,
@@ -55,7 +57,8 @@ export const GridWalls = memo(function GridWalls({
         const strokeColor = isRoomOuterWall ? '#f59e0b' : (levelColor ?? 'transparent');
         const strokeWidth = isRoomOuterWall ? 6 : (levelColor ? 4 : 10);
         const strokeOpacity = isRoomOuterWall ? 1 : (levelColor ? 1 : (isWallDecorTool ? 0.3 : 0));
-        const isInteractive = activeTool === 'wall' || levelColor || isWallDecorTool || activeTool === 'eraser';
+        // В массовых режимах стены не перехватывают мышь: события получают клетки / вершины сетки.
+        const isInteractive = !buildActive && (activeTool === 'wall' || levelColor || isWallDecorTool || activeTool === 'eraser');
 
         const handleClick = (e: React.MouseEvent) => {
           e.stopPropagation();

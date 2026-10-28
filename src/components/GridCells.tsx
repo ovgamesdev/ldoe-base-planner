@@ -18,6 +18,10 @@ interface GridCellsProps {
   onSelectFloor: (x: number, y: number) => void;
   onClearSelection: () => void;
   onHoverCell?: (x: number, y: number) => void;
+  buildActive?: boolean;
+  buildKind?: 'cell' | 'vertex';
+  onBuildPress?: (p: { x: number; y: number }, button: number) => void;
+  onBuildHover?: (p: { x: number; y: number }) => void;
 }
 
 export const GridCells = memo(function GridCells({
@@ -33,7 +37,11 @@ export const GridCells = memo(function GridCells({
   onCellClick,
   onSelectFloor,
   onClearSelection,
-  onHoverCell
+  onHoverCell,
+  buildActive = false,
+  buildKind = 'cell',
+  onBuildPress,
+  onBuildHover
 }: GridCellsProps) {
   // const isResourceLayer = activeBaseType === 'settlement' && (activeSettlementLayer === 'energy' || activeSettlementLayer === 'water');
   // const opacityValue = isResourceLayer ? 0.35 : 1;
@@ -96,11 +104,14 @@ export const GridCells = memo(function GridCells({
               if (activeTool === 'hand') {
                 if (floorExists) onSelectFloor(x, y);
                 else onClearSelection();
-              } else {
+              } else if (!buildActive) {
                 onCellClick(x, y);
               }
             }}
-            onMouseEnter={() => onHoverCell && onHoverCell(x, y)}
+            // Построение мышью: палец и стилус идут через касания в CanvasGrid, поэтому здесь только мышь.
+            onPointerDown={(e) => { if (e.pointerType === 'mouse' && buildActive && buildKind === 'cell') onBuildPress?.({ x, y }, e.button); }}
+            onPointerEnter={(e) => { if (e.pointerType === 'mouse' && buildActive && buildKind === 'cell') onBuildHover?.({ x, y }); }}
+            onMouseEnter={() => { if (onHoverCell) onHoverCell(x, y); }}
             className={isInteractive ? 'cursor-pointer transition-opacity hover:opacity-80' : 'transition-opacity'}
             style={{ pointerEvents: isInteractive ? 'auto' : 'none', opacity: opacityValue }}
           />

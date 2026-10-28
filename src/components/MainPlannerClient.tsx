@@ -29,11 +29,14 @@ import {
   validateMapData
 } from '@/lib/map-utils'
 import { useAutoSaveShare } from '@/lib/useAutoSaveShare'
+import { useBuildTools } from '@/lib/useBuildTools'
+import { useMapHistory } from '@/lib/useMapHistory'
 import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
 import { child, get, ref, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CanvasGrid } from './CanvasGrid'
+import { BuildModeBar } from './BuildModeBar'
 import CookieConsentBanner from './CookieConsentBanner'
 import { LeftSidebar } from './LeftSidebar'
 import { isDontShowAgainDismissed, ModalInfo } from './ModalInfo'
@@ -471,7 +474,7 @@ export default function MainPlannerClient() {
     }
   }, [selectedInstanceId, selectedElementData]);
 
-  const setMapState = useCallback((action: BaseData | ((prev: BaseData) => BaseData)) => {
+  const setMapStateRaw = useCallback((action: BaseData | ((prev: BaseData) => BaseData)) => {
     if (activeMapId === sharedPreviewMapId) {
       showAlert(tRef.current('sharedPreviewEditPrompt'), tRef.current('attention'), 'info');
       return;
@@ -497,6 +500,14 @@ export default function MainPlannerClient() {
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // История правок: любая запись состояния карты (через setMapState ниже) становится шагом отката.
+  const clearSelection = useCallback(() => setSelectedInstanceId(null), []);
+  const mapHistory = useMapHistory({
+    mapKey: `${activeMapId}:${activeBaseType}`, mapState, readOnly: activeMapId === sharedPreviewMapId, ready: isLoaded,
+    setMapState: setMapStateRaw, clearSelection,
+  });
+  const setMapState = mapHistory.setMapState;
   const [isLoadingShareParam, setIsLoadingShareParam] = useState(false);
   const [hoveredCell, setHoveredCell] = useState<{x: number, y: number} | null>(null);
 
@@ -1193,7 +1204,9 @@ export default function MainPlannerClient() {
     trackEvent('map_delete', { map_id: idToDelete });
   }, [maps, activeMapId, showAlert, t, currentUser, sharedPreviewMapId]);
 
-  const validatePlacement = useCallback((typeId: string, x: number, y: number, rotation: number, ignoreInstanceId?: string): { valid: boolean; reason?: string } => {
+  const validatePlacement = useCallback((typeId: string, x: number, y: number, rotation: number, ignoreInstanceId?: string, extraObjects?: ObjectLayer[]): { valid: boolean; reason?: string } => {
+    // extraObjects — ещё не сохранённые объекты массового размещения: учитываются как уже стоящие.
+    const allObjects = extraObjects?.length ? [...mapState.layers.objects, ...extraObjects] : mapState.layers.objects;
     const template = catalogMap[typeId];
     if (!template) {
       return { valid: false, reason: t('templateNotFound', { typeId }) };
@@ -1243,7 +1256,7 @@ export default function MainPlannerClient() {
       }
     }
 
-    const otherObjects = mapState.layers.objects.filter(obj => {
+    const otherObjects = allObjects.filter(obj => {
       if (activeBaseType === 'main') return true;
       const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
       return objLayer === activeSettlementLayer;
@@ -1346,7 +1359,7 @@ export default function MainPlannerClient() {
         if (!targetRoom) {
           return { valid: false, reason: t('mustBeInClosedRoom', { name: templateDisplayName }) };
         }
-        const existingDesk = mapState.layers.objects.find(o => {
+        const existingDesk = allObjects.find(o => {
           if (o.instanceId === ignoreInstanceId) return false;
           const tObj = catalogMap[o.typeId];
           return tObj?.constraints.isDesk && targetRoom.has(`${o.x},${o.y}`);
@@ -1361,7 +1374,7 @@ export default function MainPlannerClient() {
           const target_name = catalogMap[`new_base_${template.constraints.requiredDesk}`]?.name || template.constraints.requiredDesk;
           return { valid: false, reason: t('requiresDeskNotInRoom', { name: templateDisplayName, targetName: getItemName(target_name, language) }) };
         }
-        const matchingDesk = mapState.layers.objects.find(o => {
+        const matchingDesk = allObjects.find(o => {
           const tObj = catalogMap[o.typeId];
           return tObj?.constraints.isDesk === template.constraints.requiredDesk && targetRoom.has(`${o.x},${o.y}`);
         });
@@ -1374,7 +1387,7 @@ export default function MainPlannerClient() {
 
     if (template.constraints.maxPerBase) {
       if (template.constraints.sharedLimitGroup) {
-        const groupCount = mapState.layers.objects.filter(obj => {
+        const groupCount = allObjects.filter(obj => {
           if (obj.instanceId === ignoreInstanceId) return false;
           const tObj = catalogMap[obj.typeId];
           return tObj && tObj.constraints.sharedLimitGroup === template.constraints.sharedLimitGroup;
@@ -1383,7 +1396,7 @@ export default function MainPlannerClient() {
           return { valid: false, reason: t('groupLimitExceeded', { limit: template.constraints.maxPerBase, group: template.constraints.sharedLimitGroup }) };
         }
       } else {
-        const currentCount = mapState.layers.objects.filter(obj => obj.typeId === typeId && obj.instanceId !== ignoreInstanceId).length;
+        const currentCount = allObjects.filter(obj => obj.typeId === typeId && obj.instanceId !== ignoreInstanceId).length;
         if (currentCount >= template.constraints.maxPerBase) {
           return { valid: false, reason: t('objectLimitExceeded', { limit: template.constraints.maxPerBase, name: templateDisplayName }) };
         }
@@ -1478,7 +1491,7 @@ export default function MainPlannerClient() {
         }
       }
 
-      setMapState(prev => {
+      setMapState.labeled('histFloor')(prev => {
         const filtered = prev.layers.floors.filter(f => !(f.x === x && f.y === y));
         const nextFloors = isRemoving ? filtered : [...filtered, { x, y, level: buildLevel }];
         const nextWalls = prev.layers.walls.filter(w => hasFloorForWall(nextFloors, w.x, w.y, w.orientation, w.level));
@@ -1500,7 +1513,7 @@ export default function MainPlannerClient() {
     } else if (activeTool === 'nobuild') {
       if (isOutOfBounds) return;
 
-      setMapState(prev => {
+      setMapState.labeled('histNoBuild')(prev => {
         const isMatch = (nb: NoBuildZone) => nb.x === x && nb.y === y && (activeBaseType === 'main' || nb.layer === activeSettlementLayer);
         const exists = prev.mapConfig.noBuildZones.some(isMatch);
         return {
@@ -1527,7 +1540,7 @@ export default function MainPlannerClient() {
 
       if (placementResult.valid) {
         if (movingInstanceId) {
-          setMapState(prev => ({
+          setMapState.labeled('histMove')(prev => ({
             ...prev,
             layers: {
               ...prev.layers,
@@ -1546,7 +1559,7 @@ export default function MainPlannerClient() {
           const newObjId = generateUUID();
           const objTargetLayer = template?.constraints.settlementLayer || 'objects';
           const copyColor = pendingCopyColorRef.current?.typeId === selectedTypeId ? pendingCopyColorRef.current.color : undefined;
-          setMapState(prev => ({
+          setMapState.labeled('histPlaceObject')(prev => ({
             ...prev,
             layers: {
               ...prev.layers,
@@ -1563,7 +1576,7 @@ export default function MainPlannerClient() {
         showAlert(placementResult.reason || (movingInstanceId ? t('cannotMoveObject') : t('placementErrorMessage')), movingInstanceId ? t('moveError') : t('placementError'), 'error');
       }
     } else if (activeTool === 'eraser') {
-      setMapState(prev => {
+      setMapState.labeled('histErase')(prev => {
         const newObjects = [...prev.layers.objects];
         let removedInstanceId: string | null = null;
 
@@ -1633,7 +1646,7 @@ export default function MainPlannerClient() {
       const targetY = y;
       const isH = orientation === 'horizontal';
 
-      setMapState(prev => {
+      setMapState.labeled('histErase')(prev => {
         const newObjects = [...prev.layers.objects];
         let removedInstanceId: string | null = null;
 
@@ -1726,7 +1739,7 @@ export default function MainPlannerClient() {
       const placementResult = validatePlacement(selectedTypeId, targetX, targetY, autoRotation, movingInstanceId || undefined);
       if (placementResult.valid) {
         if (movingInstanceId) {
-          setMapState(prev => ({
+          setMapState.labeled('histMove')(prev => ({
             ...prev,
             layers: {
               ...prev.layers,
@@ -1745,7 +1758,7 @@ export default function MainPlannerClient() {
           const newObjId = generateUUID();
           const objTargetLayer = template.constraints.settlementLayer || 'objects';
           const copyColor = pendingCopyColorRef.current?.typeId === selectedTypeId ? pendingCopyColorRef.current.color : undefined;
-          setMapState(prev => ({
+          setMapState.labeled('histPlaceDecor')(prev => ({
             ...prev,
             layers: {
               ...prev.layers,
@@ -1790,7 +1803,7 @@ export default function MainPlannerClient() {
       }
     }
 
-    setMapState(prev => {
+    setMapState.labeled('histWall')(prev => {
       const filtered = prev.layers.walls.filter(w => !(w.x === x && w.y === y && w.orientation === orientation));
       const nextWalls = isRemoving ? filtered : [...filtered, { x, y, orientation, level: buildLevel, isDoor: isDoorPlacement, isWindow: isWindowPlacement }];
       const nextObjects = prev.layers.objects.filter(obj => isWallDecorValid(obj, nextWalls, catalogMap));
@@ -1814,6 +1827,18 @@ export default function MainPlannerClient() {
       trackEvent('wall_remove', { x, y, orientation });
     }
   }, [catalogMap, selectedInstanceId, setMapState, mapState.layers.walls, mapState.layers.floors, mapState.layers.objects, validatePlacement, showAlert, t, restorePreMoveToolSelection]);
+
+  const getCopyColor = useCallback((typeId: string) => (
+    pendingCopyColorRef.current?.typeId === typeId ? pendingCopyColorRef.current.color : undefined
+  ), []);
+
+  // Режимы строительства: линия, прямоугольник, рамка, кисть, заливка, обводка (см. lib/build-modes.ts).
+  const buildTools = useBuildTools({
+    tool: activeTool, mapState, activeMapId, activeBaseType, activeSettlementLayer, catalogMap, selectedTypeId,
+    currentRotation, buildLevel, isDoorPlacement, isWindowPlacement, movingInstanceId,
+    readOnly: activeMapId === sharedPreviewMapId, gridW: GRID_W, gridH: GRID_H,
+    setMapState, validatePlacement, showAlert, t, getCopyColor, clearSelection, history: mapHistory,
+  });
 
   const handleSelectBuildingType = useCallback((typeId: string) => {
     cancelMoveObject();
@@ -2018,7 +2043,7 @@ export default function MainPlannerClient() {
   }, [catalog, language, selectedTypeId, showAlert, t]);
 
   const handlePaintObject = useCallback((instanceId: string, color: string | undefined) => {
-    setMapState(prev => ({
+    setMapState.labeled({ label: 'histPaint', coalesce: `paint:${instanceId}` })(prev => ({
       ...prev,
       layers: {
         ...prev.layers,
@@ -2892,7 +2917,7 @@ export default function MainPlannerClient() {
 
     const placementResult = validatePlacement(obj.typeId, obj.x, obj.y, nextRot, obj.instanceId);
     if (placementResult.valid) {
-      setMapState(prev => ({
+      setMapState.labeled({ label: 'histRotate', coalesce: `rotate:${obj.instanceId}` })(prev => ({
         ...prev,
         layers: {
           ...prev.layers,
@@ -2911,7 +2936,7 @@ export default function MainPlannerClient() {
       return;
     }
 
-    setMapState(prev => ({
+    setMapState.labeled('histDelete')(prev => ({
       ...prev,
       layers: {
         ...prev.layers,
@@ -2924,7 +2949,22 @@ export default function MainPlannerClient() {
   }, [mapState.layers.objects, setMapState, selectedElementData, showAlert, t]);
 
   const handleDeleteSelectedFloor = useCallback((x: number, y: number) => {
-    setMapState(prev => {
+    // Пол под объектом удалять нельзя (как и кликом по клетке): сначала нужно убрать объект.
+    const blocked = mapState.layers.objects.some(obj => {
+      if (activeBaseType === 'settlement') {
+        const objLayer = obj.layer || catalogMap[obj.typeId]?.constraints.settlementLayer || 'objects';
+        if (objLayer !== activeSettlementLayer) return false;
+      }
+      const tObj = catalogMap[obj.typeId];
+      if (!tObj || tObj.constraints.placementType === 'wall') return false;
+      const eff = getEffectiveSize(tObj);
+      return getOccupiedCells(obj.x, obj.y, eff.w, eff.h, obj.rotation).some(c => c.x === x && c.y === y);
+    });
+    if (blocked) {
+      showAlert(t('cannotRemoveFloorUnderObject'), t('deletionError'), 'error');
+      return;
+    }
+    setMapState.labeled('histDelete')(prev => {
       const nextFloors = prev.layers.floors.filter(f => !(f.x === x && f.y === y));
       const nextWalls = prev.layers.walls.filter(w => hasFloorForWall(nextFloors, w.x, w.y, w.orientation, w.level));
       const nextObjects = prev.layers.objects.filter(obj => isWallDecorValid(obj, nextWalls, catalogMap));
@@ -2940,10 +2980,10 @@ export default function MainPlannerClient() {
       };
     });
     setSelectedInstanceId(null);
-  }, [setMapState, catalogMap]);
+  }, [mapState.layers.objects, activeBaseType, activeSettlementLayer, setMapState, catalogMap, showAlert, t]);
 
   const handleDeleteSelectedWall = useCallback((x: number, y: number, orientation: 'horizontal' | 'vertical') => {
-    setMapState(prev => {
+    setMapState.labeled('histDelete')(prev => {
       const nextWalls = prev.layers.walls.filter(w => !(w.x === x && w.y === y && w.orientation === orientation));
       const nextObjects = prev.layers.objects.filter(obj => isWallDecorValid(obj, nextWalls, catalogMap));
 
@@ -2966,7 +3006,7 @@ export default function MainPlannerClient() {
       return;
     }
 
-    setMapState(prev => ({
+    setMapState.labeled('histDelete')(prev => ({
       ...prev,
       layers: {
         ...prev.layers,
@@ -3127,6 +3167,35 @@ export default function MainPlannerClient() {
           onPanChange={setPan}
           activeBaseType={activeBaseType}
           activeSettlementLayer={activeSettlementLayer}
+          buildActive={buildTools.active}
+          buildKind={buildTools.kind}
+          buildStore={buildTools.previewStore}
+          onBuildPress={buildTools.press}
+          onBuildHover={buildTools.hoverTo}
+          onBuildTouchStart={buildTools.touchStart}
+          onBuildTouchMove={buildTools.touchMove}
+          onBuildTouchEnd={buildTools.touchEnd}
+          onBuildTouchAbort={buildTools.touchAbort}
+        />
+
+        <BuildModeBar
+          tool={activeTool}
+          modes={buildTools.modes}
+          mode={buildTools.mode}
+          isDecor={buildTools.isDecor}
+          eraserScope={buildTools.eraserScope}
+          brushSize={buildTools.brushSize}
+          showBrushSize={buildTools.brushSizeApplies}
+          canUndo={buildTools.canUndo}
+          canRedo={buildTools.canRedo}
+          undoLabel={mapHistory.undoLabel ? t(mapHistory.undoLabel.key, mapHistory.undoLabel.params) : null}
+          redoLabel={mapHistory.redoLabel ? t(mapHistory.redoLabel.key, mapHistory.redoLabel.params) : null}
+          t={t}
+          onSetMode={buildTools.setMode}
+          onSetEraserScope={buildTools.setEraserScope}
+          onSetBrushSize={buildTools.setBrushSize}
+          onUndo={buildTools.undo}
+          onRedo={buildTools.redo}
         />
 
         <SelectedElementPanel
@@ -3206,4 +3275,4 @@ export default function MainPlannerClient() {
       <CookieConsentBanner />
     </div>
   );
-}
+}

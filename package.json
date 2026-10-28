@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "eslint",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d out -b gh-pages --dotfiles"
+    "deploy": "gh-pages -d out -b gh-pages --dotfiles",
+    "zip": "node scripts/project-archive.js"
   },
   "dependencies": {
     "firebase": "^12.17.0",
