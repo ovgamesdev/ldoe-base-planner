@@ -122,6 +122,12 @@ export const WALL_TOOLTIP_IMAGES_SETTLEMENT: Record<WallVariant, Record<number, 
 };
 
 // Размер карты основной базы. Раньше было 20×18, теперь 24×18: добавленные клетки по умолчанию запретны для строительства.
+/**
+ * typeId предметов, удалённых из каталога. Их объекты вырезаются из карт при загрузке, импорте и сохранении
+ * (sanitizeMapData): иначе в сохранённых картах и в базах других игроков они остаются невидимыми «призраками».
+ */
+export const REMOVED_CATALOG_TYPE_IDS: ReadonlySet<string> = new Set(['turret']);
+
 export const MAIN_BASE_WIDTH = 24;
 export const MAIN_BASE_HEIGHT = 18;
 export const LEGACY_MAIN_BASE_WIDTH = 20;

@@ -4313,37 +4313,6 @@
     }
   },
   {
-    "typeId": "turret",
-    "category": "furniture_protective",
-    "name": {
-      "ru": "Турель",
-      "en": "Turret"
-    },
-    "size": {
-      "w": 1,
-      "h": 1
-    },
-    "image": "/assets/turret.webp",
-    "tooltipImage": "/assets/preview/turret.webp",
-    "color": "transparent",
-    "colorVariants": [],
-    "constraints": {
-      "rotatable": true,
-      "allowedRotations": [
-        0,
-        90,
-        180,
-        270
-      ],
-      "placementType": "floor",
-      "requiresFloor": true,
-      "requiresSpecificFloorLevel": 3,
-      "allowWallDecorAbove": false,
-      "maxPerBase": 4,
-      "baseType": "main"
-    }
-  },
-  {
     "typeId": "the_blind_one_head",
     "category": "furniture_protective",
     "name": {

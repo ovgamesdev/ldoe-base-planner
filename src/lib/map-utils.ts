@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { child, get, ref, serverTimestamp } from 'firebase/database'
 import { translations } from '../context/LanguageContext'
-import { DEFAULT_MAP, LEGACY_MAIN_BASE_WIDTH, MAIN_BASE_HEIGHT, MAIN_BASE_WIDTH, mainBaseExpansionZones } from './constants'
+import { DEFAULT_MAP, LEGACY_MAIN_BASE_WIDTH, MAIN_BASE_HEIGHT, MAIN_BASE_WIDTH, mainBaseExpansionZones, REMOVED_CATALOG_TYPE_IDS } from './constants'
 import { db } from './firebase'
 import type { BaseData, MapData } from './initial-data'
 import { generateUUID } from './utils'
@@ -75,7 +75,7 @@ export const sanitizeMapData = (mapData: any, defaultName: string): MapData => {
       layers: {
         floors: Array.isArray(base.layers?.floors) ? base.layers.floors : [],
         walls: Array.isArray(base.layers?.walls) ? base.layers.walls : [],
-        objects: Array.isArray(base.layers?.objects) ? base.layers.objects : []
+        objects: Array.isArray(base.layers?.objects) ? base.layers.objects.filter((o: any) => !REMOVED_CATALOG_TYPE_IDS.has(o?.typeId)) : []
       }
     };
   };
