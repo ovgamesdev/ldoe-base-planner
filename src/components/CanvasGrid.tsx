@@ -222,9 +222,13 @@ export const CanvasGrid = memo(function CanvasGrid({
     const mouseX = e.clientX - (rect.left + rect.width / 2);
     const mouseY = e.clientY - (rect.top + rect.height / 2);
 
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    // Зум мультипликативный: каждый «щелчок» колеса меняет масштаб в одно и то же число раз (~1.16×), поэтому на
+    // 30–100% и на 400–500% шаг ощущается одинаково (раньше было +0.1: на малом масштабе рывок, на большом почти ничего).
+    // deltaY нормализуем (строки/страницы → пиксели) и ограничиваем, чтобы тачпад давал плавный зум, а быстрое колесо не прыгало.
+    const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
+    const dy = Math.max(-240, Math.min(240, e.deltaY * unit));
     const currentZ = localTransformRef.current.z;
-    const nextZ = Math.min(5, Math.max(0.3, +(currentZ + delta).toFixed(2)));
+    const nextZ = Math.min(5, Math.max(0.3, +(currentZ * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0015))).toFixed(3)));
     if (nextZ === currentZ) return;
 
     const zoomFactor = nextZ / currentZ;

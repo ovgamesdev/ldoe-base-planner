@@ -76,6 +76,14 @@ interface LeftSidebarProps {
   objectListRef: React.RefObject<HTMLDivElement | null>;
 }
 
+// Зум: слайдер логарифмический (равные отрезки = равное кратное изменение масштаба), кнопки +/− тоже множители.
+const ZOOM_MIN = 0.3;
+const ZOOM_MAX = 5;
+const ZOOM_SLIDER_STEPS = 100;
+const ZOOM_BUTTON_FACTOR = 1.2;
+const zoomToSlider = (z: number) => Math.round(ZOOM_SLIDER_STEPS * Math.log(z / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN));
+const sliderToZoom = (v: number) => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, v / ZOOM_SLIDER_STEPS);
+
 export const LeftSidebar = memo(function LeftSidebar({
   gridW,
   gridH,
@@ -162,7 +170,7 @@ export const LeftSidebar = memo(function LeftSidebar({
   }, []);
 
   const dispatchZoomEvent = useCallback((val: number) => {
-    const clamped = Math.min(5, Math.max(0.3, val));
+    const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +val.toFixed(3)));
     setLocalZoom(clamped);
     window.dispatchEvent(new CustomEvent('external-zoom', { detail: { newZoom: clamped } }));
   }, []);
@@ -460,9 +468,9 @@ export const LeftSidebar = memo(function LeftSidebar({
         </div>
         
         <div className="flex items-center gap-2 pt-1">
-          <button onClick={() => dispatchZoomEvent(localZoom - 0.1)} className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded text-sm font-bold flex items-center justify-center cursor-pointer text-white">-</button>
-          <input type="range" min={30} max={500} step={10} value={Math.round(localZoom * 100)} onChange={e => dispatchZoomEvent(Number(e.target.value) / 100)} className="flex-1 accent-amber-500 h-6 cursor-pointer" />
-          <button onClick={() => dispatchZoomEvent(localZoom + 0.1)} className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded text-sm font-bold flex items-center justify-center cursor-pointer text-white">+</button>
+          <button onClick={() => dispatchZoomEvent(localZoom / ZOOM_BUTTON_FACTOR)} className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded text-sm font-bold flex items-center justify-center cursor-pointer text-white">-</button>
+          <input type="range" min={0} max={ZOOM_SLIDER_STEPS} step={1} value={zoomToSlider(localZoom)} onChange={e => dispatchZoomEvent(sliderToZoom(Number(e.target.value)))} className="flex-1 accent-amber-500 h-6 cursor-pointer" />
+          <button onClick={() => dispatchZoomEvent(localZoom * ZOOM_BUTTON_FACTOR)} className="w-9 h-9 bg-neutral-800 hover:bg-neutral-700 rounded text-sm font-bold flex items-center justify-center cursor-pointer text-white">+</button>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs text-neutral-500 font-mono">{Math.round(localZoom * 100)}%</span>
