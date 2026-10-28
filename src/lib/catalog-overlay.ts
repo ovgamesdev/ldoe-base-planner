@@ -74,6 +74,16 @@ export const buildCatalogOverlay = (
   return overlay;
 };
 
+/**
+ * Запись оверлея без базового предмета в catalog.json — это «предмет, добавленный локально», и она обязана быть полной.
+ * Если предмет убрали из catalog.json, а у пользователя остались его правки (только изменённые поля), получается
+ * обрубок без size/constraints/category: он ломал список предметов (`item.size.w`) и выпадающий список категорий.
+ */
+const isCompleteCatalogItem = (item: Partial<CatalogItem>): boolean =>
+  typeof item.typeId === 'string' && typeof item.category === 'string' && !!item.name &&
+  typeof item.size?.w === 'number' && typeof item.size?.h === 'number' &&
+  !!item.constraints && typeof item.image === 'string';
+
 /** Applies a stored overlay on top of the live catalog.json defaults. */
 export const applyCatalogOverlay = (defaults: CatalogItem[], overlay: CatalogOverlay): CatalogItem[] => {
   const result: CatalogItem[] = [];
@@ -88,7 +98,9 @@ export const applyCatalogOverlay = (defaults: CatalogItem[], overlay: CatalogOve
 
   Object.values(overlay).forEach((entry) => {
     if (seen.has(entry.typeId) || entry._deleted) return;
-    result.push({ typeId: entry.typeId, ...stripOverlayMeta(entry) } as CatalogItem);
+    const item = { typeId: entry.typeId, ...stripOverlayMeta(entry) } as Partial<CatalogItem>;
+    if (!isCompleteCatalogItem(item)) return;
+    result.push(item as CatalogItem);
   });
 
   return result;
@@ -99,7 +111,8 @@ export const applyCatalogOverlay = (defaults: CatalogItem[], overlay: CatalogOve
  * freshly-republished) catalog.json defaults:
  * - an edit whose fields now match the current default exactly
  * - a deletion marker for an item catalog.json no longer has anyway
- * Locally-added items with no counterpart in catalog.json are always kept.
+ * - an incomplete leftover of an item that catalog.json no longer has
+ * Complete locally-added items with no counterpart in catalog.json are always kept.
  */
 export const cleanupCatalogOverlay = (overlay: CatalogOverlay, defaults: CatalogItem[]): CatalogOverlay => {
   const defaultsMap = new Map(defaults.map(d => [d.typeId, d]));
@@ -114,7 +127,7 @@ export const cleanupCatalogOverlay = (overlay: CatalogOverlay, defaults: Catalog
     }
 
     if (!base) {
-      cleaned[entry.typeId] = entry;
+      if (isCompleteCatalogItem({ typeId: entry.typeId, ...stripOverlayMeta(entry) })) cleaned[entry.typeId] = entry;
       return;
     }
 

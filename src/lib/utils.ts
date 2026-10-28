@@ -1,11 +1,25 @@
+/** UUID v4 без crypto.randomUUID: на getRandomValues, а если и его нет — на Math.random. */
+const uuidFromRandomValues = (): string =>
+  '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
+    (+c ^ ((typeof window !== 'undefined' && window.crypto ? window.crypto.getRandomValues(new Uint8Array(1))[0] : Math.floor(Math.random() * 256)) & (15 >> (+c / 4)))).toString(16)
+  );
+
 /** Generates a random UUID, falling back to a manual implementation when window.crypto.randomUUID isn't available. */
 export const generateUUID = (): string => {
   if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
     return window.crypto.randomUUID();
   }
-  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c) =>
-    (+c ^ ((typeof window !== 'undefined' && window.crypto ? window.crypto.getRandomValues(new Uint8Array(1))[0] : Math.floor(Math.random() * 256)) & (15 >> (+c / 4)))).toString(16)
-  );
+  return uuidFromRandomValues();
+};
+
+/**
+ * crypto.randomUUID есть только в защищённом контексте (https / localhost). Если открыть dev-сервер с телефона по
+ * http://192.168.x.x, его нет, а Firebase (App Check, Installations) вызывает его сам. Подставляем ту же запасную
+ * реализацию, что и в generateUUID. В защищённом контексте ничего не меняет.
+ */
+export const installRandomUUIDPolyfill = (): void => {
+  if (typeof window === 'undefined' || !window.crypto || typeof window.crypto.randomUUID === 'function') return;
+  window.crypto.randomUUID = uuidFromRandomValues as typeof window.crypto.randomUUID;
 };
 
 /** Small, fast, non-cryptographic string hash (cyrb53). Used to derive a stable short id from a share id. */
