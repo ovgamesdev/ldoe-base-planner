@@ -6995,6 +6995,36 @@
     }
   },
   {
+    "typeId": "boar_farm",
+    "category": "decorations_season_rewards",
+    "name": {
+      "ru": "Ферма кабанов",
+      "en": "Boar Farm"
+    },
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/boar_farm.webp",
+    "tooltipImage": "/assets/preview/boar_farm.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "baseType": "main"
+    }
+  },
+  {
     "typeId": "welcome_to_the_wasteland_poster",
     "category": "decorations_wall_rewards",
     "name": {
