@@ -7,6 +7,10 @@ const repo = 'ldoe-base-planner'
 // const currentBasePath = isGithubActions ? `/${repo}` : '';
 const currentBasePath = `/${repo}`;
 
+// Идентификатор сборки: меняется при каждом деплое. Подставляется в адрес данных (catalog.json?v=...), чтобы браузер
+// и CDN не отдавали старую копию после выкладки. На GitHub Pages заголовки кэша менять нельзя, поэтому версия идёт в URL.
+const buildId = process.env.GITHUB_SHA || Date.now().toString(36);
+
 const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
@@ -19,6 +23,7 @@ const nextConfig: NextConfig = {
   // Пробрасываем вычисленный basePath в клиентскую часть кода
   env: {
     NEXT_PUBLIC_BASE_PATH: currentBasePath,
+    NEXT_PUBLIC_BUILD_ID: buildId,
   },
   
   images: {

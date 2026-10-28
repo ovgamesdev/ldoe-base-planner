@@ -31,7 +31,7 @@ import {
 import { useAutoSaveShare } from '@/lib/useAutoSaveShare'
 import { useBuildTools } from '@/lib/useBuildTools'
 import { useMapHistory } from '@/lib/useMapHistory'
-import { cyrb53, generateUUID, getBasePath } from '@/lib/utils'
+import { cyrb53, generateUUID, getBasePath, withBuildVersion } from '@/lib/utils'
 import { GoogleAuthProvider, linkWithPopup, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, User } from 'firebase/auth'
 import { child, get, ref, serverTimestamp, update } from 'firebase/database'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -739,7 +739,8 @@ export default function MainPlannerClient() {
   useEffect(() => {
     void (async () => {
       try {
-        const catalogResponse = await fetch(`${getBasePath()}/data/catalog.json`);
+        // Версия сборки в адресе + no-cache (всегда сверять с сервером по ETag): после деплоя каталог обновляется сразу.
+        const catalogResponse = await fetch(withBuildVersion(`${getBasePath()}/data/catalog.json`), { cache: 'no-cache' });
         if (!catalogResponse.ok) throw new Error('Initial data request failed');
         const defaults = await catalogResponse.json() as CatalogItem[];
         if (!Array.isArray(defaults)) {
@@ -2749,7 +2750,7 @@ export default function MainPlannerClient() {
     }
 
     try {
-      const response = await fetch(`${getBasePath()}/data/catalog.json`, { cache: 'no-store' });
+      const response = await fetch(withBuildVersion(`${getBasePath()}/data/catalog.json`), { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const defaults = await response.json() as CatalogItem[];
       if (!Array.isArray(defaults)) throw new Error('Invalid catalog data');

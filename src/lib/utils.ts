@@ -26,6 +26,12 @@ export const cyrb53 = (str: string, seed = 0): string => {
 /** Base path the app is deployed under (e.g. for subpath hosting). Prefix any static asset URL with this. */
 export const getBasePath = (): string => process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+/** Добавляет к адресу версию сборки (?v=...), чтобы после деплоя файл не брался из старого кэша. */
+export const withBuildVersion = (url: string): string => {
+  const v = process.env.NEXT_PUBLIC_BUILD_ID;
+  return v ? `${url}${url.includes('?') ? '&' : '?'}v=${encodeURIComponent(v)}` : url;
+};
+
 /** Order-independent structural equality for JSON-serializable values (sorts object keys before comparing). */
 export const stableStringify = (value: unknown): string => {
   if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'undefined';
