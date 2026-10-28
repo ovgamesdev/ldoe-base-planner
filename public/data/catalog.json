@@ -3267,6 +3267,35 @@
     }
   },
   {
+    "typeId": "pouring_table",
+    "category": "workbenches_advanced",
+    "name": {
+      "ru": "Разливной стол",
+      "en": "Pouring Table"
+    },
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/pouring_table.webp",
+    "tooltipImage": "/assets/preview/pouring_table.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "baseType": "main"
+    }
+  },
+  {
     "typeId": "recycler",
     "category": "workbenches_technologic",
     "name": {
