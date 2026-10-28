@@ -2552,6 +2552,35 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 2,
+      "sharedLimitGroup": "garden_bed",
+      "baseType": "main"
+    }
+  },
+  {
+    "typeId": "garden_bed_lvl_2",
+    "category": "workbenches_basic",
+    "name": {
+      "ru": "Теплица",
+      "en": "Greenhouse"
+    },
+    "size": {
+      "w": 2,
+      "h": 2
+    },
+    "image": "/assets/garden_bed_lvl_2.webp",
+    "tooltipImage": "/assets/preview/garden_bed.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": false,
+      "allowedRotations": [
+        0
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
+      "sharedLimitGroup": "garden_bed",
       "baseType": "main"
     }
   },
@@ -3234,6 +3263,35 @@
       "allowWallDecorAbove": false,
       "maxPerBase": 2,
       "sharedLimitGroup": "refined_melting_furnace",
+      "baseType": "main"
+    }
+  },
+  {
+    "typeId": "pouring_table",
+    "category": "workbenches_advanced",
+    "name": {
+      "ru": "Разливной стол",
+      "en": "Pouring Table"
+    },
+    "size": {
+      "w": 1,
+      "h": 1
+    },
+    "image": "/assets/pouring_table.webp",
+    "tooltipImage": "/assets/preview/pouring_table.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90
+      ],
+      "placementType": "floor",
+      "requiresFloor": true,
+      "requiresSpecificFloorLevel": 3,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 2,
       "baseType": "main"
     }
   },
@@ -4309,37 +4367,6 @@
       "requiresFloor": false,
       "allowWallDecorAbove": true,
       "maxPerBase": 20,
-      "baseType": "main"
-    }
-  },
-  {
-    "typeId": "turret",
-    "category": "furniture_protective",
-    "name": {
-      "ru": "Турель",
-      "en": "Turret"
-    },
-    "size": {
-      "w": 1,
-      "h": 1
-    },
-    "image": "/assets/turret.webp",
-    "tooltipImage": "/assets/preview/turret.webp",
-    "color": "transparent",
-    "colorVariants": [],
-    "constraints": {
-      "rotatable": true,
-      "allowedRotations": [
-        0,
-        90,
-        180,
-        270
-      ],
-      "placementType": "floor",
-      "requiresFloor": true,
-      "requiresSpecificFloorLevel": 3,
-      "allowWallDecorAbove": false,
-      "maxPerBase": 4,
       "baseType": "main"
     }
   },
@@ -6979,6 +7006,36 @@
     },
     "image": "/assets/caiman_farm.webp",
     "tooltipImage": "/assets/preview/caiman_farm.webp",
+    "color": "transparent",
+    "colorVariants": [],
+    "constraints": {
+      "rotatable": true,
+      "allowedRotations": [
+        0,
+        90,
+        180,
+        270
+      ],
+      "placementType": "ground",
+      "requiresFloor": false,
+      "allowWallDecorAbove": true,
+      "maxPerBase": 1,
+      "baseType": "main"
+    }
+  },
+  {
+    "typeId": "boar_farm",
+    "category": "decorations_season_rewards",
+    "name": {
+      "ru": "Ферма кабанов",
+      "en": "Boar Farm"
+    },
+    "size": {
+      "w": 2,
+      "h": 1
+    },
+    "image": "/assets/boar_farm.webp",
+    "tooltipImage": "/assets/preview/boar_farm.webp",
     "color": "transparent",
     "colorVariants": [],
     "constraints": {
